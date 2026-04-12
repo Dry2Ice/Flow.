@@ -6,6 +6,13 @@ import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEnt
 import fs from 'fs';
 import path from 'path';
 
+export interface SessionState {
+  messages: AIMessage[];
+  isGenerating: boolean;
+}
+
+const DEFAULT_SESSION_ID = 'default';
+
 interface AppState {
   // Current project
   currentProject: Project | null;
@@ -31,8 +38,8 @@ interface AppState {
   maxConcurrentRequests: number;
 
   // AI chat
-  messages: AIMessage[];
-  isGenerating: boolean;
+  sessions: Record<string, SessionState>;
+  activeSessionId: string;
 
   // UI state
   sidebarOpen: boolean;
@@ -88,8 +95,11 @@ interface AppState {
   updateTask: (taskId: string, updates: Partial<DevelopmentTask>) => void;
   setCurrentTask: (task: DevelopmentTask | null) => void;
 
-  addMessage: (message: AIMessage) => void;
-  setGenerating: (generating: boolean) => void;
+  addMessage: (sessionId: string, message: AIMessage) => void;
+  setGenerating: (sessionId: string, generating: boolean) => void;
+  setActiveSession: (sessionId: string) => void;
+  createSession: (sessionId?: string) => string;
+  getSessionState: (sessionId: string) => SessionState;
 
   setSidebarOpen: (open: boolean) => void;
   setDiffViewerOpen: (open: boolean) => void;
@@ -134,6 +144,7 @@ interface AppState {
   addAIRequest: (request: AIRequest) => void;
   updateAIRequest: (requestId: string, updates: Partial<AIRequest>) => void;
   removeAIRequest: (requestId: string) => void;
+  getAIRequestByJobId: (jobId: string) => AIRequest | undefined;
   getPendingRequests: () => AIRequest[];
   getRunningRequests: () => AIRequest[];
 }
@@ -154,8 +165,13 @@ export const useAppStore = create<AppState>()(
     projectContexts: [],
     aiRequests: [],
     maxConcurrentRequests: 3,
-    messages: [],
-    isGenerating: false,
+    sessions: {
+      [DEFAULT_SESSION_ID]: {
+        messages: [],
+        isGenerating: false
+      }
+    },
+    activeSessionId: DEFAULT_SESSION_ID,
     sidebarOpen: true,
     diffViewerOpen: false,
     currentDiff: null,
@@ -351,8 +367,59 @@ Deliver production-ready code that solves the user's problem effectively.`
     })),
     setCurrentTask: (task) => set({ currentTask: task }),
 
-    addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
-    setGenerating: (generating) => set({ isGenerating: generating }),
+    addMessage: (sessionId, message) => set((state) => {
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false };
+      return {
+        sessions: {
+          ...state.sessions,
+          [sessionId]: {
+            ...session,
+            messages: [...session.messages, message]
+          }
+        }
+      };
+    }),
+    setGenerating: (sessionId, generating) => set((state) => {
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false };
+      return {
+        sessions: {
+          ...state.sessions,
+          [sessionId]: {
+            ...session,
+            isGenerating: generating
+          }
+        }
+      };
+    }),
+    setActiveSession: (sessionId) => set((state) => {
+      if (state.sessions[sessionId]) {
+        return { activeSessionId: sessionId };
+      }
+
+      return {
+        activeSessionId: sessionId,
+        sessions: {
+          ...state.sessions,
+          [sessionId]: { messages: [], isGenerating: false }
+        }
+      };
+    }),
+    createSession: (sessionId = crypto.randomUUID()) => {
+      set((state) => ({
+        sessions: state.sessions[sessionId]
+          ? state.sessions
+          : {
+              ...state.sessions,
+              [sessionId]: { messages: [], isGenerating: false }
+            },
+        activeSessionId: sessionId
+      }));
+      return sessionId;
+    },
+    getSessionState: (sessionId) => {
+      const state = get();
+      return state.sessions[sessionId] ?? { messages: [], isGenerating: false };
+    },
 
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setDiffViewerOpen: (open) => set({ diffViewerOpen: open }),
@@ -492,6 +559,10 @@ Deliver production-ready code that solves the user's problem effectively.`
     removeAIRequest: (requestId) => set((state) => ({
       aiRequests: state.aiRequests.filter(r => r.id !== requestId)
     })),
+    getAIRequestByJobId: (jobId) => {
+      const state = get();
+      return state.aiRequests.find(r => r.jobId === jobId);
+    },
     getPendingRequests: () => {
       const state = get();
       return state.aiRequests.filter(r => r.status === 'pending');

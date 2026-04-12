@@ -1,8 +1,12 @@
-// src/app/api/projects/create/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import {
+  getWorkspaceRoot,
+  logSecurityWarning,
+  resolveWorkspacePath,
+  WorkspaceSecurityError,
+} from '@/lib/workspace-security';
 
 function ensureDirectory(dirPath: string, createdDirectories: string[]) {
   if (!fs.existsSync(dirPath)) {
@@ -30,28 +34,29 @@ export async function POST(request: NextRequest) {
   try {
     const { name, path: projectPath } = await request.json();
 
-    if (!name || !projectPath) {
-      return NextResponse.json(
-        { error: 'Name and path are required' },
-        { status: 400 }
-      );
+    if (!name || typeof name !== 'string') {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    const createdDirectories: string[] = [];
-    const createdFiles: string[] = [];
+    const workspaceRoot = getWorkspaceRoot();
+    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
 
-    // Create project directory and base structure
-    ensureDirectory(projectPath, createdDirectories);
+    if (!fs.existsSync(resolvedProjectPath)) {
+      fs.mkdirSync(resolvedProjectPath, { recursive: true });
+    }
 
-    const srcDir = path.join(projectPath, 'src');
-    const appDir = path.join(projectPath, 'src', 'app');
-    const publicDir = path.join(projectPath, 'public');
+    const srcDir = path.join(resolvedProjectPath, 'src');
+    const appDir = path.join(srcDir, 'app');
+    const publicDir = path.join(resolvedProjectPath, 'public');
 
-    ensureDirectory(srcDir, createdDirectories);
-    ensureDirectory(appDir, createdDirectories);
-    ensureDirectory(publicDir, createdDirectories);
+    if (!fs.existsSync(appDir)) {
+      fs.mkdirSync(appDir, { recursive: true });
+    }
 
-    // Create basic files
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+
     const packageJson = {
       name: name.toLowerCase().replace(/\s+/g, '-'),
       version: '0.1.0',
@@ -60,19 +65,19 @@ export async function POST(request: NextRequest) {
         dev: 'next dev',
         build: 'next build',
         start: 'next start',
-        lint: 'eslint'
+        lint: 'eslint',
       },
       dependencies: {
         next: '^16.1.3',
         react: '^19.2.3',
-        'react-dom': '^19.2.3'
+        'react-dom': '^19.2.3',
       },
       devDependencies: {
         typescript: '^5.9.3',
         '@types/node': '^24.10.2',
         '@types/react': '^19.2.7',
-        '@types/react-dom': '^19.2.3'
-      }
+        '@types/react-dom': '^19.2.3',
+      },
     };
 
     writeFileWithErrorHandling(
@@ -127,7 +132,6 @@ pnpm-debug.log*
       createdFiles
     );
 
-    // Create basic Next.js files
     const layoutContent = `export default function RootLayout({
   children,
 }: {
@@ -161,6 +165,19 @@ pnpm-debug.log*
       }
     });
   } catch (error) {
+    if (error instanceof WorkspaceSecurityError) {
+      if (error.status === 403) {
+        let rawInput: unknown;
+        try {
+          rawInput = (await request.clone().json())?.path;
+        } catch {
+          rawInput = 'unavailable';
+        }
+        logSecurityWarning('projects/create', error.reason, rawInput);
+      }
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     console.error('Failed to create project:', error);
     return NextResponse.json(
       { error: 'Failed to create project', details: error instanceof Error ? error.message : 'Unknown error' },
