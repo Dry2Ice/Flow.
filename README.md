@@ -13,13 +13,20 @@ A web-based code editor powered by Nvidia NIM AI for intelligent code generation
 
 ## Workspace Layout
 
-The application features a fully customizable four-zone workspace:
+The application launches with a fully functional four-zone workspace, ready for immediate use:
 
-- **Zone 1 (Left)**: Files & Projects - File browser and project management with tabs
-- **Zone 2 (Center Left)**: Code Editor - Monaco Editor with professional coding features
-- **Zone 3 (Center Right)**: Code Preview - Live preview with HTML rendering and execution
-- **Zone 4 (Right)**: Plans & Chat - Development plans/bug reports and AI chat/logs (vertically split)
-- **Bottom Bar**: AI Prompt Input - Always accessible prompt interface
+- **Zone 1 (Left - 25%)**: Files & Projects - File browser with demo project and tabs for project management
+- **Zone 2 (Center Left - 45%)**: Code Editor - Monaco Editor showing demo HTML file with syntax highlighting
+- **Zone 3 (Center Right - 25%)**: Code Preview - Live HTML preview with real-time updates
+- **Zone 4 (Right - 30%)**: Plans & Chat - Demo development plan (top) and AI chat interface (bottom)
+- **Bottom Bar**: AI Prompt Input - Always accessible prompt interface with preset selection
+
+**Immediate Functionality**: All zones display useful content immediately upon launch, including:
+- Demo project with sample HTML/CSS/JS files
+- Pre-opened HTML file in the editor
+- Live HTML preview
+- Sample development plan with tasks
+- Welcome message in AI chat
 
 **Resizable Panels**: Drag the borders between zones to customize the layout to your preference. Panel sizes are automatically saved.
 

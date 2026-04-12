@@ -220,10 +220,10 @@ Deliver production-ready code that solves the user's problem effectively.`
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
     panelSizes: {
-      sidebar: 20, // percentage
-      centerVertical: 60, // percentage of center area (code vs preview)
-      rightVertical: 50, // percentage of right area (plan vs chat)
-      rightPanel: 25, // percentage of total width
+      sidebar: 25, // percentage - increased for better file browsing
+      centerVertical: 65, // percentage of center area (code vs preview) - more space for code
+      rightVertical: 60, // percentage of right area (plan vs chat) - more space for plans
+      rightPanel: 30, // percentage of total width - increased for better planning interface
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 

@@ -16,6 +16,12 @@ export function CodePreview() {
 
   useEffect(() => {
     if (currentFile) {
+      // Auto-switch to preview mode for HTML files
+      const extension = currentFile.path.split('.').pop()?.toLowerCase();
+      if (extension === 'html' && previewMode === 'code') {
+        setPreviewMode('preview');
+      }
+
       if (previewMode === 'code') {
         setPreviewContent(currentFile.content);
       } else {

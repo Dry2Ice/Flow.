@@ -48,11 +48,65 @@ export default function Home() {
         isDemo: true
       };
 
-      // Add demo project to store
+      // Add demo project to store and open a default file
+      const { openFile } = useAppStore.getState();
       useAppStore.setState({
         projects: [demoProject],
         currentProject: demoProject
       });
+
+      // Open the HTML file by default to show content
+      const htmlFile = demoProject.files.find(f => f.name === 'index.html');
+      if (htmlFile) {
+        openFile(htmlFile.path, `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Project</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to AI Code Assistant</h1>
+        <p>This is a demo HTML file. You can edit it and see the preview update in real-time!</p>
+        <button onclick="alert('Hello from AI Code Assistant!')">Click me!</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`);
+      }
+
+      // Create demo plan and task
+      const { addPlan, addTask } = useAppStore.getState();
+      const demoPlan = {
+        id: 'demo-plan',
+        title: 'Demo Development Plan',
+        description: 'A sample development plan to demonstrate the planning features',
+        status: 'pending' as const,
+        tasks: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const demoTask = {
+        id: 'demo-task',
+        title: 'Welcome to AI Code Assistant',
+        description: 'Get familiar with the AI-powered development environment',
+        status: 'pending' as const,
+        priority: 'medium' as const,
+        items: [
+          { id: 'item-1', title: 'Explore the code editor with syntax highlighting', completed: false, createdAt: new Date() },
+          { id: 'item-2', title: 'Try the live HTML preview feature', completed: false, createdAt: new Date() },
+          { id: 'item-3', title: 'Check out the AI chat interface', completed: false, createdAt: new Date() },
+          { id: 'item-4', title: 'Create your first custom development plan', completed: false, createdAt: new Date() },
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      addPlan(demoPlan);
+      addTask(demoTask);
     } else if (!currentProject && projects.length > 0) {
       // Set current project if none is selected
       setCurrentProject(projects[0]);
