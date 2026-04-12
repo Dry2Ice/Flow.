@@ -19,6 +19,7 @@ export function ThemeToggle() {
   useEffect(() => {
     // Apply theme to document
     document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle('light', !isDark);
     localStorage.setItem('flow-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
@@ -35,12 +36,6 @@ export function ThemeToggle() {
         <Moon className={`w-6 h-6 text-blue-600 transition-all duration-300 absolute ${
           isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
         }`} />
-      </div>
-
-      {/* Tooltip */}
-      <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 px-2 py-1 dark:bg-neutral-900 dark:text-white dark:border-neutral-700 light:bg-white light:text-gray-900 light:border-gray-200 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border">
-        {isDark ? 'Switch to Light' : 'Switch to Dark'}
-        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 dark:bg-neutral-900 dark:border-neutral-700 light:bg-white light:border-gray-200 border-l border-t rotate-45"></div>
       </div>
     </button>
   );
