@@ -163,6 +163,7 @@ export interface PromptRequest {
     selectedCode?: string;
     projectId?: string;
     projectFiles?: FileWithMetadata[];
+    projectContext?: ProjectContext;
     sessionId?: string;
     jobId?: string;
   };

@@ -235,22 +235,17 @@ export function PromptInput() {
       {
         name: 'Code Analysis & Planning',
         presetId: 'analyze',
-        prompt: 'Analyze the entire codebase comprehensively. Identify architectural issues, code quality problems, potential improvements, and create a detailed development plan with prioritized tasks. Focus on scalability, maintainability, and best practices.',
+        prompt: 'Analyze the entire codebase comprehensively. Examine all files, identify architectural issues, code quality problems, potential improvements, and create a detailed development plan with all prioritized tasks. Focus on scalability, maintainability, security, performance, and best practices. Provide a complete roadmap for codebase enhancement.',
       },
       {
-        name: 'Task Implementation',
+        name: 'Active Development',
         presetId: 'develop',
-        prompt: 'Execute all the tasks identified in the previous analysis. Implement the improvements, refactor code where needed, and enhance the overall codebase quality. Make concrete code changes.',
+        prompt: 'Execute all tasks identified in the previous analysis perfectly. Implement every improvement, refactor all problematic code sections, enhance overall codebase quality, and make all necessary concrete code changes. Ensure all planned tasks are completed to the highest standard.',
       },
       {
         name: 'Bug Detection & Fixing',
         presetId: 'debug',
-        prompt: 'Perform a thorough code review to detect any bugs, security issues, or runtime errors. Fix all identified problems and ensure the code is production-ready.',
-      },
-      {
-        name: 'Final Verification',
-        presetId: 'analyze',
-        prompt: 'Verify that all changes are working correctly, no new issues were introduced, and the codebase meets high quality standards. Provide a summary of all improvements made.',
+        prompt: 'Perform a thorough code review to detect any bugs, security vulnerabilities, runtime errors, or logic issues. Fix all identified problems comprehensively and ensure the code is production-ready and error-free. Verify that all changes work correctly and no new issues were introduced.',
       },
     ];
 

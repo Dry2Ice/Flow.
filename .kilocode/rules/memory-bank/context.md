@@ -26,7 +26,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] AI behavior presets (bug detection, analysis, development) with inline switching
 - [x] Editable system prompts for custom AI behavior
 - [x] General system prompt with core development principles
-- [x] Ultra Mode: 4-step comprehensive code enhancement workflow
+- [x] Ultra Mode: 3-step comprehensive code enhancement workflow (Analysis → Development → Bug Fixing)
 - [x] Project directory integration for full codebase context
 - [x] Local file system integration with intelligent context limiting
 - [x] Progress tracking for automated multi-step operations
@@ -34,8 +34,6 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Rich file metadata and structural code analysis
 - [x] Professional Monaco Editor with advanced features
 - [x] Context-aware file prioritization and analysis
-- [x] Rich file metadata and structural code analysis
-- [x] Professional Monaco Editor with advanced features
 - [x] Customizable resizable workspace layout with four distinct zones and immediate content display
 - [x] Interactive planning system with hierarchical task management
 - [x] Auto-execution capabilities for plans and tasks with preset switching
@@ -64,6 +62,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Prompt pipeline now supports parallel user submissions without global input lock
 - [x] Per-request project context snapshot is attached to each AI call for isolation
 - [x] Project context now includes adaptive focus areas and rolling summary timeline for periodic systematization
+- [x] Ultra Mode preset selection locked during execution to prevent interference
 
 ## Current Structure
 
