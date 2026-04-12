@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen, Code, FileText, Settings, Database, Image } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { FileNode } from '@/types';
@@ -10,6 +10,7 @@ import { FileNode } from '@/types';
 export function FileBrowser() {
   const { currentProject, openFile } = useAppStore();
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -71,15 +72,32 @@ export function FileBrowser() {
   };
 
   const handleFileClick = async (file: FileNode) => {
-    if (file.type === 'file') {
-      try {
-        // In a real app, you'd fetch the file content from the server
-        // For now, we'll use placeholder content
-        const content = `// ${file.name}\n\n// This is placeholder content for ${file.name}`;
-        openFile(file.path, content);
-      } catch (error) {
-        console.error('Failed to load file:', error);
+    if (file.type !== 'file' || !currentProject) {
+      return;
+    }
+
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch('/api/project/file/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath: currentProject.path,
+          filePath: file.path,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load file');
       }
+
+      openFile(file.path, data.content, data.lastModifiedMs);
+    } catch (error) {
+      console.error('Failed to load file:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to load file');
     }
   };
 
@@ -145,6 +163,11 @@ export function FileBrowser() {
       <h3 className="text-sm font-semibold mb-2 text-neutral-300">
         {currentProject.name}
       </h3>
+      {errorMessage && (
+        <div className="mb-2 rounded border border-red-500/40 bg-red-500/10 px-2 py-1 text-xs text-red-300">
+          {errorMessage}
+        </div>
+      )}
       <div className="space-y-1">
         {currentProject.files.map(file => renderFileNode(file))}
       </div>
