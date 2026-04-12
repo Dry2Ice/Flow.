@@ -28,7 +28,7 @@ export function SettingsModal() {
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
   const [generalPromptText, setGeneralPromptText] = useState('');
-  const { activePreset, promptPresets, setActivePreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
+  const { activePreset, promptPresets, setActivePreset, updatePromptPreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -74,19 +74,13 @@ export function SettingsModal() {
   };
 
   const handleSavePreset = () => {
-    if (editingPreset) {
-      // In a real app, you'd save this to a backend or persistent storage
-      // For now, we'll just update the local state
-      const updatedPresets = promptPresets.map(p =>
-        p.id === editingPreset ? { ...p, systemPrompt: editedPrompt } : p
-      );
-      // Note: This won't persist across sessions without backend storage
-      console.log('Updated preset:', editingPreset, editedPrompt);
-      setEditingPreset(null);
-      setEditedPrompt('');
-      setMessage('Preset updated successfully!');
-      setTimeout(() => setMessage(''), 2000);
-    }
+    if (!editingPreset) return;
+
+    updatePromptPreset(editingPreset, { systemPrompt: editedPrompt });
+    setEditingPreset(null);
+    setEditedPrompt('');
+    setMessage('Preset updated successfully!');
+    setTimeout(() => setMessage(''), 2000);
   };
 
   const handleCancelEdit = () => {
@@ -420,12 +414,14 @@ export function SettingsModal() {
                       />
                       <div className="flex gap-2 mt-2">
                         <button
+                          type="button"
                           onClick={handleSaveGeneralPrompt}
                           className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
                         >
                           Save
                         </button>
                         <button
+                          type="button"
                           onClick={handleCancelGeneralPromptEdit}
                           className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
                         >
@@ -441,6 +437,7 @@ export function SettingsModal() {
                         </pre>
                       </div>
                       <button
+                        type="button"
                         onClick={handleEditGeneralPrompt}
                         className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                       >
@@ -492,12 +489,14 @@ export function SettingsModal() {
                               />
                               <div className="flex gap-2">
                                 <button
+                                  type="button"
                                   onClick={handleSavePreset}
                                   className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
                                 >
                                   Save
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={handleCancelEdit}
                                   className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
                                 >
@@ -514,6 +513,7 @@ export function SettingsModal() {
                                 </div>
                               </details>
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEditPreset(preset.id);
