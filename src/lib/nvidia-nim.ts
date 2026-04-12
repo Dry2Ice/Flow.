@@ -89,7 +89,7 @@ function buildIntelligentContextSummary(context?: any): string {
     '',
     `### 📊 Project Overview`,
     `- Total files: ${files.length}`,
-    `- Languages: ${projectAnalysis.languages.join(', ')}`,
+    `- Languages: ${[...projectAnalysis.languages].join(', ')}`,
     `- Primary framework: ${projectAnalysis.primaryFramework || 'Not detected'}`,
     `- Code structure: ${projectAnalysis.structureSummary}`,
     '',
@@ -113,26 +113,46 @@ function buildIntelligentContextSummary(context?: any): string {
   return sections.join('\n');
 }
 
+interface ProjectFileForAnalysis {
+  path: string;
+  content?: string;
+  metadata?: {
+    extension?: string;
+    language?: string;
+  };
+}
+
+interface ProjectStructureAnalysis {
+  languages: Set<string>;
+  primaryFramework: string;
+  structureSummary: string;
+  keyComponents: string[];
+  dependencies: string[];
+  patterns: string[];
+  notes: string[];
+}
+
 // Comprehensive project structure analysis
-function analyzeProjectStructure(files: any[]): any {
-  const analysis = {
+function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStructureAnalysis {
+  const analysis: ProjectStructureAnalysis = {
     languages: new Set<string>(),
     primaryFramework: '',
     structureSummary: '',
-    keyComponents: [] as string[],
-    dependencies: [] as string[],
-    patterns: [] as string[],
-    notes: [] as string[]
+    keyComponents: [],
+    dependencies: [],
+    patterns: [],
+    notes: []
   };
 
   let hasDjango = false;
   let hasExpress = false;
 
+  // Analyze each file
   files.forEach((file) => {
     const extension = file.metadata?.extension || '';
     const language = file.metadata?.language || '';
     const content = file.content || '';
-    const fileName = file.path.split('/').pop();
+    const fileName = file.path.split('/').pop() || file.path;
 
     if (language) analysis.languages.add(language);
 
@@ -163,7 +183,7 @@ function analyzeProjectStructure(files: any[]): any {
 
     if (file.path.includes('package.json')) {
       try {
-        const pkg = JSON.parse(content);
+        const pkg = JSON.parse(content) as { dependencies?: Record<string, string> };
         const deps = Object.keys(pkg.dependencies || {}).slice(0, 5);
         if (deps.length > 0) {
           analysis.dependencies.push(`NPM: ${deps.join(', ')}`);

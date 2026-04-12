@@ -246,15 +246,89 @@ class AIService {
     return recommendations;
   }
 
+  private isRequestReady(request: AIRequest, allRequests: AIRequest[]): boolean {
+    if (request.dependencies.length === 0) {
+      return true;
+    }
+
+    return request.dependencies.every((depId) => {
+      const dependency = allRequests.find((candidate) => candidate.id === depId);
+      return dependency?.status === 'completed';
+    });
+  }
+
+  private sortByPriority(requests: AIRequest[]): AIRequest[] {
+    const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+    return requests.sort((a, b) => {
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+  }
+
+  private claimRequestForExecution(requestId: string): AIRequest | null {
+    let claimedRequest: AIRequest | null = null;
+
+    useAppStore.setState((state) => {
+      const target = state.aiRequests.find((request) => request.id === requestId);
+      if (!target || target.status !== 'pending') {
+        return state;
+      }
+
+      const startedAt = new Date();
+      claimedRequest = { ...target, status: 'running', startedAt };
+
+      return {
+        ...state,
+        aiRequests: state.aiRequests.map((request) =>
+          request.id === requestId
+            ? { ...request, status: 'running', startedAt }
+            : request
+        )
+      };
+    });
+
+    return claimedRequest;
+  }
+
+  private dispatchAIRequests() {
+    const state = useAppStore.getState();
+    const { maxConcurrentRequests, getRunningRequests, updateAIRequest } = state;
+
+    const allRequests = state.aiRequests;
+
+    allRequests
+      .filter((request) => request.status === 'pending' || request.status === 'blocked')
+      .forEach((request) => {
+        const nextStatus = this.isRequestReady(request, allRequests) ? 'pending' : 'blocked';
+        if (request.status !== nextStatus) {
+          updateAIRequest(request.id, { status: nextStatus });
+        }
+      });
+
+    const availableSlots = maxConcurrentRequests - getRunningRequests().length;
+    if (availableSlots <= 0) {
+      return;
+    }
+
+    const readyRequests = this.sortByPriority(
+      useAppStore.getState().aiRequests.filter((request) => request.status === 'pending')
+    ).slice(0, availableSlots);
+
+    if (readyRequests.length === 0) {
+      return;
+    }
+
+    void this.processAIRequests(readyRequests);
+  }
+
   // Parallel AI request processing
   async processAIRequests(requests: AIRequest[]): Promise<void> {
     const { maxConcurrentRequests, updateAIRequest, addLog } = useAppStore.getState();
-
-    // Sort by priority
-    const sortedRequests = requests.sort((a, b) => {
-      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    });
+    const sortedRequests = this.sortByPriority([...requests]);
 
     // Process in batches based on concurrency limit
     for (let i = 0; i < sortedRequests.length; i += maxConcurrentRequests) {
@@ -262,30 +336,30 @@ class AIService {
 
       // Process batch in parallel
       const promises = batch.map(async (request) => {
-        try {
-          updateAIRequest(request.id, {
-            status: 'running',
-            startedAt: new Date()
-          });
+        const claimedRequest = this.claimRequestForExecution(request.id);
+        if (!claimedRequest) {
+          return;
+        }
 
+        try {
           addLog({
             id: crypto.randomUUID(),
             sessionId: request.sessionId,
             jobId: request.jobId,
             timestamp: new Date(),
             type: 'info',
-            message: `Starting ${request.type} request: ${request.prompt.substring(0, 50)}...`,
+            message: `Starting ${claimedRequest.type} request: ${claimedRequest.prompt.substring(0, 50)}...`,
             source: 'ai_execution'
           });
 
           const result = await nvidiaNimService.generateCode({
-            prompt: request.prompt,
-            preset: request.context?.preset,
-            generalPrompt: request.context?.generalPrompt,
-            context: request.context
+            prompt: claimedRequest.prompt,
+            preset: claimedRequest.context?.preset,
+            generalPrompt: claimedRequest.context?.generalPrompt,
+            context: claimedRequest.context
           });
 
-          updateAIRequest(request.id, {
+          updateAIRequest(claimedRequest.id, {
             status: 'completed',
             completedAt: new Date(),
             result,
@@ -298,12 +372,12 @@ class AIService {
             jobId: request.jobId,
             timestamp: new Date(),
             type: 'success',
-            message: `Completed ${request.type} request successfully`,
+            message: `Completed ${claimedRequest.type} request successfully`,
             source: 'ai_execution'
           });
 
         } catch (error) {
-          updateAIRequest(request.id, {
+          updateAIRequest(claimedRequest.id, {
             status: 'failed',
             completedAt: new Date(),
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -315,19 +389,20 @@ class AIService {
             jobId: request.jobId,
             timestamp: new Date(),
             type: 'error',
-            message: `Failed ${request.type} request: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            message: `Failed ${claimedRequest.type} request: ${error instanceof Error ? error.message : 'Unknown error'}`,
             source: 'ai_execution'
           });
         }
       });
 
       await Promise.all(promises);
+      this.dispatchAIRequests();
     }
   }
 
   // Smart request queuing and execution
   async queueAIRequest(request: Omit<AIRequest, 'id' | 'status' | 'createdAt'>): Promise<string> {
-    const { addAIRequest, getPendingRequests, getRunningRequests, maxConcurrentRequests } = useAppStore.getState();
+    const { addAIRequest } = useAppStore.getState();
 
     const aiRequest: AIRequest = {
       id: crypto.randomUUID(),
@@ -349,21 +424,7 @@ class AIService {
     };
 
     addAIRequest(aiRequest);
-
-    // Auto-start processing if we have capacity
-    const running = getRunningRequests();
-    if (running.length < maxConcurrentRequests) {
-      const pending = getPendingRequests();
-      const readyRequests = pending.filter(r =>
-        r.dependencies.length === 0 || r.dependencies.every(depId =>
-          pending.some(p => p.id === depId && p.status === 'completed')
-        )
-      );
-
-      if (readyRequests.length > 0) {
-        this.processAIRequests(readyRequests.slice(0, maxConcurrentRequests - running.length));
-      }
-    }
+    this.dispatchAIRequests();
 
     return aiRequest.id;
   }
