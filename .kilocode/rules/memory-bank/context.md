@@ -163,6 +163,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Resolved npm dependency installation issue by removing legacy `react-diff-viewer` (React 15/16 peer requirement), keeping `react-diff-viewer-continued`, and generating an npm `package-lock.json` so `npm ci` works reliably |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
 | 2026-04-12 | Hardened `POST /api/projects/create` with explicit `src/app` directory creation, robust file-write error handling, generated `tsconfig.json` + `.gitignore`, and response metadata for created files/directories |
