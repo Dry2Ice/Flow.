@@ -53,6 +53,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Project manager with tabbed interface for files and projects
 - [x] API endpoints for project creation and loading
 - [x] Persistent project management and switching
+- [x] AI request scheduler now supports blocked state, dependency checks over full queue, atomic pending→running claims, and recursive dispatch after batch completion
 
 ## Current Structure
 
@@ -129,3 +130,4 @@ export async function GET() {
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
