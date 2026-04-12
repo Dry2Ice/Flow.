@@ -10,6 +10,12 @@ export interface SessionState {
   activeRequests: number;
 }
 
+export interface OpenFile {
+  path: string;
+  content: string;
+  lastModifiedMs?: number;
+}
+
 const DEFAULT_SESSION_ID = 'default';
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
@@ -144,7 +150,7 @@ interface AppState {
   projects: Project[];
 
   // File management
-  openFiles: { path: string; content: string }[];
+  openFiles: OpenFile[];
   activeFile: string | null;
 
   // Development plan
@@ -204,7 +210,7 @@ interface AppState {
   addProject: (project: Project) => void;
   updateProject: (project: Partial<Project>) => void;
 
-  openFile: (path: string, content: string) => void;
+  openFile: (path: string, content: string, lastModifiedMs?: number) => void;
   closeFile: (path: string) => void;
   updateFileContent: (path: string, content: string) => void;
   setActiveFile: (path: string) => void;
@@ -389,13 +395,24 @@ export const useAppStore = create<AppState>()(
     })),
 
     // File actions
-    openFile: (path, content) => set((state) => {
+    openFile: (path, content, lastModifiedMs) => set((state) => {
       const existing = state.openFiles.find(f => f.path === path);
       if (existing) {
-        return { activeFile: path };
+        return {
+          activeFile: path,
+          openFiles: state.openFiles.map(file =>
+            file.path === path
+              ? {
+                  ...file,
+                  content,
+                  lastModifiedMs: lastModifiedMs ?? file.lastModifiedMs,
+                }
+              : file
+          ),
+        };
       }
       return {
-        openFiles: [...state.openFiles, { path, content }],
+        openFiles: [...state.openFiles, { path, content, lastModifiedMs }],
         activeFile: path
       };
     }),
