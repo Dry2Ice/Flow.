@@ -38,6 +38,7 @@ export default function Home() {
   const { sidebarOpen, diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
   const [activeTab, setActiveTab] = useState<'files' | 'projects' | 'analytics'>('files');
   const [leftPanelMode, setLeftPanelMode] = useState<'files' | 'stats'>('files');
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Create demo project on first load
   useEffect(() => {
@@ -233,13 +234,7 @@ export default function Home() {
             </button>
             <ThemeToggle />
             <button
-              onClick={() => {
-                // SettingsModal manages its own state
-                const settingsButton = document.querySelector('button[title="AI Settings"]') as HTMLElement;
-                if (settingsButton) {
-                  settingsButton.click();
-                }
-              }}
+              onClick={() => setSettingsModalOpen(true)}
               className="p-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
               title="AI Settings"
             >
