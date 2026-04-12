@@ -53,6 +53,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Project manager with tabbed interface for files and projects
 - [x] API endpoints for project creation and loading
 - [x] Persistent project management and switching
+- [x] Workspace-scoped API path hardening (env-based root, traversal blocking, recursion caps, security warning logs)
 
 ## Current Structure
 
@@ -128,4 +129,5 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
