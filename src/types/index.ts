@@ -81,7 +81,7 @@ export interface AIRequest {
   type: 'analysis' | 'implementation' | 'review' | 'optimization' | 'debugging';
   prompt: string;
   context: any;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'blocked' | 'running' | 'completed' | 'failed';
   priority: 'low' | 'medium' | 'high' | 'critical';
   dependencies: string[]; // IDs of requests this depends on
   createdAt: Date;
