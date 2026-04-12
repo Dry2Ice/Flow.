@@ -241,6 +241,11 @@ interface AppState {
   // Git actions
   setGitInitialized: (initialized: boolean) => void;
   setCommits: (commits: any[]) => void;
+  initializeGitRepo: () => Promise<void>;
+  saveActiveFile: () => Promise<void>;
+  loadCommitHistory: (limit?: number) => Promise<void>;
+  rollbackToCommit: (commitHash: string) => Promise<void>;
+  restoreActiveFile: () => Promise<void>;
 
   // Prompt preset actions
   setActivePreset: (preset: PromptPreset | null) => void;
@@ -553,27 +558,190 @@ export const useAppStore = create<AppState>()(
 
     setGitInitialized: (initialized) => set({ gitInitialized: initialized }),
     setCommits: (commits) => set({ commits }),
-    setActivePreset: (preset) => set((state) => {
-      const matchedPreset = preset
-        ? state.promptPresets.find((existingPreset) => existingPreset.id === preset.id) ?? preset
-        : null;
+    initializeGitRepo: async () => {
+      const state = get();
+      if (!state.currentProject || state.currentProject.isDemo) return;
 
-      saveActivePresetId(matchedPreset?.id ?? null);
-      return { activePreset: matchedPreset };
-    }),
-    updatePromptPreset: (presetId, patch) => set((state) => {
-      const promptPresets = state.promptPresets.map((preset) => (
-        preset.id === presetId ? { ...preset, ...patch, id: preset.id } : preset
-      ));
+      const response = await fetch('/api/git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'init',
+          projectPath: state.currentProject.path,
+        }),
+      });
+      const data = await response.json();
 
-      savePromptPresets(promptPresets);
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to initialize repository');
+      }
 
-      const activePreset = state.activePreset?.id === presetId
-        ? promptPresets.find((preset) => preset.id === presetId) ?? state.activePreset
-        : state.activePreset;
+      set({ gitInitialized: true });
+      state.addLog({
+        id: crypto.randomUUID(),
+        sessionId: state.activeSessionId,
+        timestamp: new Date(),
+        type: 'success',
+        message: `Git repository initialized for ${state.currentProject.name}`,
+        source: 'file_operation',
+      });
+    },
+    saveActiveFile: async () => {
+      const state = get();
+      if (!state.currentProject || state.currentProject.isDemo || !state.activeFile) return;
 
-      return { promptPresets, activePreset };
-    }),
+      const active = state.openFiles.find((file) => file.path === state.activeFile);
+      if (!active) return;
+
+      const response = await fetch('/api/git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save',
+          projectPath: state.currentProject.path,
+          filePath: active.path,
+          content: active.content,
+          commitMessage: `feat: save ${active.path}`,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to save changes');
+      }
+
+      if (data.skipped) {
+        state.addLog({
+          id: crypto.randomUUID(),
+          sessionId: state.activeSessionId,
+          timestamp: new Date(),
+          type: 'info',
+          message: `No changes to save for ${active.path}`,
+          source: 'file_operation',
+        });
+        return;
+      }
+
+      const change: CodeChange = {
+        id: crypto.randomUUID(),
+        filePath: active.path,
+        oldContent: data.oldContent || '',
+        newContent: data.newContent || active.content,
+        timestamp: new Date(),
+        description: `Saved ${active.path} to git`,
+      };
+
+      set((current) => ({
+        currentDiff: change,
+        diffViewerOpen: true,
+        commits: data.latestCommit
+          ? [data.latestCommit, ...current.commits.filter((commit) => commit.hash !== data.latestCommit.hash)]
+          : current.commits,
+        gitInitialized: true,
+      }));
+
+      state.addLog({
+        id: crypto.randomUUID(),
+        sessionId: state.activeSessionId,
+        timestamp: new Date(),
+        type: 'success',
+        message: `Saved and committed ${active.path}`,
+        details: data.latestCommit?.hash ? `Commit: ${data.latestCommit.hash}` : undefined,
+        source: 'file_operation',
+      });
+    },
+    loadCommitHistory: async (limit = 20) => {
+      const state = get();
+      if (!state.currentProject || state.currentProject.isDemo) return;
+
+      const response = await fetch('/api/git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'history',
+          projectPath: state.currentProject.path,
+          limit,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load git history');
+      }
+
+      set({ commits: data.commits || [], gitInitialized: true });
+      state.addLog({
+        id: crypto.randomUUID(),
+        sessionId: state.activeSessionId,
+        timestamp: new Date(),
+        type: 'info',
+        message: `Loaded ${data.commits?.length || 0} commits`,
+        source: 'file_operation',
+      });
+    },
+    rollbackToCommit: async (commitHash: string) => {
+      const state = get();
+      if (!state.currentProject || state.currentProject.isDemo) return;
+
+      const response = await fetch('/api/git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'rollback',
+          projectPath: state.currentProject.path,
+          commitHash,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Rollback failed');
+      }
+
+      state.addLog({
+        id: crypto.randomUUID(),
+        sessionId: state.activeSessionId,
+        timestamp: new Date(),
+        type: 'warning',
+        message: `Rollback to commit ${commitHash}`,
+        source: 'user_action',
+      });
+    },
+    restoreActiveFile: async () => {
+      const state = get();
+      if (!state.currentProject || state.currentProject.isDemo || !state.activeFile) return;
+
+      const response = await fetch('/api/git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'restore',
+          projectPath: state.currentProject.path,
+          filePath: state.activeFile,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Restore failed');
+      }
+
+      set((current) => ({
+        openFiles: current.openFiles.map((file) =>
+          file.path === state.activeFile ? { ...file, content: data.content || '' } : file
+        ),
+      }));
+
+      state.addLog({
+        id: crypto.randomUUID(),
+        sessionId: state.activeSessionId,
+        timestamp: new Date(),
+        type: 'warning',
+        message: `Restored ${state.activeFile} from git`,
+        source: 'user_action',
+      });
+    },
+    setActivePreset: (preset) => set({ activePreset: preset }),
     setProjectPath: (path: string) => set({ projectPath: path }),
     createProject: async (name: string, path: string) => {
       try {

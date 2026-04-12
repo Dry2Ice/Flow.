@@ -89,6 +89,8 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Centralized control buttons in header center (Statistics toggle, Theme toggle, Settings)
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
+- [x] Integrated real Git workflow into user scenarios: repository initialization, file save+commit, commit history loading, rollback to commit, and per-file restore with action logging
+- [x] File browser now loads real file contents via API and uses git-backed save to generate actual old/new `CodeChange` objects and open `DiffViewer`
 - [x] Unified AI executor service extracted from `PromptInput` and reused by Development Plan actions with preset-based routing (`analyze` / `develop` / `debug`)
 - [x] Development Plan/Bug actions now execute real AI calls, update status + `lastChecked`, and write action/result logs
 - [x] Secure file-level read/write API routes with workspace path validation, binary-file detection, permission handling, and write conflict detection
@@ -182,5 +184,6 @@ export async function GET() {
 | 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
 | 2026-04-12 | Refactored `analyzeProjectStructure` in `src/lib/nvidia-nim.ts`: removed duplicate structure summary block, moved all per-file logic into `forEach`, replaced out-of-scope `content` usage with `hasExpress`, and introduced strict analysis types (`ProjectStructureAnalysis`, `ProjectFileForAnalysis`). |
 | 2026-04-12 | Improved AI workflow efficiency: enabled parallel prompt submissions, added per-session active request counters, attached project context snapshots to each AI request, and introduced adaptive context summarization timeline/focus areas. |
+| 2026-04-12 | Integrated `src/lib/git.ts` into UI workflows with new `/api/git` + `/api/project/file` routes, added save/history/rollback/restore controls in file zone, and wired logs + real diff generation on save. |
 | 2026-04-12 | Added `/api/project/file/read` and `/api/project/file/write` routes secured by `workspace-security`; integrated file browser loading and editor save/reload with permission/binary/conflict error handling. |
 | 2026-04-12 | Updated Nvidia NIM config API validation to accept and validate all generation fields (temperature/topP/topK/contextTokens/maxTokens/penalties/stopSequences) and hardened NIM request body construction against NaN, invalid ranges, and empty stop arrays. |
