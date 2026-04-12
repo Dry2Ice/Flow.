@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
 
     const workspaceRoot = getWorkspaceRoot();
     const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
+    const createdDirectories: string[] = [];
+    const createdFiles: string[] = [];
 
     ensureDirectory(resolvedProjectPath, createdDirectories);
 

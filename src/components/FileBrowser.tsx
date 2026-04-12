@@ -120,6 +120,11 @@ export function FileBrowser() {
       } catch (error) {
         console.error('Failed to load file:', error);
       }
+
+      openFile(file.path, data.content, data.lastModifiedMs);
+    } catch (error) {
+      console.error('Failed to load file:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to load file');
     }
   };
 

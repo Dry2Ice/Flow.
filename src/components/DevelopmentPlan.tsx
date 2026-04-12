@@ -5,8 +5,9 @@
 import { useState } from 'react';
 import { CheckCircle, Circle, Clock, AlertTriangle, Plus, Play, Search, Edit, Trash2, CheckSquare, Square, Bug, XCircle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
-import { DevelopmentTask, TaskItem } from '@/types';
+import { BugReport, DevelopmentTask, TaskItem } from '@/types';
 import type { DevelopmentPlan } from '@/types';
+import { executeAIRequest } from '@/lib/ai-executor';
 
 export function DevelopmentPlan() {
   const {
@@ -24,7 +25,8 @@ export function DevelopmentPlan() {
     setCurrentTask,
     updateBug,
     deleteBug,
-    promptPresets
+    addLog,
+    activeSessionId,
   } = useAppStore();
 
   const [newPlanTitle, setNewPlanTitle] = useState('');
@@ -78,6 +80,21 @@ export function DevelopmentPlan() {
     }
   };
 
+  const inferWorkStatus = (
+    explanation: string | undefined,
+    fallback: DevelopmentTask['status'] | DevelopmentPlan['status']
+  ): DevelopmentTask['status'] | DevelopmentPlan['status'] => {
+    if (!explanation) return fallback;
+
+    const text = explanation.toLowerCase();
+    if (text.includes('partially') || text.includes('partial')) return 'partially_completed';
+    if (text.includes('completed') || text.includes('done') || text.includes('finished')) return 'completed';
+    if (text.includes('in progress') || text.includes('progress')) return 'in_progress';
+    if (text.includes('pending') || text.includes('not started')) return 'pending';
+
+    return fallback;
+  };
+
   const handleAddPlan = () => {
     if (!newPlanTitle.trim()) return;
 
@@ -116,41 +133,157 @@ export function DevelopmentPlan() {
   };
 
   const handleCheckPlan = async (plan: DevelopmentPlan) => {
-    // Use Code Analysis & Planning preset to check plan status
-    const analysisPreset = promptPresets.find(p => p.id === 'analyze');
-    if (!analysisPreset) return;
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `Checking plan "${plan.title}"`,
+      source: 'user_action',
+      relatedPlan: plan.id,
+    });
 
-    // Implementation for checking plan would go here
-    console.log('Checking plan:', plan.title);
+    const result = await executeAIRequest({
+      requestType: 'analysis',
+      presetId: 'analyze',
+      prompt: `Check plan status and return current progress.
+Plan title: ${plan.title}
+Plan description: ${plan.description || 'No description'}
+Current status: ${plan.status}
+Tasks count: ${plan.tasks.length}`,
+    });
+
+    const nextStatus = inferWorkStatus(result.responseText, plan.status);
+    updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      jobId: result.jobId,
+      timestamp: new Date(),
+      type: result.ok ? 'success' : 'error',
+      message: result.ok
+        ? `Plan "${plan.title}" checked. Status: ${nextStatus}.`
+        : `Failed to check plan "${plan.title}": ${result.error || 'Unknown error'}`,
+      source: 'ai_execution',
+      relatedPlan: plan.id,
+    });
   };
 
   const handleExecutePlan = async (plan: DevelopmentPlan) => {
-    // Use Active Development preset to execute plan
-    const devPreset = promptPresets.find(p => p.id === 'develop');
-    if (!devPreset) return;
-
     updatePlan(plan.id, { status: 'in_progress' });
-    // Implementation for executing plan would go here
-    console.log('Executing plan:', plan.title);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `Executing plan "${plan.title}"`,
+      source: 'user_action',
+      relatedPlan: plan.id,
+    });
+
+    const result = await executeAIRequest({
+      requestType: 'implementation',
+      presetId: 'develop',
+      prompt: `Execute this development plan.
+Plan title: ${plan.title}
+Plan description: ${plan.description || 'No description'}
+Current status: ${plan.status}
+Tasks: ${plan.tasks.map((task) => task.title).join(', ') || 'No tasks yet'}`,
+    });
+
+    const nextStatus = inferWorkStatus(result.responseText, 'in_progress');
+    updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      jobId: result.jobId,
+      timestamp: new Date(),
+      type: result.ok ? 'success' : 'error',
+      message: result.ok
+        ? `Plan "${plan.title}" execution updated status to ${nextStatus}.`
+        : `Failed to execute plan "${plan.title}": ${result.error || 'Unknown error'}`,
+      source: 'ai_execution',
+      relatedPlan: plan.id,
+    });
   };
 
   const handleCheckTask = async (task: DevelopmentTask) => {
-    // Use Code Analysis & Planning preset to check task status
-    const analysisPreset = promptPresets.find(p => p.id === 'analyze');
-    if (!analysisPreset) return;
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `Checking task "${task.title}"`,
+      source: 'user_action',
+      relatedTask: task.id,
+    });
 
-    // Implementation for checking task would go here
-    console.log('Checking task:', task.title);
+    const result = await executeAIRequest({
+      requestType: 'analysis',
+      presetId: 'analyze',
+      prompt: `Check task status and return current progress.
+Task title: ${task.title}
+Task description: ${task.description || 'No description'}
+Current status: ${task.status}
+Checklist items: ${task.items.length}`,
+    });
+
+    const nextStatus = inferWorkStatus(result.responseText, task.status);
+    updateTask(task.id, { status: nextStatus, lastChecked: new Date() });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      jobId: result.jobId,
+      timestamp: new Date(),
+      type: result.ok ? 'success' : 'error',
+      message: result.ok
+        ? `Task "${task.title}" checked. Status: ${nextStatus}.`
+        : `Failed to check task "${task.title}": ${result.error || 'Unknown error'}`,
+      source: 'ai_execution',
+      relatedTask: task.id,
+    });
   };
 
   const handleExecuteTask = async (task: DevelopmentTask) => {
-    // Use Active Development preset to execute task
-    const devPreset = promptPresets.find(p => p.id === 'develop');
-    if (!devPreset) return;
-
     updateTask(task.id, { status: 'in_progress' });
-    // Implementation for executing task would go here
-    console.log('Executing task:', task.title);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `Executing task "${task.title}"`,
+      source: 'user_action',
+      relatedTask: task.id,
+    });
+
+    const result = await executeAIRequest({
+      requestType: 'implementation',
+      presetId: 'develop',
+      prompt: `Execute task.
+Task title: ${task.title}
+Task description: ${task.description || 'No description'}
+Current status: ${task.status}
+Checklist: ${task.items.map((item) => `${item.completed ? '[x]' : '[ ]'} ${item.title}`).join('; ') || 'No items'}`,
+    });
+
+    const nextStatus = inferWorkStatus(result.responseText, 'in_progress');
+    updateTask(task.id, { status: nextStatus, lastChecked: new Date() });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      jobId: result.jobId,
+      timestamp: new Date(),
+      type: result.ok ? 'success' : 'error',
+      message: result.ok
+        ? `Task "${task.title}" execution updated status to ${nextStatus}.`
+        : `Failed to execute task "${task.title}": ${result.error || 'Unknown error'}`,
+      source: 'ai_execution',
+      relatedTask: task.id,
+    });
   };
 
   const handleToggleItem = (taskId: string, itemId: string, completed: boolean) => {
@@ -164,24 +297,82 @@ export function DevelopmentPlan() {
     updateTask(taskId, { items: updatedItems });
   };
 
-  const handleCheckBug = async (bug: any) => {
-    // Use Code Analysis & Planning preset to check bug status
-    const analysisPreset = promptPresets.find(p => p.id === 'analyze');
-    if (!analysisPreset) return;
+  const handleCheckBug = async (bug: BugReport) => {
+    updateBug(bug.id, { status: 'investigating' });
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `Checking bug "${bug.title}"`,
+      source: 'user_action',
+    });
 
-    updateBug(bug.id, { status: 'investigating', lastChecked: new Date() });
-    // Implementation for checking bug would go here
-    console.log('Checking bug:', bug.title);
+    const result = await executeAIRequest({
+      requestType: 'analysis',
+      presetId: 'analyze',
+      prompt: `Analyze bug status.
+Bug title: ${bug.title}
+Description: ${bug.description}
+Current status: ${bug.status}
+Severity: ${bug.severity}`,
+    });
+
+    updateBug(bug.id, {
+      status: result.ok ? 'investigating' : bug.status,
+      lastChecked: new Date(),
+    });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      jobId: result.jobId,
+      timestamp: new Date(),
+      type: result.ok ? 'success' : 'error',
+      message: result.ok
+        ? `Bug "${bug.title}" checked.`
+        : `Failed to check bug "${bug.title}": ${result.error || 'Unknown error'}`,
+      source: 'ai_execution',
+    });
   };
 
-  const handleFixBug = async (bug: any) => {
-    // Use Bug Detection & Fixing preset to fix the bug
-    const debugPreset = promptPresets.find(p => p.id === 'debug');
-    if (!debugPreset) return;
-
+  const handleFixBug = async (bug: BugReport) => {
     updateBug(bug.id, { status: 'fixing' });
-    // Implementation for fixing bug would go here
-    console.log('Fixing bug:', bug.title);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `Fixing bug "${bug.title}"`,
+      source: 'user_action',
+    });
+
+    const result = await executeAIRequest({
+      requestType: 'debugging',
+      presetId: 'debug',
+      prompt: `Fix bug and report result.
+Bug title: ${bug.title}
+Description: ${bug.description}
+Severity: ${bug.severity}
+Related files: ${bug.relatedFiles.join(', ') || 'N/A'}`,
+    });
+
+    updateBug(bug.id, {
+      status: result.ok ? 'resolved' : 'fixing',
+      lastChecked: new Date(),
+    });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      jobId: result.jobId,
+      timestamp: new Date(),
+      type: result.ok ? 'success' : 'error',
+      message: result.ok
+        ? `Bug "${bug.title}" fix completed.`
+        : `Failed to fix bug "${bug.title}": ${result.error || 'Unknown error'}`,
+      source: 'ai_execution',
+    });
   };
 
   const getBugSeverityColor = (severity: string) => {
