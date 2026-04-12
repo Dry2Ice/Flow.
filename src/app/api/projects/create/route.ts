@@ -40,22 +40,17 @@ export async function POST(request: NextRequest) {
 
     const workspaceRoot = getWorkspaceRoot();
     const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
+    const createdDirectories: string[] = [];
+    const createdFiles: string[] = [];
 
-    if (!fs.existsSync(resolvedProjectPath)) {
-      fs.mkdirSync(resolvedProjectPath, { recursive: true });
-    }
+    ensureDirectory(resolvedProjectPath, createdDirectories);
 
     const srcDir = path.join(resolvedProjectPath, 'src');
     const appDir = path.join(srcDir, 'app');
     const publicDir = path.join(resolvedProjectPath, 'public');
 
-    if (!fs.existsSync(appDir)) {
-      fs.mkdirSync(appDir, { recursive: true });
-    }
-
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
+    ensureDirectory(appDir, createdDirectories);
+    ensureDirectory(publicDir, createdDirectories);
 
     const packageJson = {
       name: name.toLowerCase().replace(/\s+/g, '-'),
@@ -81,7 +76,7 @@ export async function POST(request: NextRequest) {
     };
 
     writeFileWithErrorHandling(
-      path.join(projectPath, 'package.json'),
+      path.join(resolvedProjectPath, 'package.json'),
       JSON.stringify(packageJson, null, 2),
       createdFiles
     );
@@ -109,7 +104,7 @@ export async function POST(request: NextRequest) {
     );
 
     writeFileWithErrorHandling(
-      path.join(projectPath, 'tsconfig.json'),
+      path.join(resolvedProjectPath, 'tsconfig.json'),
       tsconfigContent,
       createdFiles
     );
@@ -127,7 +122,7 @@ pnpm-debug.log*
 `;
 
     writeFileWithErrorHandling(
-      path.join(projectPath, '.gitignore'),
+      path.join(resolvedProjectPath, '.gitignore'),
       gitignoreContent,
       createdFiles
     );

@@ -52,6 +52,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] API endpoints for project creation and loading
 - [x] Persistent project management and switching
 - [x] Hardened project creation API with safe app dir creation, per-file write errors, template tsconfig/.gitignore, and created paths response
+- [x] Project creation route now tracks `createdDirectories`/`createdFiles` consistently and writes template files strictly via resolved workspace paths
 - [x] Workspace-scoped API path hardening (env-based root, traversal blocking, recursion caps, security warning logs)
 - [x] Session-aware AI chat state with isolated message/history per session
 - [x] Job-level AI request tracking with `sessionId`/`jobId` for requests, logs, and messages
@@ -163,6 +164,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Fixed `POST /api/projects/create` to declare/use `createdDirectories` and `createdFiles`, route all file writes through `resolvedProjectPath`, and replace direct directory creation calls with `ensureDirectory(...)` for accurate creation reports |
 | 2026-04-12 | Resolved npm dependency installation issue by removing legacy `react-diff-viewer` (React 15/16 peer requirement), keeping `react-diff-viewer-continued`, and generating an npm `package-lock.json` so `npm ci` works reliably |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
