@@ -325,10 +325,10 @@ export const useAppStore = create<AppState>()(
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
     panelSizes: {
-      sidebar: 25, // percentage - increased for better file browsing
-      centerVertical: 65, // percentage of center area (code vs preview) - more space for code
-      rightVertical: 60, // percentage of right area (plan vs chat) - more space for plans
-      rightPanel: 30, // percentage of total width - increased for better planning interface
+      sidebar: 20, // percentage - left panel (files/stats)
+      centerVertical: 50, // percentage of center area for code editor
+      rightVertical: 50, // percentage of right area for plans
+      rightPanel: 30, // percentage of total width for right panel (plans + chat)
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 

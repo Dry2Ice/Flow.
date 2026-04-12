@@ -115,7 +115,7 @@ export default function Home() {
       }
 
       // Create demo plan and task
-      const { addPlan, addTask } = useAppStore.getState();
+      const { addPlan, addTask, addMessage } = useAppStore.getState();
       const demoPlan = {
         id: 'demo-plan',
         title: 'Flow Onboarding Journey',
@@ -145,6 +145,15 @@ export default function Home() {
 
       addPlan(demoPlan);
       addTask(demoTask);
+
+      // Add demo message to chat
+      addMessage('default-session', {
+        id: 'demo-message',
+        sessionId: 'default-session',
+        role: 'assistant',
+        content: '👋 **Welcome to Flow!**\n\nI\'m your AI development assistant. I can help you:\n\n• Generate and modify code\n• Debug and optimize existing code\n• Create documentation\n• Answer questions about development\n• Provide best practices\n\nTry asking me to create something or modify the code in the editor!',
+        timestamp: new Date(),
+      });
     } else if (!currentProject && projects.length > 0) {
       // Set current project if none is selected
       setCurrentProject(projects[0]);
@@ -172,9 +181,9 @@ export default function Home() {
   const handlePanelResize = (sizes: number[]) => {
     setPanelSizes({
       sidebar: sizes[0] || panelSizes.sidebar,
-      centerVertical: sizes[2] || panelSizes.centerVertical, // Right top panel (plans)
-      rightPanel: sizes[3] || panelSizes.rightPanel, // Right bottom panel (chat)
-      rightVertical: panelSizes.rightVertical, // Keep existing
+      centerVertical: panelSizes.centerVertical, // Keep for center split
+      rightPanel: sizes[2] || panelSizes.rightPanel, // Right panel size
+      rightVertical: panelSizes.rightVertical, // Keep for right split
     });
   };
 
@@ -271,17 +280,16 @@ export default function Home() {
       <div className="flex-1 overflow-hidden">
         <Allotment
           defaultSizes={[
-            panelSizes.sidebar, // Left panel (files/stats)
-            100 - panelSizes.sidebar - panelSizes.centerVertical - panelSizes.rightPanel, // Center (code + preview)
-            panelSizes.centerVertical, // Right top (plans)
-            panelSizes.rightPanel // Right bottom (chat)
+            panelSizes.sidebar, // Left panel (files/stats) - 20%
+            100 - panelSizes.sidebar - panelSizes.rightPanel, // Center area (code + preview) - 50%
+            panelSizes.rightPanel // Right panel (plans + chat) - 30%
           ]}
           onChange={(sizes: number[]) => {
             setPanelSizes({
               sidebar: sizes[0] || panelSizes.sidebar,
-              centerVertical: sizes[2] || panelSizes.centerVertical, // Right top panel (plans)
-              rightPanel: sizes[3] || panelSizes.rightPanel, // Right bottom panel (chat)
-              rightVertical: panelSizes.rightVertical, // Keep existing
+              centerVertical: panelSizes.centerVertical, // Keep for internal center split
+              rightPanel: sizes[2] || panelSizes.rightPanel, // Right panel size
+              rightVertical: panelSizes.rightVertical, // Keep for internal right split
             });
           }}
         >
@@ -352,14 +360,19 @@ export default function Home() {
             </Allotment>
           </Allotment.Pane>
 
-          {/* Right Panel Top - Development Plans */}
-          <Allotment.Pane minSize={200} maxSize={600}>
-            <DevelopmentPlan />
-          </Allotment.Pane>
+          {/* Right Panel - Plans & Chat (Vertical split) */}
+          <Allotment.Pane minSize={250} maxSize={800}>
+            <Allotment vertical defaultSizes={[panelSizes.rightVertical, 100 - panelSizes.rightVertical]} onChange={handleRightResize}>
+              {/* Development Plan */}
+              <Allotment.Pane minSize={150}>
+                <DevelopmentPlan />
+              </Allotment.Pane>
 
-          {/* Right Panel Bottom - AI Chat */}
-          <Allotment.Pane minSize={150} maxSize={600}>
-            <AIChat />
+              {/* AI Chat */}
+              <Allotment.Pane minSize={150}>
+                <AIChat />
+              </Allotment.Pane>
+            </Allotment>
           </Allotment.Pane>
         </Allotment>
       </div>
