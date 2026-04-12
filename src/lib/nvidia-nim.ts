@@ -69,6 +69,150 @@ function getLanguageFromExtension(extension: string): string {
   return languageMap[extension] || 'plaintext';
 }
 
+// Build intelligent context summary for optimal AI performance
+function buildIntelligentContextSummary(context?: any): string {
+  if (!context?.projectFiles || context.projectFiles.length === 0) {
+    return '## Project Context\nNo project files available for analysis.';
+  }
+
+  const files = context.projectFiles;
+  const currentFile = context.currentFile;
+  const selectedCode = context.selectedCode;
+
+  // Analyze project structure
+  const projectAnalysis = analyzeProjectStructure(files);
+
+  // Build context sections
+  const sections = [
+    '## Intelligent Project Context Analysis',
+    '',
+    `### 📊 Project Overview`,
+    `- Total files: ${files.length}`,
+    `- Languages: ${projectAnalysis.languages.join(', ')}`,
+    `- Primary framework: ${projectAnalysis.primaryFramework || 'Not detected'}`,
+    `- Code structure: ${projectAnalysis.structureSummary}`,
+    '',
+    `### 🎯 Current Focus`,
+    currentFile ? `- Active file: ${currentFile}` : '- No active file',
+    selectedCode ? `- Selected code: ${selectedCode.substring(0, 100)}${selectedCode.length > 100 ? '...' : ''}` : '- No code selection',
+    '',
+    `### 🏗️ Key Components`,
+    ...projectAnalysis.keyComponents.map((comp: string) => `- ${comp}`),
+    '',
+    `### 🔗 Dependencies & Relationships`,
+    ...projectAnalysis.dependencies.map((dep: string) => `- ${dep}`),
+    '',
+    `### 📝 Code Patterns`,
+    ...projectAnalysis.patterns.map((pattern: string) => `- ${pattern}`),
+    '',
+    `### ⚠️ Important Notes`,
+    ...projectAnalysis.notes.map((note: string) => `- ${note}`),
+  ];
+
+  return sections.join('\n');
+}
+
+// Comprehensive project structure analysis
+function analyzeProjectStructure(files: any[]): any {
+  const analysis = {
+    languages: new Set<string>(),
+    primaryFramework: '',
+    structureSummary: '',
+    keyComponents: [] as string[],
+    dependencies: [] as string[],
+    patterns: [] as string[],
+    notes: [] as string[]
+  };
+
+  // Analyze each file
+  files.forEach(file => {
+    const extension = file.metadata?.extension || '';
+    const language = file.metadata?.language || '';
+    const content = file.content || '';
+
+    if (language) analysis.languages.add(language);
+
+    // Framework detection
+    if (content.includes('React') || content.includes('react')) {
+      analysis.primaryFramework = 'React';
+    } else if (content.includes('Vue') || content.includes('vue')) {
+      analysis.primaryFramework = 'Vue.js';
+    } else if (content.includes('Angular') || extension === 'ts' && content.includes('@Component')) {
+      analysis.primaryFramework = 'Angular';
+    } else if (content.includes('express') || content.includes('app.listen')) {
+      analysis.primaryFramework = 'Express.js';
+    } else if (content.includes('django') || content.includes('from django')) {
+      analysis.primaryFramework = 'Django';
+    }
+
+    // Key components detection
+    if (extension === 'js' || extension === 'ts') {
+      const functions = content.match(/(?:export\s+)?(?:function|const|let|var)\s+(\w+)\s*[=(]/g) || [];
+      const classes = content.match(/(?:export\s+)?class\s+(\w+)/g) || [];
+      const components = [...functions, ...classes].slice(0, 5);
+      if (components.length > 0) {
+        analysis.keyComponents.push(`${file.path.split('/').pop()}: ${components.join(', ')}`);
+      }
+    }
+
+    // Dependencies analysis
+    if (file.path.includes('package.json')) {
+      try {
+        const pkg = JSON.parse(content);
+        const deps = Object.keys(pkg.dependencies || {}).slice(0, 5);
+        if (deps.length > 0) {
+          analysis.dependencies.push(`NPM: ${deps.join(', ')}`);
+        }
+      } catch (e) {
+        // Invalid JSON
+      }
+    }
+
+    // Import analysis
+    const imports = content.match(/import\s+.*?\s+from\s+['"]([^'"]+)['"]/g) || [];
+    if (imports.length > 3) {
+      analysis.patterns.push(`${file.path.split('/').pop()}: ${imports.length} imports`);
+    }
+
+    // Architecture patterns
+    if (content.includes('useState') || content.includes('useEffect')) {
+      analysis.patterns.push(`${file.path.split('/').pop()}: React hooks`);
+    }
+    if (content.includes('async') && content.includes('await')) {
+      analysis.patterns.push(`${file.path.split('/').pop()}: Async/await patterns`);
+    }
+    if (content.includes('interface') || content.includes('type')) {
+      analysis.patterns.push(`${file.path.split('/').pop()}: TypeScript types`);
+    }
+  });
+
+  // Structure summary
+  const fileTypes = [...analysis.languages];
+  if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
+    analysis.structureSummary = 'Frontend web application';
+  } else if (fileTypes.includes('python') && content.includes('django')) {
+    analysis.structureSummary = 'Django web application';
+  } else if (fileTypes.includes('javascript') && content.includes('express')) {
+    analysis.structureSummary = 'Node.js backend application';
+  } else {
+    analysis.structureSummary = `${fileTypes.join('/')} codebase`;
+  }
+
+  // Important notes
+  if (files.length > 20) {
+    analysis.notes.push('Large codebase - focus on specific areas for detailed analysis');
+  }
+  if (analysis.languages.size > 3) {
+    analysis.notes.push('Multi-language project - ensure consistent coding standards');
+  }
+  if (analysis.primaryFramework) {
+    analysis.notes.push(`Follow ${analysis.primaryFramework} best practices and conventions`);
+  }
+
+  analysis.languages = [...analysis.languages];
+  return analysis;
+}
+
 // Analyze code structure for better context understanding
 function analyzeCodeStructure(content: string, language: string): { summary: string; details?: string } {
   const lines = content.split('\n');
@@ -172,9 +316,12 @@ class NvidiaNimService {
 
       const generalPrompt = request.generalPrompt || '';
 
+      // Build intelligent context summary
+      const contextSummary = buildIntelligentContextSummary(request.context);
+
       const fullSystemPrompt = generalPrompt
-        ? `${baseSystemPrompt}\n\n${generalPrompt}`
-        : baseSystemPrompt;
+        ? `${baseSystemPrompt}\n\n${generalPrompt}\n\n${contextSummary}`
+        : `${baseSystemPrompt}\n\n${contextSummary}`;
 
       const requestBody: any = {
         model: this.config.model,
