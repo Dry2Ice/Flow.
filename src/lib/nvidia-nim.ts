@@ -19,6 +19,7 @@ export interface NvidiaNimConfig {
 
 export interface GenerateCodeRequest extends PromptRequest {
   generalPrompt?: string;
+  signal?: AbortSignal;
 }
 
 export interface GenerateCodeResponse {
@@ -155,7 +156,6 @@ function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStruct
 
     if (language) analysis.languages.add(language);
 
-    // Framework detection
     if (content.includes('React') || content.includes('react')) {
       analysis.primaryFramework = 'React';
     } else if (content.includes('Vue') || content.includes('vue')) {
@@ -172,8 +172,7 @@ function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStruct
       analysis.primaryFramework = 'Flask';
     }
 
-    // Key components detection
-    if (extension === 'js' || extension === 'ts') {
+    if (extension === 'js' || extension === 'ts' || extension === 'tsx') {
       const functions = content.match(/(?:export\s+)?(?:function|const|let|var)\s+(\w+)\s*[=(]/g) || [];
       const classes = content.match(/(?:export\s+)?class\s+(\w+)/g) || [];
       const components = [...functions, ...classes].slice(0, 5);
@@ -182,7 +181,6 @@ function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStruct
       }
     }
 
-    // Dependencies analysis
     if (file.path.includes('package.json')) {
       try {
         const pkg = JSON.parse(content) as { dependencies?: Record<string, string> };
@@ -195,13 +193,11 @@ function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStruct
       }
     }
 
-    // Import analysis
     const imports = content.match(/import\s+.*?\s+from\s+['"]([^'"]+)['"]/g) || [];
     if (imports.length > 3) {
       analysis.patterns.push(`${fileName}: ${imports.length} imports`);
     }
 
-    // Architecture patterns
     if (content.includes('useState') || content.includes('useEffect')) {
       analysis.patterns.push(`${fileName}: React hooks`);
     }
@@ -213,7 +209,6 @@ function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStruct
     }
   });
 
-  // Structure summary
   const fileTypes = [...analysis.languages];
   if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
     analysis.structureSummary = 'Frontend web application';
@@ -408,6 +403,7 @@ ${numberedLines}
         `${this.config.baseUrl}/chat/completions`,
         requestBody,
         {
+          signal: request.signal,
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json'
