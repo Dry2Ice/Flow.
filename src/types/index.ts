@@ -78,6 +78,12 @@ export interface ProjectContext {
   complexity: 'low' | 'medium' | 'high' | 'very_high';
   insights: string[];
   recommendations: string[];
+  focusAreas?: string[];
+  summaryTimeline?: Array<{
+    version: number;
+    createdAt: Date;
+    summary: string;
+  }>;
 }
 
 export interface AIRequest {
