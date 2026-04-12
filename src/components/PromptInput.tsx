@@ -301,117 +301,209 @@ export function PromptInput() {
   };
 
   return (
-    <div className="p-4 bg-neutral-800">
+    <div className="p-6 bg-gradient-to-r from-neutral-800 to-neutral-900 border-t border-neutral-700/50">
       {ultraModeActive && (
-        <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-yellow-400">Ultra Mode Active</span>
-            <span className="text-xs text-neutral-400">Step {ultraModeStep} of {ultraModeTotalSteps}</span>
+        <div className="mb-4 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl hover-lift animate-fade-in">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-yellow-400">Ultra Mode Active</span>
+            </div>
+            <span className="text-xs text-neutral-400 bg-neutral-800 px-2 py-1 rounded-full">
+              {ultraModeStep} / {ultraModeTotalSteps}
+            </span>
           </div>
-          <div className="w-full bg-neutral-700 rounded-full h-2 mb-2">
+          <div className="w-full bg-neutral-700 rounded-full h-3 mb-3 overflow-hidden">
             <div
-              className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
               style={{ width: `${(ultraModeStep / ultraModeTotalSteps) * 100}%` }}
             />
           </div>
-          <p className="text-xs text-neutral-300">{ultraModeCurrentStep}</p>
+          <p className="text-sm text-neutral-300 font-medium">{ultraModeCurrentStep}</p>
         </div>
       )}
 
       {/* Preset Selection Cards */}
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <label className="text-sm font-medium text-neutral-300">AI Mode:</label>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+            <label className="text-sm font-semibold text-neutral-200">AI Mode:</label>
+          </div>
           {ultraModeActive && (
-            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">
-              Locked during Ultra Mode
+            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30 font-medium animate-pulse">
+              🔒 Locked during Ultra Mode
             </span>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {promptPresets.map((preset) => (
+        <div className="grid grid-cols-3 gap-3">
+          {promptPresets.map((preset, index) => (
             <button
               key={preset.id}
               onClick={() => !ultraModeActive && setActivePreset(preset)}
               disabled={ultraModeActive}
-              className={`p-3 rounded-lg border transition-all duration-200 text-left ${
+              className={`p-4 rounded-xl border-2 transition-all duration-300 text-left hover-lift group animate-fade-in ${
                 activePreset?.id === preset.id
-                  ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
-                  : 'border-neutral-600 bg-neutral-700 hover:border-neutral-500 hover:bg-neutral-600'
-              } ${ultraModeActive ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  ? 'border-blue-400 bg-gradient-to-br from-blue-500/20 to-purple-500/10 shadow-xl shadow-blue-500/30 scale-105'
+                  : 'border-neutral-600/50 bg-neutral-800/50 hover:border-neutral-500 hover:bg-neutral-700/70 hover:shadow-lg'
+              } ${ultraModeActive ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
+              style={{animationDelay: `${index * 0.1}s`}}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <div className={`w-3 h-3 rounded-full ${
-                  preset.id === 'debug' ? 'bg-red-400' :
-                  preset.id === 'analyze' ? 'bg-blue-400' :
-                  'bg-green-400'
-                }`} />
-                <span className="text-sm font-medium text-white">{preset.name}</span>
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                  preset.id === 'debug' ? 'bg-gradient-to-r from-red-400 to-pink-400 shadow-red-400/50 shadow-lg' :
+                  preset.id === 'analyze' ? 'bg-gradient-to-r from-blue-400 to-cyan-400 shadow-blue-400/50 shadow-lg' :
+                  'bg-gradient-to-r from-green-400 to-emerald-400 shadow-green-400/50 shadow-lg'
+                } ${activePreset?.id === preset.id ? 'animate-pulse' : ''}`} />
+                <span className={`text-sm font-semibold transition-colors ${
+                  activePreset?.id === preset.id ? 'text-white' : 'text-neutral-200 group-hover:text-white'
+                }`}>
+                  {preset.name}
+                </span>
               </div>
-              <p className="text-xs text-neutral-400 leading-tight">{preset.description}</p>
+              <p className={`text-xs leading-relaxed transition-colors ${
+                activePreset?.id === preset.id ? 'text-blue-200' : 'text-neutral-400 group-hover:text-neutral-300'
+              }`}>
+                {preset.description}
+              </p>
+              {activePreset?.id === preset.id && (
+                <div className="absolute top-2 right-2 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+              )}
             </button>
           ))}
         </div>
-        <div className="flex justify-end mt-3">
+
+        {/* Ultra Mode Button */}
+        <div className="flex justify-end mt-4">
           <button
             onClick={executeUltraMode}
             disabled={ultraModeActive || !projectPath}
-            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-neutral-600 disabled:to-neutral-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium flex items-center gap-2 transition-all shadow-lg"
+            className={`px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition-all duration-300 hover-lift hover-glow ${
+              ultraModeActive
+                ? 'bg-gradient-to-r from-yellow-600 to-orange-600 cursor-not-allowed opacity-75'
+                : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 shadow-xl hover:shadow-purple-500/30'
+            }`}
           >
-            <Zap className="w-4 h-4" />
-            Ultra Mode
+            <div className={`p-1 rounded-lg ${ultraModeActive ? 'bg-yellow-400/20' : 'bg-white/20'}`}>
+              <Zap className={`w-4 h-4 ${ultraModeActive ? 'text-yellow-300' : 'text-white'} transition-transform duration-200 hover:scale-110`} />
+            </div>
+            <span className="text-white">
+              {ultraModeActive ? 'Ultra Mode Running...' : 'Launch Ultra Mode'}
+            </span>
+            {!ultraModeActive && (
+              <div className="ml-2 flex items-center gap-1">
+                <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                <div className="w-1 h-1 bg-white rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                <div className="w-1 h-1 bg-white rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+              </div>
+            )}
           </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex-1">
+      <form onSubmit={handleSubmit} className="flex gap-3 animate-fade-in">
+        <div className="flex-1 relative">
           <textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Describe what you want to build or modify..."
-            className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Describe what you want to build or modify with AI assistance..."
+            className={`w-full p-4 bg-neutral-800/50 border-2 rounded-xl resize-none transition-all duration-300 focus:outline-none focus:ring-2 backdrop-blur-sm ${
+              ultraModeActive
+                ? 'border-neutral-600 cursor-not-allowed opacity-50'
+                : 'border-neutral-600/50 focus:border-blue-400 focus:bg-neutral-800 hover:border-neutral-500 hover:bg-neutral-800/70'
+            }`}
             rows={3}
             disabled={ultraModeActive}
           />
+          {!ultraModeActive && (
+            <div className="absolute bottom-3 right-3 text-xs text-neutral-500">
+              {prompt.length}/1000
+            </div>
+          )}
         </div>
         <button
           type="submit"
           disabled={ultraModeActive || !prompt.trim()}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 disabled:cursor-not-allowed rounded-lg flex items-center gap-2 transition-colors"
+          className={`px-6 py-4 rounded-xl flex items-center gap-2 transition-all duration-300 hover-lift hover-glow font-semibold ${
+            ultraModeActive || !prompt.trim()
+              ? 'bg-neutral-700 cursor-not-allowed opacity-50'
+              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-blue-500/30'
+          }`}
         >
-          <Send className="w-4 h-4" />
-          <span className="hidden sm:inline">Send</span>
+          <Send className={`w-5 h-5 transition-transform duration-200 ${!ultraModeActive && prompt.trim() ? 'hover:scale-110' : ''}`} />
+          <span className="hidden sm:inline text-white">Send to AI</span>
         </button>
       </form>
 
-      <div className="mt-3 space-y-2 max-h-36 overflow-y-auto pr-1">
-        {sessionRequests.slice().reverse().slice(0, 5).map((request) => (
-          <div key={request.id} className="flex items-center justify-between rounded border border-neutral-700 bg-neutral-900/60 px-2 py-1 text-xs text-neutral-300">
-            <span className="truncate max-w-[60%]" title={request.prompt}>{request.prompt}</span>
-            <div className="flex items-center gap-2">
-              <span className="uppercase text-[10px] text-neutral-400">{request.status}</span>
-              <button
-                type="button"
-                onClick={() => cancelJob(request.jobId)}
-                disabled={request.status !== 'running'}
-                className="text-yellow-400 disabled:text-neutral-500"
-                title="Cancel job"
-              >
-                <Square className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => retryJob(request.jobId)}
-                disabled={request.status === 'running'}
-                className="text-blue-400 disabled:text-neutral-500"
-                title="Retry job"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+      {/* Request History */}
+      <div className="mt-4 bg-neutral-800/30 rounded-xl p-4 backdrop-blur-sm border border-neutral-700/30">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+          <span className="text-sm font-medium text-neutral-300">Recent Requests</span>
+          <span className="text-xs text-neutral-500 ml-auto">{sessionRequests.length} total</span>
+        </div>
+        <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+          {sessionRequests.length === 0 ? (
+            <div className="text-center py-4 text-neutral-500 text-sm">
+              No requests yet. Start by sending a prompt!
             </div>
-          </div>
-        ))}
+          ) : (
+            sessionRequests.slice().reverse().slice(0, 5).map((request, index) => (
+              <div
+                key={request.id}
+                className={`flex items-center justify-between rounded-lg border backdrop-blur-sm px-3 py-2 text-sm transition-all duration-200 hover-scale animate-slide-in ${
+                  request.status === 'completed' ? 'border-green-500/30 bg-green-500/5' :
+                  request.status === 'running' ? 'border-blue-500/30 bg-blue-500/5' :
+                  request.status === 'failed' ? 'border-red-500/30 bg-red-500/5' :
+                  'border-neutral-700/50 bg-neutral-800/30'
+                }`}
+                style={{animationDelay: `${index * 0.05}s`}}
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    request.status === 'completed' ? 'bg-green-400 shadow-green-400/50 shadow-lg' :
+                    request.status === 'running' ? 'bg-blue-400 animate-pulse shadow-blue-400/50 shadow-lg' :
+                    request.status === 'failed' ? 'bg-red-400 shadow-red-400/50 shadow-lg' :
+                    'bg-yellow-400 shadow-yellow-400/50 shadow-lg'
+                  }`} />
+                  <span className="truncate text-neutral-300 font-medium" title={request.prompt}>
+                    {request.prompt}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${
+                    request.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                    request.status === 'running' ? 'bg-blue-500/20 text-blue-400' :
+                    request.status === 'failed' ? 'bg-red-500/20 text-red-400' :
+                    'bg-yellow-500/20 text-yellow-400'
+                  }`}>
+                    {request.status}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => cancelJob(request.jobId)}
+                      disabled={request.status !== 'running'}
+                      className="p-1 rounded hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Cancel job"
+                    >
+                      <Square className="w-3 h-3 text-yellow-400" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => retryJob(request.jobId)}
+                      disabled={request.status === 'running'}
+                      className="p-1 rounded hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Retry job"
+                    >
+                      <RotateCcw className="w-3 h-3 text-blue-400" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

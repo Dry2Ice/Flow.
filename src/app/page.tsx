@@ -13,7 +13,7 @@ import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import { FolderOpen, FileText, BarChart3 } from 'lucide-react';
+import { FolderOpen, FileText, BarChart3, Zap, Activity } from 'lucide-react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
@@ -175,23 +175,48 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-neutral-900 text-white flex flex-col">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900 border-b border-neutral-700 p-4 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <header className="bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900 border-b border-neutral-700 p-4 shadow-xl relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-1/4 w-32 h-32 bg-blue-400 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-4 right-1/3 w-24 h-24 bg-purple-400 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-2 right-1/4 w-20 h-20 bg-indigo-400 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
+
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3 animate-slide-in">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg hover-scale hover-glow">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Flow</h1>
-              <p className="text-xs text-blue-200">AI-Powered Development</p>
+              <h1 className="text-2xl font-bold text-white bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                Flow
+              </h1>
+              <p className="text-sm text-blue-200 font-medium">AI-Powered Development Platform</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-neutral-300">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span>Ready</span>
+
+          <div className="flex items-center gap-4">
+            {/* Connection status */}
+            <div className="flex items-center gap-2 text-sm text-neutral-300 bg-neutral-800/50 px-3 py-1 rounded-full backdrop-blur-sm border border-neutral-700/50">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-green-400/50 shadow-lg"></div>
+                <span className="font-medium">AI Connected</span>
+              </div>
+            </div>
+
+            {/* Quick stats */}
+            <div className="hidden md:flex items-center gap-4 text-xs text-neutral-400">
+              <div className="flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                <span>Ultra Mode Ready</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Activity className="w-3 h-3" />
+                <span>Real-time Sync</span>
+              </div>
             </div>
           </div>
         </div>
@@ -207,39 +232,48 @@ export default function Home() {
           <Allotment.Pane minSize={200} maxSize={600}>
             <div className="h-full bg-neutral-800 border-r border-neutral-700 flex flex-col">
               {/* Tab Navigation */}
-              <div className="flex border-b border-neutral-700">
+              <div className="flex border-b border-neutral-700/50 bg-neutral-800/30 backdrop-blur-sm">
                 <button
                   onClick={() => setActiveTab('files')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
                     activeTab === 'files'
-                      ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
-                      : 'text-neutral-400 hover:text-neutral-300'
+                      ? 'text-blue-400 bg-blue-500/10 border-b-2 border-blue-400 shadow-lg'
+                      : 'text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700/30'
                   }`}
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileText className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'files' ? 'scale-110' : 'group-hover:scale-105'}`} />
                   Files
+                  {activeTab === 'files' && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
+                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab('projects')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
                     activeTab === 'projects'
-                      ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
-                      : 'text-neutral-400 hover:text-neutral-300'
+                      ? 'text-purple-400 bg-purple-500/10 border-b-2 border-purple-400 shadow-lg'
+                      : 'text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700/30'
                   }`}
                 >
-                  <FolderOpen className="w-4 h-4" />
+                  <FolderOpen className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'projects' ? 'scale-110' : 'group-hover:scale-105'}`} />
                   Projects
+                  {activeTab === 'projects' && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                  )}
                 </button>
                 <button
                   onClick={() => setActiveTab('analytics')}
-                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
                     activeTab === 'analytics'
-                      ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
-                      : 'text-neutral-400 hover:text-neutral-300'
+                      ? 'text-green-400 bg-green-500/10 border-b-2 border-green-400 shadow-lg'
+                      : 'text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700/30'
                   }`}
                 >
-                  <BarChart3 className="w-4 h-4" />
+                  <BarChart3 className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'analytics' ? 'scale-110' : 'group-hover:scale-105'}`} />
                   Analytics
+                  {activeTab === 'analytics' && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
+                  )}
                 </button>
               </div>
 
