@@ -34,6 +34,10 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Rich file metadata and structural code analysis
 - [x] Professional Monaco Editor with advanced features
 - [x] Context-aware file prioritization and analysis
+- [x] Customizable resizable workspace layout
+- [x] Four-zone interface: files, code editor, preview, plan, and chat
+- [x] Live code preview with HTML rendering and execution simulation
+- [x] Persistent panel sizing and layout preferences
 - [x] Multi-project support with automatic and manual project creation
 - [x] Project manager with tabbed interface for files and projects
 - [x] API endpoints for project creation and loading

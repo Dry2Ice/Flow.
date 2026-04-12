@@ -48,6 +48,14 @@ interface AppState {
   // General prompt
   generalPrompt: string;
 
+  // Workspace layout
+  panelSizes: {
+    sidebar: number;
+    mainVertical: number;
+    rightPanel: number;
+    codePreview: number;
+  };
+
   // Actions
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
@@ -90,6 +98,9 @@ interface AppState {
 
   // General prompt actions
   setGeneralPrompt: (prompt: string) => void;
+
+  // Workspace actions
+  setPanelSizes: (sizes: Partial<AppState['panelSizes']>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -185,6 +196,12 @@ Deliver production-ready code that solves the user's problem effectively.`
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
+    panelSizes: {
+      sidebar: 20, // percentage
+      mainVertical: 60, // percentage of main area
+      rightPanel: 25, // percentage
+      codePreview: 40 // percentage of code area
+    },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
 **Code Quality & Best Practices:**
@@ -391,5 +408,10 @@ Deliver production-ready code that solves the user's problem effectively.`
 
     // General prompt actions
     setGeneralPrompt: (prompt: string) => set({ generalPrompt: prompt }),
+
+    // Workspace actions
+    setPanelSizes: (sizes) => set((state) => ({
+      panelSizes: { ...state.panelSizes, ...sizes }
+    })),
   }))
 );

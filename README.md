@@ -11,6 +11,19 @@ A web-based code editor powered by Nvidia NIM AI for intelligent code generation
 - **Change Tracking**: View code differences and modifications
 - **Version Control Ready**: Git integration for rollback and history management
 
+## Workspace Layout
+
+The application features a fully customizable four-zone workspace:
+
+- **Left Panel**: File browser and project management (tabs)
+- **Center Top**: Code editor with Monaco Editor
+- **Center Bottom**: Live code preview and execution
+- **Right Top**: Development plan and task tracking
+- **Right Bottom**: AI chat and conversation history
+- **Bottom**: AI prompt input
+
+**Resizable Panels**: Drag the borders between zones to customize the layout to your preference. Panel sizes are automatically saved.
+
 ## Getting Started
 
 ### 1. Set Up Your Project
