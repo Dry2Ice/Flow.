@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Settings } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { DevelopmentTask, PromptRequest } from '@/types';
@@ -11,7 +11,7 @@ import { DevelopmentTask, PromptRequest } from '@/types';
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { addMessage, setGenerating, activeFile, openFiles, addTask, activePreset, projectPath } = useAppStore();
+  const { addMessage, setGenerating, activeFile, openFiles, addTask, activePreset, promptPresets, setActivePreset, projectPath } = useAppStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +107,31 @@ export function PromptInput() {
 
   return (
     <div className="p-4 bg-neutral-800">
+      {/* Preset Selector */}
+      <div className="mb-3 flex items-center gap-2">
+        <label className="text-sm text-neutral-400">AI Mode:</label>
+        <select
+          value={activePreset?.id || ''}
+          onChange={(e) => {
+            const preset = promptPresets.find(p => p.id === e.target.value);
+            if (preset) setActivePreset(preset);
+          }}
+          className="px-3 py-1 bg-neutral-700 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={isLoading}
+        >
+          {promptPresets.map(preset => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </select>
+        {activePreset && (
+          <span className="text-xs text-neutral-500 max-w-48 truncate" title={activePreset.description}>
+            {activePreset.description}
+          </span>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="flex-1">
           <textarea

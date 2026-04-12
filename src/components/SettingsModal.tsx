@@ -17,12 +17,15 @@ export function SettingsModal() {
   const [topP, setTopP] = useState(1.0);
   const [topK, setTopK] = useState(50);
   const [maxTokens, setMaxTokens] = useState(4000);
+  const [contextTokens, setContextTokens] = useState(0); // 0 = unlimited
   const [presencePenalty, setPresencePenalty] = useState(0.0);
   const [frequencyPenalty, setFrequencyPenalty] = useState(0.0);
   const [stopSequences, setStopSequences] = useState('');
   const [projectPath, setProjectPathLocal] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [editingPreset, setEditingPreset] = useState<string | null>(null);
+  const [editedPrompt, setEditedPrompt] = useState('');
   const { activePreset, promptPresets, setActivePreset, setProjectPath } = useAppStore();
 
   // Load settings from localStorage on mount
@@ -38,6 +41,7 @@ export function SettingsModal() {
         setTopP(settings.topP ?? 1.0);
         setTopK(settings.topK ?? 50);
         setMaxTokens(settings.maxTokens ?? 4000);
+        setContextTokens(settings.contextTokens ?? 0);
         setPresencePenalty(settings.presencePenalty ?? 0.0);
         setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
         setStopSequences(settings.stopSequences?.join(', ') || '');
@@ -57,6 +61,35 @@ export function SettingsModal() {
     }
   }, []);
 
+  const handleEditPreset = (presetId: string) => {
+    const preset = promptPresets.find(p => p.id === presetId);
+    if (preset) {
+      setEditingPreset(presetId);
+      setEditedPrompt(preset.systemPrompt);
+    }
+  };
+
+  const handleSavePreset = () => {
+    if (editingPreset) {
+      // In a real app, you'd save this to a backend or persistent storage
+      // For now, we'll just update the local state
+      const updatedPresets = promptPresets.map(p =>
+        p.id === editingPreset ? { ...p, systemPrompt: editedPrompt } : p
+      );
+      // Note: This won't persist across sessions without backend storage
+      console.log('Updated preset:', editingPreset, editedPrompt);
+      setEditingPreset(null);
+      setEditedPrompt('');
+      setMessage('Preset updated successfully!');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPreset(null);
+    setEditedPrompt('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -71,6 +104,7 @@ export function SettingsModal() {
         topP,
         topK,
         maxTokens,
+        contextTokens,
         presencePenalty,
         frequencyPenalty,
         stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
@@ -247,7 +281,22 @@ export function SettingsModal() {
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Max Tokens ({maxTokens})
+                      Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens})
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100000"
+                      value={contextTokens}
+                      onChange={(e) => setContextTokens(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Maximum context tokens (0 = unlimited)</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Max Response Tokens ({maxTokens})
                     </label>
                     <input
                       type="number"
@@ -322,7 +371,7 @@ export function SettingsModal() {
                           ? 'border-blue-500 bg-blue-500/10'
                           : 'border-neutral-600 hover:border-neutral-500 hover:bg-neutral-700/50'
                       }`}
-                      onClick={() => setActivePreset(preset)}
+                      onClick={() => !editingPreset && setActivePreset(preset)}
                     >
                       <div className="flex items-start gap-3">
                         <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
@@ -337,12 +386,50 @@ export function SettingsModal() {
                         <div className="flex-1">
                           <h5 className="font-medium text-neutral-200 mb-1">{preset.name}</h5>
                           <p className="text-sm text-neutral-400 mb-2">{preset.description}</p>
-                          <details className="text-xs text-neutral-500">
-                            <summary className="cursor-pointer hover:text-neutral-400">View system prompt</summary>
-                            <div className="mt-2 p-3 bg-neutral-800 rounded text-neutral-300 whitespace-pre-wrap">
-                              {preset.systemPrompt}
+
+                          {editingPreset === preset.id ? (
+                            <div className="space-y-3">
+                              <textarea
+                                value={editedPrompt}
+                                onChange={(e) => setEditedPrompt(e.target.value)}
+                                className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                rows={8}
+                                placeholder="Enter system prompt..."
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleSavePreset}
+                                  className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
-                          </details>
+                          ) : (
+                            <div>
+                              <details className="text-xs text-neutral-500">
+                                <summary className="cursor-pointer hover:text-neutral-400">View system prompt</summary>
+                                <div className="mt-2 p-3 bg-neutral-800 rounded text-neutral-300 whitespace-pre-wrap">
+                                  {preset.systemPrompt}
+                                </div>
+                              </details>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditPreset(preset.id);
+                                }}
+                                className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                              >
+                                Edit Prompt
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

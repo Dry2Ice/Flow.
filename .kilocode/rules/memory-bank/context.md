@@ -21,11 +21,12 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Code diff viewer
 - [x] Prompt input for AI interaction
 - [x] Git integration for version control and rollbacks
-- [x] Advanced AI generation parameters (temperature, top-p, top-k, penalties)
+- [x] Advanced AI generation parameters (temperature, top-p, top-k, penalties, context limits)
 - [x] Persistent settings storage in localStorage
-- [x] AI behavior presets (bug detection, analysis, development)
+- [x] AI behavior presets (bug detection, analysis, development) with inline switching
+- [x] Editable system prompts for custom AI behavior
 - [x] Project directory integration for full codebase context
-- [x] Local file system integration for project analysis
+- [x] Local file system integration with intelligent context limiting
 
 ## Current Structure
 

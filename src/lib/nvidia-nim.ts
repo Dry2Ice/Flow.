@@ -10,6 +10,7 @@ export interface NvidiaNimConfig {
   temperature?: number;
   topP?: number;
   topK?: number;
+  contextTokens?: number;
   maxTokens?: number;
   presencePenalty?: number;
   frequencyPenalty?: number;
@@ -50,7 +51,49 @@ class NvidiaNimService {
         messages: [
           {
             role: 'system',
-            content: `${systemPrompt}\n\nProject Context:\n${request.context?.projectFiles ? request.context.projectFiles.map(f => `File: ${f.path}\n${f.content}`).join('\n\n---\n\n') : 'No project files available'}`
+            content: (() => {
+              const basePrompt = systemPrompt;
+              const projectFiles = request.context?.projectFiles || [];
+
+              // Limit context based on contextTokens setting
+              const contextLimit = this.config.contextTokens || 0; // 0 = unlimited
+              let contextContent = '';
+
+              if (projectFiles.length > 0) {
+                if (contextLimit === 0) {
+                  // Unlimited context
+                  contextContent = projectFiles.map(f => `File: ${f.path}\n${f.content}`).join('\n\n---\n\n');
+                } else {
+                  // Limited context - prioritize current file and recent files
+                  const currentFile = projectFiles.find(f => f.path === request.context?.currentFile);
+                  const otherFiles = projectFiles.filter(f => f.path !== request.context?.currentFile);
+
+                  let selectedFiles = [];
+                  let totalTokens = 0;
+
+                  // Always include current file first
+                  if (currentFile) {
+                    selectedFiles.push(currentFile);
+                    totalTokens += Math.ceil(currentFile.content.length / 4); // Rough token estimation
+                  }
+
+                  // Add other files until limit
+                  for (const file of otherFiles) {
+                    const fileTokens = Math.ceil(file.content.length / 4);
+                    if (totalTokens + fileTokens <= contextLimit) {
+                      selectedFiles.push(file);
+                      totalTokens += fileTokens;
+                    } else {
+                      break;
+                    }
+                  }
+
+                  contextContent = selectedFiles.map(f => `File: ${f.path}\n${f.content}`).join('\n\n---\n\n');
+                }
+              }
+
+              return `${basePrompt}\n\nProject Context:\n${contextContent || 'No project files available'}`;
+            })()
           },
           {
             role: 'user',

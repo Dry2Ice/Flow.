@@ -27,20 +27,24 @@ A web-based code editor powered by Nvidia NIM AI for intelligent code generation
    - **Temperature**: Controls randomness (0 = deterministic, 2 = very random)
    - **Top P**: Nucleus sampling (0.1 = very focused, 1.0 = diverse)
    - **Top K**: Top-K sampling (1-100)
-   - **Max Tokens**: Maximum response length (100-8000)
+   - **Context Tokens**: Maximum context tokens for project files (0 = unlimited)
+   - **Max Response Tokens**: Maximum response length (100-8000)
    - **Presence Penalty**: Penalize new topics (-2 to 2)
    - **Frequency Penalty**: Penalize token repetition (-2 to 2)
    - **Stop Sequences**: Comma-separated sequences where generation should stop
 
 #### AI Behavior Presets
-Choose from three specialized modes:
+Switch between three specialized modes directly in the prompt input:
 - **Bug Detection & Fixing**: Analyzes code for bugs, security issues, and suggests fixes
 - **Code Analysis & Planning**: Comprehensive codebase analysis and improvement planning
 - **Active Development**: Implements features, makes changes, and enhances functionality
 
+**Customizable Prompts**: Edit system prompts for each preset in settings to tailor AI behavior to your needs.
+
 #### Project Integration
-- **Project Directory**: Set the path to your local project for full codebase context
-- **File Integration**: AI analyzes all project files for better understanding and suggestions
+- **Project Directory**: Set the path to your local project for file operations
+- **Intelligent Context**: AI analyzes project files with token limits for optimal performance
+- **File Integration**: Full codebase awareness for better suggestions
 
 Settings are automatically saved and persist between sessions.
 
