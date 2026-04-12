@@ -52,7 +52,6 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] API endpoints for project creation and loading
 - [x] Persistent project management and switching
 - [x] Hardened project creation API with safe app dir creation, per-file write errors, template tsconfig/.gitignore, and created paths response
-- [x] Project creation route now tracks `createdDirectories`/`createdFiles` consistently and writes template files strictly via resolved workspace paths
 - [x] Workspace-scoped API path hardening (env-based root, traversal blocking, recursion caps, security warning logs)
 - [x] Session-aware AI chat state with isolated message/history per session
 - [x] Job-level AI request tracking with `sessionId`/`jobId` for requests, logs, and messages
@@ -89,16 +88,6 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Centralized control buttons in header center (Statistics toggle, Theme toggle, Settings)
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
-- [x] Integrated real Git workflow into user scenarios: repository initialization, file save+commit, commit history loading, rollback to commit, and per-file restore with action logging
-- [x] File browser now loads real file contents via API and uses git-backed save to generate actual old/new `CodeChange` objects and open `DiffViewer`
-- [x] Unified AI executor service extracted from `PromptInput` and reused by Development Plan actions with preset-based routing (`analyze` / `develop` / `debug`)
-- [x] Development Plan/Bug actions now execute real AI calls, update status + `lastChecked`, and write action/result logs
-- [x] Secure file-level read/write API routes with workspace path validation, binary-file detection, permission handling, and write conflict detection
-- [x] File browser now loads real file contents from project API instead of placeholder text
-- [x] Code editor now supports explicit save/reload workflow (Ctrl/Cmd+S) wired to project file API with conflict/error feedback
-- [x] Editable prompt presets now persist in localStorage and are restored on app startup
-- [x] Prompt preset updates now immediately refresh the selected preset context used by PromptInput
-- [x] Refreshed UI polish for theme switching, statistics panel, and settings modal with new appearance/dashboard preferences persisted in localStorage
 
 ## Current Structure
 
@@ -174,13 +163,6 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
-| 2026-04-12 | Improved design consistency for light/dark themes by syncing `dark`/`light` classes on `<html>`; updated header settings trigger to reliably open modal via event; added UI preferences storage (`autoRefreshSeconds`, `showAdvancedStats`) and wired it into Settings + Project Statistics; enhanced stats panel with focus score, language count, and configurable refresh text. |
-| 2026-04-12 | Fixed `FileBrowser` file-open error handling by consolidating `handleFileClick` into one coherent `try/catch` and keeping API response data scoped; removed duplicate `createdDirectories`/`createdFiles` declarations in `POST /api/projects/create`; updated `SettingsModal` settings-load effect dependencies with a one-time guard; restored missing `updatePromptPreset` implementation in Zustand store; re-ran lint/typecheck/build successfully. |
-| 2026-04-12 | Removed stale `react-diff-viewer` dependency entries from `bun.lock` to prevent React 19 peer-conflict reinstalls; verified npm install now completes without ERESOLVE (remaining `http-proxy` warning is environment-level npm config) |
-| 2026-04-12 | Fixed `POST /api/projects/create` to declare/use `createdDirectories` and `createdFiles`, route all file writes through `resolvedProjectPath`, and replace direct directory creation calls with `ensureDirectory(...)` for accurate creation reports |
-| 2026-04-12 | Replaced DevelopmentPlan placeholders with real AI execution via shared `executeAIRequest` service; added preset routing for check/execute/fix flows and post-response status/lastChecked/log updates |
-| 2026-04-12 | Added persistent prompt preset storage/loading in Zustand store, implemented `updatePromptPreset`, and wired SettingsModal preset saving to update active PromptInput system prompt immediately |
-| 2026-04-12 | Resolved npm dependency installation issue by removing legacy `react-diff-viewer` (React 15/16 peer requirement), keeping `react-diff-viewer-continued`, and generating an npm `package-lock.json` so `npm ci` works reliably |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
 | 2026-04-12 | Hardened `POST /api/projects/create` with explicit `src/app` directory creation, robust file-write error handling, generated `tsconfig.json` + `.gitignore`, and response metadata for created files/directories |
@@ -188,6 +170,3 @@ export async function GET() {
 | 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
 | 2026-04-12 | Refactored `analyzeProjectStructure` in `src/lib/nvidia-nim.ts`: removed duplicate structure summary block, moved all per-file logic into `forEach`, replaced out-of-scope `content` usage with `hasExpress`, and introduced strict analysis types (`ProjectStructureAnalysis`, `ProjectFileForAnalysis`). |
 | 2026-04-12 | Improved AI workflow efficiency: enabled parallel prompt submissions, added per-session active request counters, attached project context snapshots to each AI request, and introduced adaptive context summarization timeline/focus areas. |
-| 2026-04-12 | Integrated `src/lib/git.ts` into UI workflows with new `/api/git` + `/api/project/file` routes, added save/history/rollback/restore controls in file zone, and wired logs + real diff generation on save. |
-| 2026-04-12 | Added `/api/project/file/read` and `/api/project/file/write` routes secured by `workspace-security`; integrated file browser loading and editor save/reload with permission/binary/conflict error handling. |
-| 2026-04-12 | Updated Nvidia NIM config API validation to accept and validate all generation fields (temperature/topP/topK/contextTokens/maxTokens/penalties/stopSequences) and hardened NIM request body construction against NaN, invalid ranges, and empty stop arrays. |

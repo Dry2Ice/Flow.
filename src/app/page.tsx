@@ -6,6 +6,22 @@ import { PromptInput } from '@/components/PromptInput';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { DiffViewer } from '@/components/DiffViewer';
 import { SettingsModal } from '@/components/SettingsModal';
+// Settings button component
+function SettingsButton() {
+  return (
+    <button
+      onClick={() => {
+        // SettingsModal manages its own state, just trigger it
+        const event = new CustomEvent('open-settings-modal');
+        window.dispatchEvent(event);
+      }}
+      className="p-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
+      title="AI Settings"
+    >
+      <Settings className="w-5 h-5 dark:text-neutral-300 light:text-gray-600" />
+    </button>
+  );
+}
 import { ProjectManager } from '@/components/ProjectManager';
 import { CodePreview } from '@/components/CodePreview';
 import { AIChat } from '@/components/AIChat';
@@ -22,6 +38,7 @@ export default function Home() {
   const { sidebarOpen, diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
   const [activeTab, setActiveTab] = useState<'files' | 'projects' | 'analytics'>('files');
   const [leftPanelMode, setLeftPanelMode] = useState<'files' | 'stats'>('files');
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Create demo project on first load
   useEffect(() => {
@@ -217,7 +234,7 @@ export default function Home() {
             </button>
             <ThemeToggle />
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('open-settings-modal'))}
+              onClick={() => setSettingsModalOpen(true)}
               className="p-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
               title="AI Settings"
             >
@@ -348,7 +365,7 @@ export default function Home() {
       </div>
 
       {/* Prompt input at bottom */}
-      <div className="border-t dark:border-neutral-700 light:border-gray-200 dark:bg-neutral-800 light:bg-white transition-colors duration-300">
+      <div className="border-t border-neutral-700 bg-neutral-800">
         <PromptInput />
       </div>
 
@@ -356,7 +373,7 @@ export default function Home() {
       {diffViewerOpen && <DiffViewer />}
 
       {/* Settings Modal */}
-      <SettingsModal />
+      <SettingsModal isOpen={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
     </main>
   );
 }

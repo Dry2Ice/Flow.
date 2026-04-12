@@ -2,14 +2,30 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { X, Check, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Settings, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
-import { DEFAULT_UI_PREFERENCES, loadUiPreferences, saveUiPreferences } from '@/lib/ui-preferences';
+import { PromptPreset } from '@/types';
 
-export function SettingsModal() {
-  const [isOpen, setIsOpen] = useState(false);
+interface SettingsModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use external state if provided, otherwise use internal
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+
+  const handleClose = () => {
+    if (externalOnClose) {
+      externalOnClose();
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [model, setModel] = useState('');
@@ -24,22 +40,14 @@ export function SettingsModal() {
   const [projectPath, setProjectPathLocal] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [autoRefreshSeconds, setAutoRefreshSeconds] = useState(DEFAULT_UI_PREFERENCES.autoRefreshSeconds);
-  const [showAdvancedStats, setShowAdvancedStats] = useState(DEFAULT_UI_PREFERENCES.showAdvancedStats);
   const [editingPreset, setEditingPreset] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
   const [generalPromptText, setGeneralPromptText] = useState('');
-  const hasLoadedSettings = useRef(false);
-  const { activePreset, promptPresets, setActivePreset, updatePromptPreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
+  const { activePreset, promptPresets, setActivePreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    if (hasLoadedSettings.current) {
-      return;
-    }
-    hasLoadedSettings.current = true;
-
     const saved = localStorage.getItem('nim-settings');
     if (saved) {
       try {
@@ -71,21 +79,6 @@ export function SettingsModal() {
         console.error('Failed to load settings:', error);
       }
     }
-  }, [promptPresets, setActivePreset, setGeneralPrompt, setProjectPath]);
-
-  useEffect(() => {
-    const openModal = () => setIsOpen(true);
-    window.addEventListener('open-settings-modal', openModal);
-
-    return () => {
-      window.removeEventListener('open-settings-modal', openModal);
-    };
-  }, []);
-
-  useEffect(() => {
-    const preferences = loadUiPreferences();
-    setAutoRefreshSeconds(preferences.autoRefreshSeconds);
-    setShowAdvancedStats(preferences.showAdvancedStats);
   }, []);
 
   const handleEditPreset = (presetId: string) => {
@@ -97,13 +90,19 @@ export function SettingsModal() {
   };
 
   const handleSavePreset = () => {
-    if (!editingPreset) return;
-
-    updatePromptPreset(editingPreset, { systemPrompt: editedPrompt });
-    setEditingPreset(null);
-    setEditedPrompt('');
-    setMessage('Preset updated successfully!');
-    setTimeout(() => setMessage(''), 2000);
+    if (editingPreset) {
+      // In a real app, you'd save this to a backend or persistent storage
+      // For now, we'll just update the local state
+      const updatedPresets = promptPresets.map(p =>
+        p.id === editingPreset ? { ...p, systemPrompt: editedPrompt } : p
+      );
+      // Note: This won't persist across sessions without backend storage
+      console.log('Updated preset:', editingPreset, editedPrompt);
+      setEditingPreset(null);
+      setEditedPrompt('');
+      setMessage('Preset updated successfully!');
+      setTimeout(() => setMessage(''), 2000);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -176,13 +175,9 @@ export function SettingsModal() {
           generalPrompt
         };
         localStorage.setItem('nim-settings', JSON.stringify(settingsToSave));
-        saveUiPreferences({
-          autoRefreshSeconds,
-          showAdvancedStats,
-        });
         setMessage('AI configured successfully!');
         setTimeout(() => {
-          setIsOpen(false);
+          handleClose();
           setMessage('');
         }, 2000);
       }
@@ -197,67 +192,33 @@ export function SettingsModal() {
     <>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="dark:bg-neutral-800 light:bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden border dark:border-neutral-700 light:border-gray-200 transition-colors duration-300">
-            <div className="flex items-center justify-between p-4 border-b dark:border-neutral-700 light:border-gray-200">
-              <h3 className="text-lg font-semibold dark:text-neutral-200 light:text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-neutral-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-700">
+              <h3 className="text-lg font-semibold text-neutral-200">
                 AI Configuration Settings
               </h3>
               <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 dark:hover:bg-neutral-700 light:hover:bg-gray-100 rounded transition-colors"
+                onClick={handleClose}
+                className="p-2 hover:bg-neutral-700 rounded transition-colors"
               >
-                <X className="w-5 h-5 dark:text-neutral-200 light:text-gray-700" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-6 max-h-[calc(90vh-80px)] overflow-y-auto">
               {/* Quick Actions */}
-              <div className="border-b dark:border-neutral-600 light:border-gray-200 pb-4">
-                <h4 className="text-md font-medium dark:text-neutral-200 light:text-gray-900 mb-3">Quick Actions</h4>
+              <div className="border-b border-neutral-600 pb-4">
+                <h4 className="text-md font-medium text-neutral-200 mb-3">Quick Actions</h4>
                 <button
                   type="button"
                   onClick={handleResetLayout}
-                  className="flex items-center gap-2 px-4 py-2 dark:bg-neutral-700 dark:hover:bg-neutral-600 light:bg-gray-100 light:hover:bg-gray-200 rounded text-sm transition-colors dark:text-neutral-100 light:text-gray-800"
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
                   Reset Workspace Layout
                 </button>
-                <p className="text-xs dark:text-neutral-500 light:text-gray-500 mt-2">Restore default panel sizes and layout</p>
-              </div>
-
-              <div>
-                <h4 className="text-md font-medium dark:text-neutral-200 light:text-gray-900 mb-3 border-b dark:border-neutral-600 light:border-gray-200 pb-2">
-                  Appearance & Dashboard
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-1">
-                      Stats Auto-Refresh (seconds)
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="300"
-                      value={autoRefreshSeconds}
-                      onChange={(e) => setAutoRefreshSeconds(parseInt(e.target.value) || 30)}
-                      className="w-full px-3 py-2 dark:bg-neutral-700 light:bg-gray-50 border dark:border-neutral-600 light:border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white light:text-gray-900"
-                    />
-                    <div className="text-xs dark:text-neutral-400 light:text-gray-500 mt-1">Controls text and refresh cadence in the stats panel.</div>
-                  </div>
-
-                  <label className="flex items-center gap-3 p-3 rounded border dark:border-neutral-600 light:border-gray-300 dark:bg-neutral-700/30 light:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showAdvancedStats}
-                      onChange={(e) => setShowAdvancedStats(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm dark:text-neutral-300 light:text-gray-700">
-                      Show advanced project health metrics in statistics
-                    </span>
-                  </label>
-                </div>
+                <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
               </div>
 
               {/* API Configuration Section */}
@@ -475,14 +436,12 @@ export function SettingsModal() {
                       />
                       <div className="flex gap-2 mt-2">
                         <button
-                          type="button"
                           onClick={handleSaveGeneralPrompt}
                           className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
                         >
                           Save
                         </button>
                         <button
-                          type="button"
                           onClick={handleCancelGeneralPromptEdit}
                           className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
                         >
@@ -498,7 +457,6 @@ export function SettingsModal() {
                         </pre>
                       </div>
                       <button
-                        type="button"
                         onClick={handleEditGeneralPrompt}
                         className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                       >
@@ -550,14 +508,12 @@ export function SettingsModal() {
                               />
                               <div className="flex gap-2">
                                 <button
-                                  type="button"
                                   onClick={handleSavePreset}
                                   className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
                                 >
                                   Save
                                 </button>
                                 <button
-                                  type="button"
                                   onClick={handleCancelEdit}
                                   className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
                                 >
@@ -574,7 +530,6 @@ export function SettingsModal() {
                                 </div>
                               </details>
                               <button
-                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEditPreset(preset.id);
@@ -609,7 +564,7 @@ export function SettingsModal() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                   className="flex-1 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded transition-colors"
                 >
                   Cancel

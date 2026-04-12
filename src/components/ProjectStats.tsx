@@ -4,7 +4,6 @@
 
 import { useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
-import { loadUiPreferences } from '@/lib/ui-preferences';
 import {
   FileText,
   Code,
@@ -54,7 +53,6 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color = "blue" }: {
 
 export function ProjectStats() {
   const { currentProject, openFiles, logs, aiRequests } = useAppStore();
-  const uiPreferences = loadUiPreferences();
 
   const stats = useMemo(() => {
     if (!currentProject) {
@@ -103,7 +101,6 @@ export function ProjectStats() {
       successRate,
       recentLogs,
       projectSize: formatBytes(codeStats.size),
-      focusScore: totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 100,
     };
   }, [currentProject, openFiles, logs, aiRequests]);
 
@@ -217,65 +214,53 @@ export function ProjectStats() {
         </div>
       </div>
 
-      {uiPreferences.showAdvancedStats && (
-        <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4">
-          <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-3 flex items-center gap-2">
-            <GitBranch className="w-4 h-4" />
-            Project Health
-          </h3>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="dark:text-neutral-400 light:text-gray-600">AI Success Rate</span>
-                <span className="dark:text-neutral-300 light:text-gray-700 font-medium">{stats.successRate.toFixed(1)}%</span>
-              </div>
-              <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full ${
-                    stats.successRate > 80 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                    stats.successRate > 60 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                    'bg-gradient-to-r from-red-500 to-pink-500'
-                  }`}
-                  style={{ width: `${stats.successRate}%` }}
-                />
-              </div>
+      {/* Project Health */}
+      <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4">
+        <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-3 flex items-center gap-2">
+          <GitBranch className="w-4 h-4" />
+          Project Health
+        </h3>
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span className="dark:text-neutral-400 light:text-gray-600">AI Success Rate</span>
+              <span className="dark:text-neutral-300 light:text-gray-700 font-medium">{stats.successRate.toFixed(1)}%</span>
             </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="dark:text-neutral-400 light:text-gray-600">File Utilization</span>
-                <span className="dark:text-neutral-300 light:text-gray-700 font-medium">
-                  {((stats.openFileCount / Math.max(stats.totalFiles, 1)) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full"
-                  style={{ width: `${(stats.openFileCount / Math.max(stats.totalFiles, 1)) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-1">
-              <div className="rounded-lg dark:bg-neutral-700/40 light:bg-gray-50 p-3 text-center">
-                <div className="text-xl font-semibold dark:text-white light:text-gray-900">{stats.focusScore}%</div>
-                <div className="text-xs dark:text-neutral-400 light:text-gray-500">Focus Score</div>
-              </div>
-              <div className="rounded-lg dark:bg-neutral-700/40 light:bg-gray-50 p-3 text-center">
-                <div className="text-xl font-semibold dark:text-white light:text-gray-900">{Object.keys(stats.languageStats).length}</div>
-                <div className="text-xs dark:text-neutral-400 light:text-gray-500">Languages Used</div>
-              </div>
+            <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full ${
+                  stats.successRate > 80 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
+                  stats.successRate > 60 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                  'bg-gradient-to-r from-red-500 to-pink-500'
+                }`}
+                style={{ width: `${stats.successRate}%` }}
+              />
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t dark:border-neutral-700 light:border-gray-200">
-            <div className="flex items-center justify-center gap-2 text-xs dark:text-neutral-400 light:text-gray-500">
-              <Clock className="w-3 h-3" />
-              <span>Auto-updating every {uiPreferences.autoRefreshSeconds} seconds</span>
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span className="dark:text-neutral-400 light:text-gray-600">File Utilization</span>
+              <span className="dark:text-neutral-300 light:text-gray-700 font-medium">
+                {((stats.openFileCount / Math.max(stats.totalFiles, 1)) * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full"
+                style={{ width: `${(stats.openFileCount / Math.max(stats.totalFiles, 1)) * 100}%` }}
+              />
             </div>
           </div>
         </div>
-      )}
+
+        <div className="mt-4 pt-4 border-t dark:border-neutral-700 light:border-gray-200">
+          <div className="flex items-center justify-center gap-2 text-xs dark:text-neutral-400 light:text-gray-500">
+            <Clock className="w-3 h-3" />
+            <span>Auto-updating every 30 seconds</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
