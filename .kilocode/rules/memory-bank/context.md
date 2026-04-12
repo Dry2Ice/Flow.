@@ -60,6 +60,10 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Job execution manager with per-job cancel/retry controls via `AbortController`
 - [x] UI session switcher with scoped chat/log filtering to prevent cross-task mixing
 - [x] AI request scheduler now supports blocked state, dependency checks over full queue, atomic pending→running claims, and recursive dispatch after batch completion
+- [x] Session generation tracking now supports concurrent requests via `activeRequests` counters to prevent false idle states
+- [x] Prompt pipeline now supports parallel user submissions without global input lock
+- [x] Per-request project context snapshot is attached to each AI call for isolation
+- [x] Project context now includes adaptive focus areas and rolling summary timeline for periodic systematization
 
 ## Current Structure
 
@@ -141,3 +145,4 @@ export async function GET() {
 | 2026-04-12 | Added multi-session chat/request architecture, per-job cancel/retry flow, and execution manager integration |
 | 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
 | 2026-04-12 | Refactored `analyzeProjectStructure` in `src/lib/nvidia-nim.ts`: removed duplicate structure summary block, moved all per-file logic into `forEach`, replaced out-of-scope `content` usage with `hasExpress`, and introduced strict analysis types (`ProjectStructureAnalysis`, `ProjectFileForAnalysis`). |
+| 2026-04-12 | Improved AI workflow efficiency: enabled parallel prompt submissions, added per-session active request counters, attached project context snapshots to each AI request, and introduced adaptive context summarization timeline/focus areas. |

@@ -8,14 +8,16 @@ import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { AIRequest, PromptRequest } from '@/types';
 import { executionManager } from '@/lib/execution-manager';
+import { aiService } from '@/lib/ai-service';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const {
     addMessage,
     setGenerating,
+    incrementSessionRequests,
+    decrementSessionRequests,
     activeFile,
     openFiles,
     addTask,
@@ -37,6 +39,8 @@ export function PromptInput() {
     aiRequests,
     addAIRequest,
     updateAIRequest,
+    currentProject,
+    getProjectContext,
   } = useAppStore();
 
   const sessionRequests = useMemo(
@@ -78,6 +82,7 @@ export function PromptInput() {
       timestamp: new Date(),
     });
 
+    incrementSessionRequests(activeSessionId);
     setGenerating(activeSessionId, true);
     const controller = executionManager.createController(jobId);
 
@@ -106,6 +111,10 @@ export function PromptInput() {
         }
       }
 
+      const projectContext = currentProject
+        ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
+        : undefined;
+
       const request: PromptRequest = {
         prompt: requestInput.prompt,
         preset: activePreset || undefined,
@@ -114,6 +123,8 @@ export function PromptInput() {
           currentFile: activeFile || undefined,
           selectedCode: currentFile?.content,
           projectFiles,
+          projectId: currentProject?.id,
+          projectContext,
           sessionId: activeSessionId,
           jobId,
         },
@@ -215,7 +226,7 @@ export function PromptInput() {
       });
     } finally {
       executionManager.clear(jobId);
-      setGenerating(activeSessionId, false);
+      decrementSessionRequests(activeSessionId);
     }
   };
 
@@ -261,15 +272,11 @@ export function PromptInput() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!prompt.trim() || isLoading || ultraModeActive) return;
+    if (!prompt.trim() || ultraModeActive) return;
 
-    setIsLoading(true);
-    try {
-      await runRequest({ prompt });
-      setPrompt('');
-    } finally {
-      setIsLoading(false);
-    }
+    const nextPrompt = prompt;
+    setPrompt('');
+    void runRequest({ prompt: nextPrompt });
   };
 
   const cancelJob = (jobId: string) => {
@@ -325,7 +332,7 @@ export function PromptInput() {
             if (preset) setActivePreset(preset);
           }}
           className="px-3 py-1 bg-neutral-700 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isLoading || ultraModeActive}
+          disabled={ultraModeActive}
         >
           {promptPresets.map((preset) => (
             <option key={preset.id} value={preset.id}>
@@ -336,7 +343,7 @@ export function PromptInput() {
 
         <button
           onClick={executeUltraMode}
-          disabled={isLoading || ultraModeActive || !projectPath}
+          disabled={ultraModeActive || !projectPath}
           className="ml-auto px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-neutral-600 disabled:to-neutral-600 disabled:cursor-not-allowed rounded text-sm font-medium flex items-center gap-1 transition-all"
         >
           <Zap className="w-4 h-4" />
@@ -352,15 +359,15 @@ export function PromptInput() {
             placeholder="Describe what you want to build or modify..."
             className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={3}
-            disabled={isLoading || ultraModeActive}
+            disabled={ultraModeActive}
           />
         </div>
         <button
           type="submit"
-          disabled={isLoading || ultraModeActive || !prompt.trim()}
+          disabled={ultraModeActive || !prompt.trim()}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 disabled:cursor-not-allowed rounded-lg flex items-center gap-2 transition-colors"
         >
-          {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+          <Send className="w-4 h-4" />
           <span className="hidden sm:inline">Send</span>
         </button>
       </form>

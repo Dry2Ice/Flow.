@@ -9,6 +9,7 @@ import path from 'path';
 export interface SessionState {
   messages: AIMessage[];
   isGenerating: boolean;
+  activeRequests: number;
 }
 
 const DEFAULT_SESSION_ID = 'default';
@@ -97,6 +98,8 @@ interface AppState {
 
   addMessage: (sessionId: string, message: AIMessage) => void;
   setGenerating: (sessionId: string, generating: boolean) => void;
+  incrementSessionRequests: (sessionId: string) => void;
+  decrementSessionRequests: (sessionId: string) => void;
   setActiveSession: (sessionId: string) => void;
   createSession: (sessionId?: string) => string;
   getSessionState: (sessionId: string) => SessionState;
@@ -168,7 +171,8 @@ export const useAppStore = create<AppState>()(
     sessions: {
       [DEFAULT_SESSION_ID]: {
         messages: [],
-        isGenerating: false
+        isGenerating: false,
+        activeRequests: 0
       }
     },
     activeSessionId: DEFAULT_SESSION_ID,
@@ -368,7 +372,7 @@ Deliver production-ready code that solves the user's problem effectively.`
     setCurrentTask: (task) => set({ currentTask: task }),
 
     addMessage: (sessionId, message) => set((state) => {
-      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false };
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
       return {
         sessions: {
           ...state.sessions,
@@ -380,13 +384,42 @@ Deliver production-ready code that solves the user's problem effectively.`
       };
     }),
     setGenerating: (sessionId, generating) => set((state) => {
-      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false };
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
       return {
         sessions: {
           ...state.sessions,
           [sessionId]: {
             ...session,
-            isGenerating: generating
+            isGenerating: generating,
+            activeRequests: generating ? Math.max(1, session.activeRequests) : 0
+          }
+        }
+      };
+    }),
+    incrementSessionRequests: (sessionId) => set((state) => {
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
+      const activeRequests = session.activeRequests + 1;
+      return {
+        sessions: {
+          ...state.sessions,
+          [sessionId]: {
+            ...session,
+            activeRequests,
+            isGenerating: activeRequests > 0
+          }
+        }
+      };
+    }),
+    decrementSessionRequests: (sessionId) => set((state) => {
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
+      const activeRequests = Math.max(0, session.activeRequests - 1);
+      return {
+        sessions: {
+          ...state.sessions,
+          [sessionId]: {
+            ...session,
+            activeRequests,
+            isGenerating: activeRequests > 0
           }
         }
       };
@@ -400,7 +433,7 @@ Deliver production-ready code that solves the user's problem effectively.`
         activeSessionId: sessionId,
         sessions: {
           ...state.sessions,
-          [sessionId]: { messages: [], isGenerating: false }
+          [sessionId]: { messages: [], isGenerating: false, activeRequests: 0 }
         }
       };
     }),
@@ -410,7 +443,7 @@ Deliver production-ready code that solves the user's problem effectively.`
           ? state.sessions
           : {
               ...state.sessions,
-              [sessionId]: { messages: [], isGenerating: false }
+              [sessionId]: { messages: [], isGenerating: false, activeRequests: 0 }
             },
         activeSessionId: sessionId
       }));
@@ -418,7 +451,7 @@ Deliver production-ready code that solves the user's problem effectively.`
     },
     getSessionState: (sessionId) => {
       const state = get();
-      return state.sessions[sessionId] ?? { messages: [], isGenerating: false };
+      return state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
     },
 
     setSidebarOpen: (open) => set({ sidebarOpen: open }),

@@ -52,6 +52,12 @@ The application launches with a fully functional four-zone workspace, ready for 
 - **Bug Reporting**: Create and manage bug reports with AI assistance
 - **Task Execution**: AI-powered task checking and implementation
 
+### Intelligent Context & Concurrency Engine
+- **Per-Project Adaptive Context**: Each project has its own evolving context profile with summary timeline and focus areas
+- **Periodic Systematization**: Context is re-analyzed automatically with adaptive refresh intervals based on project complexity
+- **Request Isolation**: Every AI job carries its own frozen context payload (`sessionId`, `jobId`, project snapshot) to prevent cross-request interference
+- **Parallel Request Workflow**: Multiple AI requests can run in parallel while preserving correct session state and chat/log isolation
+
 ## Getting Started
 
 ### 1. Set Up Your Project

@@ -6,6 +6,7 @@ import { ProjectContext, AIRequest, FileWithMetadata } from '@/types';
 
 class AIService {
   private contextUpdateInterval: NodeJS.Timeout | null = null;
+  private readonly defaultContextRefreshMs = 5 * 60 * 1000;
 
   constructor() {
     this.startPeriodicContextUpdates();
@@ -16,7 +17,7 @@ class AIService {
     // Update context every 5 minutes
     this.contextUpdateInterval = setInterval(() => {
       this.updateAllProjectContexts();
-    }, 5 * 60 * 1000);
+    }, this.defaultContextRefreshMs);
   }
 
   // Intelligent context building
@@ -47,6 +48,14 @@ class AIService {
     // Get existing context for incremental updates
     const existingContext = getProjectContext(projectId);
     const version = existingContext ? existingContext.version + 1 : 1;
+    const summaryTimeline = [
+      ...(existingContext?.summaryTimeline || []).slice(-4),
+      {
+        version,
+        createdAt: new Date(),
+        summary: analysis.summary
+      }
+    ];
 
     const context: ProjectContext = {
       id: `context-${projectId}-${version}`,
@@ -64,7 +73,9 @@ class AIService {
       framework: analysis.framework,
       complexity: analysis.complexity,
       insights: analysis.insights,
-      recommendations: analysis.recommendations
+      recommendations: analysis.recommendations,
+      focusAreas: this.resolveFocusAreas(analysis),
+      summaryTimeline
     };
 
     // Update context in store
@@ -244,6 +255,29 @@ class AIService {
     }
 
     return recommendations;
+  }
+
+  private resolveFocusAreas(analysis: any): string[] {
+    const focusAreas: string[] = [];
+
+    if (analysis.complexity === 'high' || analysis.complexity === 'very_high') {
+      focusAreas.push('modularization');
+    }
+    if (analysis.patterns.some((pattern: string) => pattern.includes('Async/await'))) {
+      focusAreas.push('async-reliability');
+    }
+    if (analysis.languages.includes('typescript')) {
+      focusAreas.push('type-safety');
+    }
+    if (analysis.framework === 'React') {
+      focusAreas.push('render-performance');
+    }
+
+    if (focusAreas.length === 0) {
+      focusAreas.push('core-maintainability');
+    }
+
+    return focusAreas;
   }
 
   private isRequestReady(request: AIRequest, allRequests: AIRequest[]): boolean {
@@ -435,7 +469,20 @@ class AIService {
 
     for (const project of projects) {
       try {
-        await this.buildProjectContext(project.id);
+        const existingContext = useAppStore.getState().getProjectContext(project.id);
+        const ageMs = existingContext
+          ? Date.now() - existingContext.lastUpdated.getTime()
+          : Number.POSITIVE_INFINITY;
+
+        const refreshThresholdMs = existingContext?.complexity === 'very_high'
+          ? 2 * 60 * 1000
+          : existingContext?.complexity === 'high'
+            ? 3 * 60 * 1000
+            : this.defaultContextRefreshMs;
+
+        if (ageMs >= refreshThresholdMs) {
+          await this.buildProjectContext(project.id);
+        }
       } catch (error) {
         console.error(`Failed to update context for project ${project.name}:`, error);
       }
