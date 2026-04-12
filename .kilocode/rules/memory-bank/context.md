@@ -173,6 +173,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Removed stale `react-diff-viewer` dependency entries from `bun.lock` to prevent React 19 peer-conflict reinstalls; verified npm install now completes without ERESOLVE (remaining `http-proxy` warning is environment-level npm config) |
 | 2026-04-12 | Fixed `POST /api/projects/create` to declare/use `createdDirectories` and `createdFiles`, route all file writes through `resolvedProjectPath`, and replace direct directory creation calls with `ensureDirectory(...)` for accurate creation reports |
 | 2026-04-12 | Replaced DevelopmentPlan placeholders with real AI execution via shared `executeAIRequest` service; added preset routing for check/execute/fix flows and post-response status/lastChecked/log updates |
 | 2026-04-12 | Added persistent prompt preset storage/loading in Zustand store, implemented `updatePromptPreset`, and wired SettingsModal preset saving to update active PromptInput system prompt immediately |
