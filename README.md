@@ -1,6 +1,6 @@
-# AI Code Assistant
+# Flow
 
-A web-based code editor powered by Nvidia NIM AI for intelligent code generation and project management.
+A modern, AI-powered code editor that transforms ideas into software through intelligent code generation, comprehensive analytics, and streamlined development workflows.
 
 ## Features
 

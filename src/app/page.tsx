@@ -9,15 +9,17 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { ProjectManager } from '@/components/ProjectManager';
 import { CodePreview } from '@/components/CodePreview';
 import { AIChat } from '@/components/AIChat';
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import { FolderOpen, FileText } from 'lucide-react';
+import { FolderOpen, FileText, BarChart3 } from 'lucide-react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
 export default function Home() {
   const { sidebarOpen, diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'files' | 'projects'>('files');
+  const [activeTab, setActiveTab] = useState<'files' | 'projects' | 'analytics'>('files');
 
   // Create demo project on first load
   useEffect(() => {
@@ -63,14 +65,30 @@ export default function Home() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo Project</title>
+    <title>Flow Demo</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to AI Code Assistant</h1>
-        <p>This is a demo HTML file. You can edit it and see the preview update in real-time!</p>
-        <button onclick="alert('Hello from AI Code Assistant!')">Click me!</button>
+        <div class="hero-section">
+            <h1 class="hero-title">Welcome to <span class="gradient-text">Flow</span></h1>
+            <p class="hero-subtitle">Experience the future of AI-powered development</p>
+        </div>
+        <div class="features">
+            <div class="feature-card">
+                <h3>⚡ Intelligent Code Generation</h3>
+                <p>Transform ideas into code with advanced AI</p>
+            </div>
+            <div class="feature-card">
+                <h3>📊 Real-time Analytics</h3>
+                <p>Track progress and optimize your workflow</p>
+            </div>
+            <div class="feature-card">
+                <h3>🔧 Modern Development Tools</h3>
+                <p>Professional editor with live preview</p>
+            </div>
+        </div>
+        <button onclick="alert('🚀 Welcome to Flow - Let\\'s build something amazing!')" class="cta-button">Get Started</button>
     </div>
     <script src="script.js"></script>
 </body>
@@ -81,8 +99,8 @@ export default function Home() {
       const { addPlan, addTask } = useAppStore.getState();
       const demoPlan = {
         id: 'demo-plan',
-        title: 'Demo Development Plan',
-        description: 'A sample development plan to demonstrate the planning features',
+        title: 'Flow Onboarding Journey',
+        description: 'Complete guide to mastering Flow\'s AI-powered development features',
         status: 'pending' as const,
         tasks: [],
         createdAt: new Date(),
@@ -91,15 +109,16 @@ export default function Home() {
 
       const demoTask = {
         id: 'demo-task',
-        title: 'Welcome to AI Code Assistant',
-        description: 'Get familiar with the AI-powered development environment',
+        title: 'Welcome to Flow',
+        description: 'Discover the power of AI-driven development with Flow\'s comprehensive toolkit',
         status: 'pending' as const,
-        priority: 'medium' as const,
+        priority: 'high' as const,
         items: [
-          { id: 'item-1', title: 'Explore the code editor with syntax highlighting', completed: false, createdAt: new Date() },
-          { id: 'item-2', title: 'Try the live HTML preview feature', completed: false, createdAt: new Date() },
-          { id: 'item-3', title: 'Check out the AI chat interface', completed: false, createdAt: new Date() },
-          { id: 'item-4', title: 'Create your first custom development plan', completed: false, createdAt: new Date() },
+          { id: 'item-1', title: 'Explore the Monaco code editor with advanced syntax highlighting', completed: false, createdAt: new Date() },
+          { id: 'item-2', title: 'Experience real-time HTML preview with instant updates', completed: false, createdAt: new Date() },
+          { id: 'item-3', title: 'Interact with Flow\'s intelligent AI chat system', completed: false, createdAt: new Date() },
+          { id: 'item-4', title: 'Create and manage development plans with AI assistance', completed: false, createdAt: new Date() },
+          { id: 'item-5', title: 'Use Ultra Mode for comprehensive code enhancement', completed: false, createdAt: new Date() },
         ],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -156,8 +175,26 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-neutral-900 text-white flex flex-col">
       {/* Header */}
-      <header className="bg-neutral-800 border-b border-neutral-700 p-4">
-        <h1 className="text-xl font-semibold">AI Code Assistant</h1>
+      <header className="bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900 border-b border-neutral-700 p-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Flow</h1>
+              <p className="text-xs text-blue-200">AI-Powered Development</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-neutral-300">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Ready</span>
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Main content with resizable panels */}
@@ -193,12 +230,24 @@ export default function Home() {
                   <FolderOpen className="w-4 h-4" />
                   Projects
                 </button>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                    activeTab === 'analytics'
+                      ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
+                      : 'text-neutral-400 hover:text-neutral-300'
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </button>
               </div>
 
               {/* Tab Content */}
               <div className="flex-1 overflow-hidden">
                 {activeTab === 'files' && <FileBrowser />}
                 {activeTab === 'projects' && <ProjectManager />}
+                {activeTab === 'analytics' && <AnalyticsDashboard />}
               </div>
             </div>
           </Allotment.Pane>
@@ -245,6 +294,9 @@ export default function Home() {
 
       {/* Settings Modal */}
       <SettingsModal />
+
+      {/* Theme Toggle */}
+      <ThemeToggle />
     </main>
   );
 }

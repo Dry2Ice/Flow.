@@ -318,32 +318,50 @@ export function PromptInput() {
         </div>
       )}
 
-      <div className="mb-3 flex items-center gap-2">
-        <label className="text-sm text-neutral-400">AI Mode:</label>
-        <select
-          value={activePreset?.id || ''}
-          onChange={(event) => {
-            const preset = promptPresets.find((item) => item.id === event.target.value);
-            if (preset) setActivePreset(preset);
-          }}
-          className="px-3 py-1 bg-neutral-700 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={ultraModeActive}
-        >
+      {/* Preset Selection Cards */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <label className="text-sm font-medium text-neutral-300">AI Mode:</label>
+          {ultraModeActive && (
+            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30">
+              Locked during Ultra Mode
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
           {promptPresets.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.name}
-            </option>
+            <button
+              key={preset.id}
+              onClick={() => !ultraModeActive && setActivePreset(preset)}
+              disabled={ultraModeActive}
+              className={`p-3 rounded-lg border transition-all duration-200 text-left ${
+                activePreset?.id === preset.id
+                  ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
+                  : 'border-neutral-600 bg-neutral-700 hover:border-neutral-500 hover:bg-neutral-600'
+              } ${ultraModeActive ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-3 h-3 rounded-full ${
+                  preset.id === 'debug' ? 'bg-red-400' :
+                  preset.id === 'analyze' ? 'bg-blue-400' :
+                  'bg-green-400'
+                }`} />
+                <span className="text-sm font-medium text-white">{preset.name}</span>
+              </div>
+              <p className="text-xs text-neutral-400 leading-tight">{preset.description}</p>
+            </button>
           ))}
-        </select>
-
-        <button
-          onClick={executeUltraMode}
-          disabled={ultraModeActive || !projectPath}
-          className="ml-auto px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-neutral-600 disabled:to-neutral-600 disabled:cursor-not-allowed rounded text-sm font-medium flex items-center gap-1 transition-all"
-        >
-          <Zap className="w-4 h-4" />
-          Ultra Mode
-        </button>
+        </div>
+        <div className="flex justify-end mt-3">
+          <button
+            onClick={executeUltraMode}
+            disabled={ultraModeActive || !projectPath}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-neutral-600 disabled:to-neutral-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium flex items-center gap-2 transition-all shadow-lg"
+          >
+            <Zap className="w-4 h-4" />
+            Ultra Mode
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
