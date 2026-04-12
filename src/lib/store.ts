@@ -3,8 +3,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
-import fs from 'fs';
-import path from 'path';
 
 export interface SessionState {
   messages: AIMessage[];
@@ -12,7 +10,139 @@ export interface SessionState {
   activeRequests: number;
 }
 
+export interface OpenFile {
+  path: string;
+  content: string;
+  lastModifiedMs?: number;
+}
+
 const DEFAULT_SESSION_ID = 'default';
+
+const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
+const ACTIVE_PRESET_STORAGE_KEY = 'flow-active-preset-id';
+
+const DEFAULT_PROMPT_PRESETS: PromptPreset[] = [
+  {
+    id: 'debug',
+    name: 'Bug Detection & Fixing',
+    description: 'Search for bugs, analyze code issues, and suggest fixes',
+    systemPrompt: `You are an expert software engineer specializing in debugging and code quality. Your task is to:
+
+1. Analyze the provided code and project files for potential bugs, security issues, and code quality problems
+2. Identify specific problems with line numbers and explanations
+3. Suggest concrete fixes with code examples
+4. Explain the reasoning behind each suggested change
+5. Prioritize critical issues that could cause runtime errors or security vulnerabilities
+
+When analyzing the project, consider:
+- Logic errors and edge cases
+- Type safety issues
+- Performance bottlenecks
+- Security vulnerabilities
+- Code maintainability
+- Best practices compliance
+
+Provide actionable recommendations that can be implemented immediately.`
+  },
+  {
+    id: 'analyze',
+    name: 'Code Analysis & Planning',
+    description: 'Analyze codebase and create improvement plans',
+    systemPrompt: `You are a senior software architect specializing in code analysis and strategic planning. Your task is to:
+
+1. Thoroughly analyze the entire codebase structure, patterns, and architecture
+2. Identify areas for improvement, refactoring opportunities, and modernization needs
+3. Create detailed development plans with prioritized tasks
+4. Suggest architectural improvements and design patterns
+5. Provide technical debt assessment and recommendations
+6. Outline implementation strategies with clear milestones
+
+Consider:
+- Code organization and modularity
+- Design patterns and architectural decisions
+- Technology stack appropriateness
+- Scalability and maintainability
+- Testing coverage and quality assurance
+- Documentation and developer experience
+
+Generate a comprehensive improvement roadmap with measurable goals and success criteria.`
+  },
+  {
+    id: 'develop',
+    name: 'Active Development',
+    description: 'Implement features, make changes, and enhance functionality',
+    systemPrompt: `You are a skilled software developer ready to implement features and make code changes. Your task is to:
+
+1. Understand the user's requirements and current codebase context
+2. Implement requested features with clean, maintainable code
+3. Follow existing code patterns and conventions
+4. Ensure type safety and error handling
+5. Provide complete, working solutions that integrate well with existing code
+6. Create appropriate tests when needed
+7. Update documentation if necessary
+
+When making changes:
+- Preserve existing functionality
+- Follow the established architecture and patterns
+- Write self-documenting code with clear variable names
+- Handle edge cases and error conditions
+- Optimize for performance where appropriate
+- Ensure compatibility with existing dependencies
+
+Deliver production-ready code that solves the user's problem effectively.`
+  }
+];
+
+const isClient = typeof window !== 'undefined';
+
+const loadPromptPresets = (): PromptPreset[] => {
+  if (!isClient) return DEFAULT_PROMPT_PRESETS;
+
+  const saved = localStorage.getItem(PROMPT_PRESETS_STORAGE_KEY);
+  if (!saved) return DEFAULT_PROMPT_PRESETS;
+
+  try {
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return DEFAULT_PROMPT_PRESETS;
+
+    return parsed.filter((preset): preset is PromptPreset => {
+      return (
+        typeof preset?.id === 'string'
+        && typeof preset?.name === 'string'
+        && typeof preset?.description === 'string'
+        && typeof preset?.systemPrompt === 'string'
+      );
+    });
+  } catch (error) {
+    console.error('Failed to parse saved prompt presets:', error);
+    return DEFAULT_PROMPT_PRESETS;
+  }
+};
+
+const savePromptPresets = (promptPresets: PromptPreset[]) => {
+  if (!isClient) return;
+  localStorage.setItem(PROMPT_PRESETS_STORAGE_KEY, JSON.stringify(promptPresets));
+};
+
+const loadActivePresetId = (): string | null => {
+  if (!isClient) return null;
+  return localStorage.getItem(ACTIVE_PRESET_STORAGE_KEY);
+};
+
+const saveActivePresetId = (presetId: string | null) => {
+  if (!isClient) return;
+
+  if (presetId) {
+    localStorage.setItem(ACTIVE_PRESET_STORAGE_KEY, presetId);
+    return;
+  }
+
+  localStorage.removeItem(ACTIVE_PRESET_STORAGE_KEY);
+};
+
+const initialPromptPresets = loadPromptPresets();
+const initialActivePresetId = loadActivePresetId();
+const initialActivePreset = initialPromptPresets.find((preset) => preset.id === initialActivePresetId) ?? null;
 
 interface AppState {
   // Current project
@@ -20,7 +150,7 @@ interface AppState {
   projects: Project[];
 
   // File management
-  openFiles: { path: string; content: string }[];
+  openFiles: OpenFile[];
   activeFile: string | null;
 
   // Development plan
@@ -80,7 +210,7 @@ interface AppState {
   addProject: (project: Project) => void;
   updateProject: (project: Partial<Project>) => void;
 
-  openFile: (path: string, content: string) => void;
+  openFile: (path: string, content: string, lastModifiedMs?: number) => void;
   closeFile: (path: string) => void;
   updateFileContent: (path: string, content: string) => void;
   setActiveFile: (path: string) => void;
@@ -114,6 +244,7 @@ interface AppState {
 
   // Prompt preset actions
   setActivePreset: (preset: PromptPreset | null) => void;
+  updatePromptPreset: (presetId: string, patch: Partial<Omit<PromptPreset, 'id'>>) => void;
 
   // Project actions
   setProjectPath: (path: string) => void;
@@ -181,78 +312,8 @@ export const useAppStore = create<AppState>()(
     currentDiff: null,
     gitInitialized: false,
     commits: [],
-    activePreset: null,
-    promptPresets: [
-      {
-        id: 'debug',
-        name: 'Bug Detection & Fixing',
-        description: 'Search for bugs, analyze code issues, and suggest fixes',
-        systemPrompt: `You are an expert software engineer specializing in debugging and code quality. Your task is to:
-
-1. Analyze the provided code and project files for potential bugs, security issues, and code quality problems
-2. Identify specific problems with line numbers and explanations
-3. Suggest concrete fixes with code examples
-4. Explain the reasoning behind each suggested change
-5. Prioritize critical issues that could cause runtime errors or security vulnerabilities
-
-When analyzing the project, consider:
-- Logic errors and edge cases
-- Type safety issues
-- Performance bottlenecks
-- Security vulnerabilities
-- Code maintainability
-- Best practices compliance
-
-Provide actionable recommendations that can be implemented immediately.`
-      },
-      {
-        id: 'analyze',
-        name: 'Code Analysis & Planning',
-        description: 'Analyze codebase and create improvement plans',
-        systemPrompt: `You are a senior software architect specializing in code analysis and strategic planning. Your task is to:
-
-1. Thoroughly analyze the entire codebase structure, patterns, and architecture
-2. Identify areas for improvement, refactoring opportunities, and modernization needs
-3. Create detailed development plans with prioritized tasks
-4. Suggest architectural improvements and design patterns
-5. Provide technical debt assessment and recommendations
-6. Outline implementation strategies with clear milestones
-
-Consider:
-- Code organization and modularity
-- Design patterns and architectural decisions
-- Technology stack appropriateness
-- Scalability and maintainability
-- Testing coverage and quality assurance
-- Documentation and developer experience
-
-Generate a comprehensive improvement roadmap with measurable goals and success criteria.`
-      },
-      {
-        id: 'develop',
-        name: 'Active Development',
-        description: 'Implement features, make changes, and enhance functionality',
-        systemPrompt: `You are a skilled software developer ready to implement features and make code changes. Your task is to:
-
-1. Understand the user's requirements and current codebase context
-2. Implement requested features with clean, maintainable code
-3. Follow existing code patterns and conventions
-4. Ensure type safety and error handling
-5. Provide complete, working solutions that integrate well with existing code
-6. Create appropriate tests when needed
-7. Update documentation if necessary
-
-When making changes:
-- Preserve existing functionality
-- Follow the established architecture and patterns
-- Write self-documenting code with clear variable names
-- Handle edge cases and error conditions
-- Optimize for performance where appropriate
-- Ensure compatibility with existing dependencies
-
-Deliver production-ready code that solves the user's problem effectively.`
-      }
-    ],
+    promptPresets: initialPromptPresets,
+    activePreset: initialActivePreset,
     projectPath: '',
     ultraModeActive: false,
     ultraModeStep: 0,
@@ -334,13 +395,24 @@ Deliver production-ready code that solves the user's problem effectively.`
     })),
 
     // File actions
-    openFile: (path, content) => set((state) => {
+    openFile: (path, content, lastModifiedMs) => set((state) => {
       const existing = state.openFiles.find(f => f.path === path);
       if (existing) {
-        return { activeFile: path };
+        return {
+          activeFile: path,
+          openFiles: state.openFiles.map(file =>
+            file.path === path
+              ? {
+                  ...file,
+                  content,
+                  lastModifiedMs: lastModifiedMs ?? file.lastModifiedMs,
+                }
+              : file
+          ),
+        };
       }
       return {
-        openFiles: [...state.openFiles, { path, content }],
+        openFiles: [...state.openFiles, { path, content, lastModifiedMs }],
         activeFile: path
       };
     }),
@@ -481,7 +553,27 @@ Deliver production-ready code that solves the user's problem effectively.`
 
     setGitInitialized: (initialized) => set({ gitInitialized: initialized }),
     setCommits: (commits) => set({ commits }),
-    setActivePreset: (preset) => set({ activePreset: preset }),
+    setActivePreset: (preset) => set((state) => {
+      const matchedPreset = preset
+        ? state.promptPresets.find((existingPreset) => existingPreset.id === preset.id) ?? preset
+        : null;
+
+      saveActivePresetId(matchedPreset?.id ?? null);
+      return { activePreset: matchedPreset };
+    }),
+    updatePromptPreset: (presetId, patch) => set((state) => {
+      const promptPresets = state.promptPresets.map((preset) => (
+        preset.id === presetId ? { ...preset, ...patch, id: preset.id } : preset
+      ));
+
+      savePromptPresets(promptPresets);
+
+      const activePreset = state.activePreset?.id === presetId
+        ? promptPresets.find((preset) => preset.id === presetId) ?? state.activePreset
+        : state.activePreset;
+
+      return { promptPresets, activePreset };
+    }),
     setProjectPath: (path: string) => set({ projectPath: path }),
     createProject: async (name: string, path: string) => {
       try {
