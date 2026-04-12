@@ -58,11 +58,48 @@ export function CodeEditor() {
           onMount={handleEditorDidMount}
           theme="vs-dark"
           options={{
-            minimap: { enabled: false },
+            minimap: { enabled: true, size: 'proportional' },
             fontSize: 14,
             lineNumbers: 'on',
             wordWrap: 'on',
             automaticLayout: true,
+            scrollBeyondLastLine: false,
+            renderWhitespace: 'selection',
+            bracketPairColorization: { enabled: true },
+            guides: {
+              bracketPairs: true,
+              indentation: true
+            },
+            suggest: {
+              showKeywords: true,
+              showSnippets: true
+            },
+            quickSuggestions: {
+              other: true,
+              comments: true,
+              strings: true
+            },
+            parameterHints: { enabled: true },
+            hover: { enabled: true },
+            contextmenu: true,
+            mouseWheelZoom: true,
+            smoothScrolling: true,
+            cursorBlinking: 'smooth',
+            cursorSmoothCaretAnimation: 'on',
+            renderLineHighlight: 'all',
+            selectionHighlight: true,
+            occurrencesHighlight: 'singleFile',
+            codeLens: true,
+            folding: true,
+            foldingHighlight: true,
+            showFoldingControls: 'mouseover',
+            matchBrackets: 'always',
+            autoClosingBrackets: 'always',
+            autoClosingQuotes: 'always',
+            autoSurround: 'languageDefined',
+            trimAutoWhitespace: true,
+            formatOnPaste: true,
+            formatOnType: true
           }}
         />
       ) : (

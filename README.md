@@ -43,6 +43,13 @@ Switch between three specialized modes directly in the prompt input:
 
 **General System Prompt**: Core development principles and guidelines that are always applied to all AI interactions, ensuring consistent quality standards across all operations.
 
+**Enhanced Code Interaction:**
+- **Precise Line Referencing**: AI references specific lines using `file_path:line_number` format (e.g., `src/app/page.tsx:42`)
+- **Structured Code Analysis**: Files presented with line numbers, language detection, and structural analysis
+- **Comprehensive Context**: Full project codebase awareness with intelligent file prioritization
+- **Rich Metadata**: File size, modification dates, import/export analysis for better understanding
+- **Professional Editor**: Monaco Editor with advanced features (folding, bracket matching, IntelliSense, etc.)
+
 #### Ultra Mode
 **Comprehensive Code Enhancement**: One-click execution of complete development workflow:
 - **Step 1**: Code Analysis & Planning - Deep codebase analysis and improvement roadmap

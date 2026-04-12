@@ -179,7 +179,7 @@ Deliver production-ready code that solves the user's problem effectively.`
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
-    generalPrompt: `## Core Development Principles
+    generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
 **Code Quality & Best Practices:**
 - Write clean, readable, and maintainable code following established patterns
@@ -206,23 +206,37 @@ Deliver production-ready code that solves the user's problem effectively.`
 - Write testable code with clear interfaces
 - Follow SOLID principles and design patterns
 
+**Code Reference Guidelines:**
+- When referencing specific code locations, use the exact format: \`file_path:line_number\` (e.g., \`src/app/page.tsx:42\`)
+- Reference line numbers from the numbered code blocks provided in context
+- Be precise about which files and lines you're referring to
+- When suggesting changes, provide the exact line numbers and surrounding context
+
+**Project Structure Awareness:**
+- Analyze the provided codebase structure and understand relationships between files
+- Consider imports, exports, and dependencies between modules
+- Maintain consistency with existing architectural patterns
+- Respect the project's file organization and naming conventions
+
+**Context-Aware Analysis:**
+- Use the provided code structure information to understand the codebase better
+- Consider the language-specific features and best practices
+- Analyze the relationships between different parts of the codebase
+- Understand the project's technology stack and framework usage
+
 **Documentation & Communication:**
 - Provide clear explanations of changes and reasoning
 - Document important functions and complex logic
 - Explain trade-offs and alternative approaches considered
 - Use clear, professional language in all communications
 
-**Project-Specific Considerations:**
-- Respect existing codebase architecture and patterns
-- Maintain backward compatibility unless explicitly requested otherwise
-- Consider the impact on existing functionality
-- Follow project's established conventions and standards
-
 **Response Format:**
 - Be specific and actionable in recommendations
 - Provide concrete code examples when suggesting changes
 - Explain the reasoning behind each suggestion
-- Prioritize solutions by importance and impact`,
+- Reference specific files and line numbers when possible
+- Prioritize solutions by importance and impact
+- Structure responses clearly with sections when appropriate`,
 
     // Project actions
     setCurrentProject: (project) => set({ currentProject: project }),

@@ -3,13 +3,62 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, File, Folder, FolderOpen, Code, FileText, Settings, Database, Image } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { FileNode } from '@/types';
 
 export function FileBrowser() {
   const { currentProject, openFile } = useAppStore();
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
+
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+
+    switch (extension) {
+      case 'js':
+      case 'jsx':
+      case 'ts':
+      case 'tsx':
+      case 'py':
+      case 'java':
+      case 'cpp':
+      case 'c':
+      case 'cs':
+      case 'php':
+      case 'rb':
+      case 'go':
+      case 'rs':
+        return <Code className="w-4 h-4 mr-2 text-blue-400" />;
+      case 'html':
+      case 'htm':
+      case 'xml':
+        return <FileText className="w-4 h-4 mr-2 text-orange-400" />;
+      case 'css':
+      case 'scss':
+      case 'sass':
+      case 'less':
+        return <FileText className="w-4 h-4 mr-2 text-blue-500" />;
+      case 'json':
+        return <Database className="w-4 h-4 mr-2 text-yellow-400" />;
+      case 'md':
+        return <FileText className="w-4 h-4 mr-2 text-gray-400" />;
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+      case 'gif':
+      case 'svg':
+        return <Image className="w-4 h-4 mr-2 text-green-400" />;
+      case 'config':
+      case 'conf':
+      case 'ini':
+      case 'toml':
+      case 'yaml':
+      case 'yml':
+        return <Settings className="w-4 h-4 mr-2 text-gray-500" />;
+      default:
+        return <File className="w-4 h-4 mr-2 text-neutral-400" />;
+    }
+  };
 
   const toggleDir = (path: string) => {
     const newExpanded = new Set(expandedDirs);
@@ -40,7 +89,7 @@ export function FileBrowser() {
     return (
       <div key={node.path}>
         <div
-          className={`flex items-center py-1 px-2 hover:bg-neutral-700 cursor-pointer text-sm ${
+          className={`flex items-center py-1 px-2 hover:bg-neutral-700 cursor-pointer text-sm group ${
             depth > 0 ? 'ml-4' : ''
           }`}
           onClick={() => node.type === 'directory' ? toggleDir(node.path) : handleFileClick(node)}
@@ -61,10 +110,17 @@ export function FileBrowser() {
           ) : (
             <>
               <div className="w-4 h-4 mr-1" />
-              <File className="w-4 h-4 mr-2 text-neutral-400" />
+              {getFileIcon(node.name)}
             </>
           )}
-          <span className="truncate">{node.name}</span>
+          <span className="truncate flex-1">{node.name}</span>
+
+          {/* File metadata on hover */}
+          {node.type === 'file' && (
+            <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-neutral-500">
+              {/* This would show file size, lines, etc. if we had metadata */}
+            </div>
+          )}
         </div>
 
         {node.type === 'directory' && isExpanded && node.children && (

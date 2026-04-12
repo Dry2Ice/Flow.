@@ -42,6 +42,21 @@ export interface PromptPreset {
   systemPrompt: string;
 }
 
+export interface FileWithMetadata {
+  path: string;
+  content: string;
+  metadata?: {
+    extension: string;
+    lineCount: number;
+    size: number;
+    isBinary: boolean;
+    hasImports: boolean;
+    hasExports: boolean;
+    language: string;
+    lastModified: string;
+  };
+}
+
 export interface PromptRequest {
   prompt: string;
   preset?: PromptPreset;
@@ -50,10 +65,7 @@ export interface PromptRequest {
     currentFile?: string;
     selectedCode?: string;
     projectId?: string;
-    projectFiles?: Array<{
-      path: string;
-      content: string;
-    }>;
+    projectFiles?: FileWithMetadata[];
   };
 }
 
