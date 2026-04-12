@@ -6,20 +6,38 @@ import { PromptInput } from '@/components/PromptInput';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { DiffViewer } from '@/components/DiffViewer';
 import { SettingsModal } from '@/components/SettingsModal';
+// Settings button component
+function SettingsButton() {
+  return (
+    <button
+      onClick={() => {
+        // SettingsModal manages its own state, just trigger it
+        const event = new CustomEvent('open-settings-modal');
+        window.dispatchEvent(event);
+      }}
+      className="p-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
+      title="AI Settings"
+    >
+      <Settings className="w-5 h-5 dark:text-neutral-300 light:text-gray-600" />
+    </button>
+  );
+}
 import { ProjectManager } from '@/components/ProjectManager';
 import { CodePreview } from '@/components/CodePreview';
 import { AIChat } from '@/components/AIChat';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { ProjectStats } from '@/components/ProjectStats';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
-import { FolderOpen, FileText, BarChart3, Zap, Activity } from 'lucide-react';
+import { FolderOpen, FileText, BarChart3, Zap, Activity, Settings } from 'lucide-react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
 export default function Home() {
   const { sidebarOpen, diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
   const [activeTab, setActiveTab] = useState<'files' | 'projects' | 'analytics'>('files');
+  const [leftPanelMode, setLeftPanelMode] = useState<'files' | 'stats'>('files');
 
   // Create demo project on first load
   useEffect(() => {
@@ -153,8 +171,9 @@ export default function Home() {
   const handlePanelResize = (sizes: number[]) => {
     setPanelSizes({
       sidebar: sizes[0] || panelSizes.sidebar,
-      centerVertical: sizes[1] || panelSizes.centerVertical,
-      rightPanel: sizes[2] || panelSizes.rightPanel,
+      centerVertical: sizes[2] || panelSizes.centerVertical, // Right top panel (plans)
+      rightPanel: sizes[3] || panelSizes.rightPanel, // Right bottom panel (chat)
+      rightVertical: panelSizes.rightVertical, // Keep existing
     });
   };
 
@@ -184,6 +203,7 @@ export default function Home() {
         </div>
 
         <div className="flex items-center justify-between relative z-10">
+          {/* Left side - Logo and title */}
           <div className="flex items-center gap-3 animate-slide-in">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg hover-scale hover-glow">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,6 +218,36 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Center - Control buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setLeftPanelMode(leftPanelMode === 'files' ? 'stats' : 'files')}
+              className="px-3 py-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
+              title={leftPanelMode === 'files' ? 'Show Project Statistics' : 'Show Files & Projects'}
+            >
+              <BarChart3 className={`w-5 h-5 transition-colors ${
+                leftPanelMode === 'files'
+                  ? 'dark:text-neutral-300 light:text-gray-600'
+                  : 'dark:text-blue-400 light:text-blue-600'
+              }`} />
+            </button>
+            <ThemeToggle />
+            <button
+              onClick={() => {
+                // SettingsModal manages its own state
+                const settingsButton = document.querySelector('button[title="AI Settings"]') as HTMLElement;
+                if (settingsButton) {
+                  settingsButton.click();
+                }
+              }}
+              className="p-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
+              title="AI Settings"
+            >
+              <Settings className="w-5 h-5 dark:text-neutral-300 light:text-gray-600" />
+            </button>
+          </div>
+
+          {/* Right side - Status */}
           <div className="flex items-center gap-4">
             {/* Connection status */}
             <div className="flex items-center gap-2 text-sm dark:text-neutral-300 light:text-gray-600 dark:bg-neutral-800/50 light:bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm dark:border-neutral-700/50 light:border-gray-200/50 border">
@@ -225,63 +275,69 @@ export default function Home() {
       {/* Main content with resizable panels */}
       <div className="flex-1 overflow-hidden">
         <Allotment
-          defaultSizes={[panelSizes.sidebar, 100 - panelSizes.sidebar - panelSizes.rightPanel, panelSizes.rightPanel]}
-          onChange={handlePanelResize}
+          defaultSizes={[
+            panelSizes.sidebar, // Left panel (files/stats)
+            100 - panelSizes.sidebar - panelSizes.centerVertical - panelSizes.rightPanel, // Center (code + preview)
+            panelSizes.centerVertical, // Right top (plans)
+            panelSizes.rightPanel // Right bottom (chat)
+          ]}
+          onChange={(sizes: number[]) => {
+            setPanelSizes({
+              sidebar: sizes[0] || panelSizes.sidebar,
+              centerVertical: sizes[2] || panelSizes.centerVertical, // Right top panel (plans)
+              rightPanel: sizes[3] || panelSizes.rightPanel, // Right bottom panel (chat)
+              rightVertical: panelSizes.rightVertical, // Keep existing
+            });
+          }}
         >
-          {/* Left Panel - Files & Projects */}
+          {/* Left Panel - Files/Projects or Statistics */}
           <Allotment.Pane minSize={200} maxSize={600}>
             <div className="h-full dark:bg-neutral-800 light:bg-white border-r dark:border-neutral-700 light:border-gray-200 flex flex-col transition-colors duration-300">
-              {/* Tab Navigation */}
-              <div className="flex border-b dark:border-neutral-700/50 light:border-gray-200/50 dark:bg-neutral-800/30 light:bg-white/30 backdrop-blur-sm">
-                <button
-                  onClick={() => setActiveTab('files')}
-                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
-                    activeTab === 'files'
-                      ? 'dark:text-blue-400 light:text-blue-600 border-b-2 border-blue-400 dark:bg-blue-500/10 light:bg-blue-50'
-                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
-                  }`}
-                >
-                  <FileText className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'files' ? 'scale-110' : 'group-hover:scale-105'}`} />
-                  Files
-                  {activeTab === 'files' && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('projects')}
-                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
-                    activeTab === 'projects'
-                      ? 'dark:text-purple-400 light:text-purple-600 border-b-2 border-purple-400 dark:bg-purple-500/10 light:bg-purple-50'
-                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
-                  }`}
-                >
-                  <FolderOpen className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'projects' ? 'scale-110' : 'group-hover:scale-105'}`} />
-                  Projects
-                  {activeTab === 'projects' && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('analytics')}
-                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
-                    activeTab === 'analytics'
-                      ? 'dark:text-green-400 light:text-green-600 border-b-2 border-green-400 dark:bg-green-500/10 light:bg-green-50'
-                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
-                  }`}
-                >
-                  <BarChart3 className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'analytics' ? 'scale-110' : 'group-hover:scale-105'}`} />
-                  Analytics
-                  {activeTab === 'analytics' && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
-                  )}
-                </button>
-              </div>
-
-              {/* Tab Content */}
+              {/* Left Panel Content */}
               <div className="flex-1 overflow-hidden">
-                {activeTab === 'files' && <FileBrowser />}
-                {activeTab === 'projects' && <ProjectManager />}
-                {activeTab === 'analytics' && <AnalyticsDashboard />}
+                {leftPanelMode === 'files' ? (
+                  <>
+                    {/* Tab Navigation */}
+                    <div className="flex border-b dark:border-neutral-700/50 light:border-gray-200/50 dark:bg-neutral-800/30 light:bg-white/30 backdrop-blur-sm">
+                      <button
+                        onClick={() => setActiveTab('files')}
+                        className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
+                          activeTab === 'files'
+                            ? 'dark:text-blue-400 light:text-blue-600 border-b-2 border-blue-400 dark:bg-blue-500/10 light:bg-blue-50'
+                            : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
+                        }`}
+                      >
+                        <FileText className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'files' ? 'scale-110' : 'group-hover:scale-105'}`} />
+                        Files
+                        {activeTab === 'files' && (
+                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('projects')}
+                        className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
+                          activeTab === 'projects'
+                            ? 'dark:text-purple-400 light:text-purple-600 border-b-2 border-purple-400 dark:bg-purple-500/10 light:bg-purple-50'
+                            : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
+                        }`}
+                      >
+                        <FolderOpen className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'projects' ? 'scale-110' : 'group-hover:scale-105'}`} />
+                        Projects
+                        {activeTab === 'projects' && (
+                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="flex-1 overflow-hidden">
+                      {activeTab === 'files' && <FileBrowser />}
+                      {activeTab === 'projects' && <ProjectManager />}
+                    </div>
+                  </>
+                ) : (
+                  <ProjectStats />
+                )}
               </div>
             </div>
           </Allotment.Pane>
@@ -301,19 +357,14 @@ export default function Home() {
             </Allotment>
           </Allotment.Pane>
 
-          {/* Right Panel - Plan & Chat */}
-          <Allotment.Pane minSize={250} maxSize={800}>
-            <Allotment vertical defaultSizes={[panelSizes.rightVertical, 100 - panelSizes.rightVertical]} onChange={handleRightResize}>
-              {/* Development Plan */}
-              <Allotment.Pane minSize={200}>
-                <DevelopmentPlan />
-              </Allotment.Pane>
+          {/* Right Panel Top - Development Plans */}
+          <Allotment.Pane minSize={200} maxSize={600}>
+            <DevelopmentPlan />
+          </Allotment.Pane>
 
-              {/* AI Chat */}
-              <Allotment.Pane minSize={150}>
-                <AIChat />
-              </Allotment.Pane>
-            </Allotment>
+          {/* Right Panel Bottom - AI Chat */}
+          <Allotment.Pane minSize={150} maxSize={600}>
+            <AIChat />
           </Allotment.Pane>
         </Allotment>
       </div>
@@ -328,9 +379,6 @@ export default function Home() {
 
       {/* Settings Modal */}
       <SettingsModal />
-
-      {/* Theme Toggle */}
-      <ThemeToggle />
     </main>
   );
 }
