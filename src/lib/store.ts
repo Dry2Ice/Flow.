@@ -51,9 +51,9 @@ interface AppState {
   // Workspace layout
   panelSizes: {
     sidebar: number;
-    mainVertical: number;
+    centerVertical: number;
+    rightVertical: number;
     rightPanel: number;
-    codePreview: number;
   };
 
   // Actions
@@ -198,9 +198,9 @@ Deliver production-ready code that solves the user's problem effectively.`
     ultraModeCurrentStep: '',
     panelSizes: {
       sidebar: 20, // percentage
-      mainVertical: 60, // percentage of main area
-      rightPanel: 25, // percentage
-      codePreview: 40 // percentage of code area
+      centerVertical: 60, // percentage of center area (code vs preview)
+      rightVertical: 50, // percentage of right area (plan vs chat)
+      rightPanel: 25, // percentage of total width
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 

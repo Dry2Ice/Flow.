@@ -80,23 +80,22 @@ export default function Home() {
   const handlePanelResize = (sizes: number[]) => {
     setPanelSizes({
       sidebar: sizes[0] || panelSizes.sidebar,
-      mainVertical: sizes[1] || panelSizes.mainVertical,
+      centerVertical: sizes[1] || panelSizes.centerVertical,
       rightPanel: sizes[2] || panelSizes.rightPanel,
     });
   };
 
-  const handleMainResize = (sizes: number[]) => {
+  const handleCenterResize = (sizes: number[]) => {
     // sizes[0] is code editor percentage, sizes[1] is preview percentage
-    // We store preview percentage
     setPanelSizes({
-      codePreview: sizes[1] || panelSizes.codePreview,
+      centerVertical: sizes[0] || panelSizes.centerVertical,
     });
   };
 
   const handleRightResize = (sizes: number[]) => {
     // sizes[0] is development plan percentage, sizes[1] is chat percentage
     setPanelSizes({
-      mainVertical: sizes[0] || panelSizes.mainVertical,
+      rightVertical: sizes[0] || panelSizes.rightVertical,
     });
   };
 
@@ -150,9 +149,9 @@ export default function Home() {
             </div>
           </Allotment.Pane>
 
-          {/* Main Center Area - Code & Preview */}
+          {/* Center Area - Code & Preview (Horizontal split) */}
           <Allotment.Pane minSize={300}>
-            <Allotment vertical defaultSizes={[100 - panelSizes.codePreview, panelSizes.codePreview]} onChange={handleMainResize}>
+            <Allotment defaultSizes={[panelSizes.centerVertical, 100 - panelSizes.centerVertical]} onChange={handleCenterResize}>
               {/* Code Editor */}
               <Allotment.Pane minSize={200}>
                 <CodeEditor />
@@ -167,7 +166,7 @@ export default function Home() {
 
           {/* Right Panel - Plan & Chat */}
           <Allotment.Pane minSize={250} maxSize={800}>
-            <Allotment vertical defaultSizes={[panelSizes.mainVertical, 100 - panelSizes.mainVertical]} onChange={handleRightResize}>
+            <Allotment vertical defaultSizes={[panelSizes.rightVertical, 100 - panelSizes.rightVertical]} onChange={handleRightResize}>
               {/* Development Plan */}
               <Allotment.Pane minSize={200}>
                 <DevelopmentPlan />

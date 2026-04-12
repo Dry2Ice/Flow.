@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Settings, Check } from 'lucide-react';
+import { X, Settings, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 import { PromptPreset } from '@/types';
@@ -112,6 +112,19 @@ export function SettingsModal() {
     setGeneralPromptText('');
   };
 
+  const handleResetLayout = () => {
+    const defaultSizes = {
+      sidebar: 20,
+      centerVertical: 60,
+      rightVertical: 50,
+      rightPanel: 25,
+    };
+    useAppStore.setState({ panelSizes: defaultSizes });
+    localStorage.setItem('workspace-layout', JSON.stringify(defaultSizes));
+    setMessage('Workspace layout reset to default!');
+    setTimeout(() => setMessage(''), 2000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -185,6 +198,20 @@ export function SettingsModal() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-6 max-h-[calc(90vh-80px)] overflow-y-auto">
+              {/* Quick Actions */}
+              <div className="border-b border-neutral-600 pb-4">
+                <h4 className="text-md font-medium text-neutral-200 mb-3">Quick Actions</h4>
+                <button
+                  type="button"
+                  onClick={handleResetLayout}
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset Workspace Layout
+                </button>
+                <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
+              </div>
+
               {/* API Configuration Section */}
               <div>
                 <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">

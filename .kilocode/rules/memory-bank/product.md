@@ -50,9 +50,9 @@ Starting a new Next.js project involves boilerplate setup, configuration decisio
 - **Progress Tracking**: Visual indicators for multi-step operations
 - **Enhanced Code Interaction**: Precise line referencing and structural analysis
 - **Professional Editor**: Monaco Editor with advanced development features
-- **Customizable Workspace**: Four resizable zones optimized for development workflow
+- **Customizable Workspace**: Four resizable zones with horizontal/vertical splitting
 - **Live Preview**: Real-time code preview with HTML rendering and execution
-- **Persistent Layout**: Saved panel sizes and user preferences
+- **Persistent Layout**: Saved panel sizes with reset to default functionality
 - **Multi-Project Management**: Create new projects or load existing ones
 - **Project Persistence**: Save and switch between multiple projects
 - **Tabbed Interface**: Organized file browser and project manager
