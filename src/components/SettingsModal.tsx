@@ -174,13 +174,6 @@ export function SettingsModal() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 p-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors z-10"
-        title="AI Settings"
-      >
-        <Settings className="w-5 h-5" />
-      </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

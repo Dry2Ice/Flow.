@@ -16,6 +16,41 @@ import {
   BarChart3
 } from 'lucide-react';
 
+const StatCard = ({ title, value, subtitle, icon: Icon, color = "blue" }: {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: any;
+  color?: string;
+}) => (
+  <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4 hover-lift">
+    <div className="flex items-center gap-3 mb-2">
+      <div className={`p-2 rounded-lg ${
+        color === 'blue' ? 'dark:bg-blue-500/20 light:bg-blue-100' :
+        color === 'green' ? 'dark:bg-green-500/20 light:bg-green-100' :
+        color === 'purple' ? 'dark:bg-purple-500/20 light:bg-purple-100' :
+        color === 'orange' ? 'dark:bg-orange-500/20 light:bg-orange-100' :
+        'dark:bg-neutral-700 light:bg-gray-100'
+      }`}>
+        <Icon className={`w-5 h-5 ${
+          color === 'blue' ? 'dark:text-blue-400 light:text-blue-600' :
+          color === 'green' ? 'dark:text-green-400 light:text-green-600' :
+          color === 'purple' ? 'dark:text-purple-400 light:text-purple-600' :
+          color === 'orange' ? 'dark:text-orange-400 light:text-orange-600' :
+          'dark:text-neutral-300 light:text-gray-600'
+        }`} />
+      </div>
+      <div>
+        <h4 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700">{title}</h4>
+        <p className="text-lg font-bold dark:text-white light:text-gray-900">{value}</p>
+      </div>
+    </div>
+    {subtitle && (
+      <p className="text-xs dark:text-neutral-500 light:text-gray-500 mt-2">{subtitle}</p>
+    )}
+  </div>
+);
+
 export function ProjectStats() {
   const { currentProject, openFiles, logs, aiRequests } = useAppStore();
 
@@ -54,12 +89,7 @@ export function ProjectStats() {
     const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
 
     // Activity statistics
-    const now = Date.now();
-    const recentLogs = logs.filter(log => {
-      const logTime = new Date(log.timestamp).getTime();
-      const oneDay = 24 * 60 * 60 * 1000;
-      return now - logTime < oneDay;
-    }).length;
+    const recentLogs = logs.length;
 
     return {
       totalFiles,
@@ -89,41 +119,6 @@ export function ProjectStats() {
       </div>
     );
   }
-
-  const StatCard = ({ title, value, subtitle, icon: Icon, color = "blue" }: {
-    title: string;
-    value: string | number;
-    subtitle?: string;
-    icon: any;
-    color?: string;
-  }) => (
-    <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4 hover-lift">
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`p-2 rounded-lg ${
-          color === 'blue' ? 'dark:bg-blue-500/20 light:bg-blue-100' :
-          color === 'green' ? 'dark:bg-green-500/20 light:bg-green-100' :
-          color === 'purple' ? 'dark:bg-purple-500/20 light:bg-purple-100' :
-          color === 'orange' ? 'dark:bg-orange-500/20 light:bg-orange-100' :
-          'dark:bg-neutral-700 light:bg-gray-100'
-        }`}>
-          <Icon className={`w-5 h-5 ${
-            color === 'blue' ? 'dark:text-blue-400 light:text-blue-600' :
-            color === 'green' ? 'dark:text-green-400 light:text-green-600' :
-            color === 'purple' ? 'dark:text-purple-400 light:text-purple-600' :
-            color === 'orange' ? 'dark:text-orange-400 light:text-orange-600' :
-            'dark:text-neutral-300 light:text-gray-600'
-          }`} />
-        </div>
-        <div>
-          <h4 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700">{title}</h4>
-          <p className="text-lg font-bold dark:text-white light:text-gray-900">{value}</p>
-        </div>
-      </div>
-      {subtitle && (
-        <p className="text-xs dark:text-neutral-500 light:text-gray-500 mt-2">{subtitle}</p>
-      )}
-    </div>
-  );
 
   return (
     <div className="h-full dark:bg-neutral-900 light:bg-gray-50 p-6 overflow-y-auto">
@@ -208,13 +203,13 @@ export function ProjectStats() {
             <div className="text-2xl font-bold dark:text-white light:text-gray-900 mb-1">
               {stats.totalRequests}
             </div>
-            <div className="text-xs dark:text-neutral-500 light:text-gray-500">AI Requests</div>
+            <div className="text-xs dark:text-neutral-500 light:text-gray-500 uppercase tracking-wide">AI Requests</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold dark:text-white light:text-gray-900 mb-1">
               {stats.recentLogs}
             </div>
-            <div className="text-xs dark:text-neutral-500 light:text-gray-500">Recent Logs</div>
+            <div className="text-xs dark:text-neutral-500 light:text-gray-500 uppercase tracking-wide">Total Logs</div>
           </div>
         </div>
       </div>
