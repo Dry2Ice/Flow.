@@ -25,14 +25,23 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setIsDark(!isDark)}
-      className="fixed top-4 right-16 p-2 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors z-10"
+      className="fixed top-4 right-16 p-3 rounded-xl transition-all duration-300 hover-lift hover-glow z-10 group backdrop-blur-sm border dark:border-neutral-700/50 dark:bg-neutral-800/80 dark:hover:bg-neutral-700/80 light:border-gray-200/50 light:bg-white/80 light:hover:bg-gray-50/80"
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
-      {isDark ? (
-        <Sun className="w-5 h-5 text-yellow-400" />
-      ) : (
-        <Moon className="w-5 h-5 text-blue-400" />
-      )}
+      <div className="relative w-6 h-6 flex items-center justify-center">
+        <Sun className={`w-6 h-6 text-yellow-500 transition-all duration-300 absolute ${
+          isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+        }`} />
+        <Moon className={`w-6 h-6 text-blue-600 transition-all duration-300 absolute ${
+          isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+        }`} />
+      </div>
+
+      {/* Tooltip */}
+      <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 px-2 py-1 dark:bg-neutral-900 dark:text-white dark:border-neutral-700 light:bg-white light:text-gray-900 light:border-gray-200 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border">
+        {isDark ? 'Switch to Light' : 'Switch to Dark'}
+        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 dark:bg-neutral-900 dark:border-neutral-700 light:bg-white light:border-gray-200 border-l border-t rotate-45"></div>
+      </div>
     </button>
   );
 }

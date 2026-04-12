@@ -28,7 +28,7 @@ const CircularProgress = ({ percentage, size = 60, strokeWidth = 4, color = "#66
           stroke="currentColor"
           strokeWidth={strokeWidth}
           fill="transparent"
-          className="text-neutral-700"
+          className="dark:text-neutral-700 light:text-gray-200"
         />
         <circle
           cx={size / 2}
@@ -44,7 +44,7 @@ const CircularProgress = ({ percentage, size = 60, strokeWidth = 4, color = "#66
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-bold text-white">{percentage}%</span>
+        <span className="text-sm font-bold dark:text-white light:text-gray-900">{percentage}%</span>
       </div>
     </div>
   );
@@ -58,20 +58,20 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color, progress }: {
   color: string;
   progress?: number;
 }) => (
-  <div className={`bg-neutral-800 border border-neutral-700 rounded-xl p-4 hover-lift hover-glow ${color} animate-fade-in`}>
+  <div className={`dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4 hover-lift hover-glow ${color} animate-fade-in shadow-sm dark:shadow-none`}>
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-neutral-700 rounded-lg">
-          <Icon className="w-5 h-5 text-neutral-300" />
+        <div className="p-2 dark:bg-neutral-700 light:bg-gray-100 rounded-lg">
+          <Icon className="w-5 h-5 dark:text-neutral-300 light:text-gray-600" />
         </div>
-        <h3 className="text-sm font-medium text-neutral-300">{title}</h3>
+        <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700">{title}</h3>
       </div>
       {progress !== undefined && (
         <CircularProgress percentage={progress} size={40} color="rgb(102, 126, 234)" />
       )}
     </div>
-    <div className="text-2xl font-bold text-white mb-1">{value}</div>
-    {subtitle && <p className="text-xs text-neutral-500">{subtitle}</p>}
+    <div className="text-2xl font-bold dark:text-white light:text-gray-900 mb-1">{value}</div>
+    {subtitle && <p className="text-xs dark:text-neutral-500 light:text-gray-500">{subtitle}</p>}
   </div>
 );
 
@@ -112,14 +112,14 @@ export function AnalyticsDashboard() {
   }, [logs]);
 
   return (
-    <div className="h-full bg-neutral-900 p-4 space-y-6">
+    <div className="h-full dark:bg-neutral-900 light:bg-gray-50 p-4 space-y-6 transition-colors duration-300">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
           <BarChart3 className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-white">Analytics Dashboard</h2>
-          <p className="text-sm text-neutral-400">Project insights and development metrics</p>
+          <h2 className="text-lg font-semibold dark:text-white light:text-gray-900">Analytics Dashboard</h2>
+          <p className="text-sm dark:text-neutral-400 light:text-gray-600">Project insights and development metrics</p>
         </div>
       </div>
 
@@ -159,42 +159,42 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* AI Usage Stats */}
-      <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-6 hover-lift glass animate-fade-in">
-        <h3 className="text-sm font-medium text-neutral-300 mb-4 flex items-center gap-2">
+      <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-6 hover-lift glass animate-fade-in shadow-sm dark:shadow-none">
+        <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-4 flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-blue-400" />
           AI Usage Analytics
         </h3>
         <div className="grid grid-cols-2 gap-6">
           <div className="text-center">
-            <div className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <div className="text-3xl font-bold dark:text-white light:text-gray-900 mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               {stats.totalTokens.toLocaleString()}
             </div>
-            <div className="text-xs text-neutral-500 uppercase tracking-wide">Total Tokens</div>
-            <div className="mt-2 w-full bg-neutral-700 rounded-full h-1">
+            <div className="text-xs dark:text-neutral-500 light:text-gray-500 uppercase tracking-wide">Total Tokens</div>
+            <div className="mt-2 w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-1">
               <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-1 rounded-full animate-pulse" style={{width: '100%'}}></div>
             </div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+            <div className="text-3xl font-bold dark:text-white light:text-gray-900 mb-2 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
               {stats.averageTokensPerRequest.toFixed(0)}
             </div>
-            <div className="text-xs text-neutral-500 uppercase tracking-wide">Avg per Request</div>
-            <div className="mt-2 w-full bg-neutral-700 rounded-full h-1">
+            <div className="text-xs dark:text-neutral-500 light:text-gray-500 uppercase tracking-wide">Avg per Request</div>
+            <div className="mt-2 w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-1">
               <div className="bg-gradient-to-r from-green-500 to-blue-500 h-1 rounded-full animate-pulse" style={{width: '70%'}}></div>
             </div>
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-neutral-700">
-          <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>Efficiency: {stats.totalRequests > 0 ? 'High' : 'No Data'}</span>
-            <span>Last Updated: Just now</span>
+        <div className="mt-4 pt-4 dark:border-t dark:border-neutral-700 light:border-t light:border-gray-200">
+          <div className="flex items-center justify-center gap-2 text-xs dark:text-neutral-400 light:text-gray-500">
+            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Auto-updating every 30 seconds</span>
           </div>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-6 hover-lift glass animate-fade-in">
-        <h3 className="text-sm font-medium text-neutral-300 mb-4 flex items-center gap-2">
+      <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-6 hover-lift glass animate-fade-in shadow-sm dark:shadow-none">
+        <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-4 flex items-center gap-2">
           <Clock className="w-4 h-4 text-purple-400" />
           Recent Activity
           <div className="ml-auto flex items-center gap-1">
@@ -205,19 +205,19 @@ export function AnalyticsDashboard() {
         <div className="space-y-3">
           {recentActivity.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
-              <p className="text-sm text-neutral-500">No recent activity</p>
+              <Clock className="w-8 h-8 dark:text-neutral-600 light:text-gray-400 mx-auto mb-2" />
+              <p className="text-sm dark:text-neutral-500 light:text-gray-500">No recent activity</p>
             </div>
           ) : (
             recentActivity.map((log, index) => (
               <div key={log.id} className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200 hover-scale animate-slide-in`} style={{animationDelay: `${index * 0.1}s`}}>
-                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                   log.type === 'success' ? 'bg-green-400 shadow-green-400/50 shadow-lg' :
                   log.type === 'error' ? 'bg-red-400 shadow-red-400/50 shadow-lg' :
                   log.type === 'warning' ? 'bg-yellow-400 shadow-yellow-400/50 shadow-lg' : 'bg-blue-400 shadow-blue-400/50 shadow-lg'
                 }`} />
-                <span className="text-neutral-300 flex-1 text-sm">{log.message}</span>
-                <span className="text-neutral-500 text-xs font-mono">
+                <span className="dark:text-neutral-300 light:text-gray-700 flex-1 text-sm">{log.message}</span>
+                <span className="dark:text-neutral-500 light:text-gray-500 text-xs font-mono">
                   {log.timestamp.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
                 </span>
               </div>
@@ -227,17 +227,17 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Project Health Indicator */}
-      <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-6 hover-lift glass animate-fade-in">
-        <h3 className="text-sm font-medium text-neutral-300 mb-4 flex items-center gap-2">
+      <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-6 hover-lift glass animate-fade-in shadow-sm dark:shadow-none">
+        <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-4 flex items-center gap-2">
           <Target className="w-4 h-4 text-green-400" />
           Project Health
           <div className="ml-auto">
             <div className={`px-2 py-1 rounded-full text-xs font-medium ${
               (stats.taskCompletionRate + stats.bugResolutionRate + stats.requestSuccessRate) / 3 > 70
-                ? 'bg-green-500/20 text-green-400'
+                ? 'dark:bg-green-500/20 dark:text-green-400 light:bg-green-100 light:text-green-700'
                 : (stats.taskCompletionRate + stats.bugResolutionRate + stats.requestSuccessRate) / 3 > 40
-                ? 'bg-yellow-500/20 text-yellow-400'
-                : 'bg-red-500/20 text-red-400'
+                ? 'dark:bg-yellow-500/20 dark:text-yellow-400 light:bg-yellow-100 light:text-yellow-700'
+                : 'dark:bg-red-500/20 dark:text-red-400 light:bg-red-100 light:text-red-700'
             }`}>
               {((stats.taskCompletionRate + stats.bugResolutionRate + stats.requestSuccessRate) / 3).toFixed(0)}% Healthy
             </div>
@@ -246,13 +246,13 @@ export function AnalyticsDashboard() {
         <div className="space-y-4">
           <div className="group">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-neutral-400 flex items-center gap-2">
+              <span className="dark:text-neutral-400 light:text-gray-600 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-400" />
                 Task Completion
               </span>
-              <span className="text-neutral-300 font-medium">{stats.taskCompletionRate.toFixed(1)}%</span>
+              <span className="dark:text-neutral-300 light:text-gray-700 font-medium">{stats.taskCompletionRate.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-neutral-700 rounded-full h-3 overflow-hidden">
+            <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out group-hover:shadow-lg group-hover:shadow-green-500/30"
                 style={{ width: `${stats.taskCompletionRate}%` }}
@@ -262,13 +262,13 @@ export function AnalyticsDashboard() {
 
           <div className="group">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-neutral-400 flex items-center gap-2">
+              <span className="dark:text-neutral-400 light:text-gray-600 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-blue-400" />
                 Bug Resolution
               </span>
-              <span className="text-neutral-300 font-medium">{stats.bugResolutionRate.toFixed(1)}%</span>
+              <span className="dark:text-neutral-300 light:text-gray-700 font-medium">{stats.bugResolutionRate.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-neutral-700 rounded-full h-3 overflow-hidden">
+            <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full transition-all duration-1000 ease-out group-hover:shadow-lg group-hover:shadow-blue-500/30"
                 style={{ width: `${stats.bugResolutionRate}%` }}
@@ -278,13 +278,13 @@ export function AnalyticsDashboard() {
 
           <div className="group">
             <div className="flex justify-between text-sm mb-2">
-              <span className="text-neutral-400 flex items-center gap-2">
+              <span className="dark:text-neutral-400 light:text-gray-600 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-purple-400" />
                 AI Success Rate
               </span>
-              <span className="text-neutral-300 font-medium">{stats.requestSuccessRate.toFixed(1)}%</span>
+              <span className="dark:text-neutral-300 light:text-gray-700 font-medium">{stats.requestSuccessRate.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-neutral-700 rounded-full h-3 overflow-hidden">
+            <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
                 className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-1000 ease-out group-hover:shadow-lg group-hover:shadow-purple-500/30"
                 style={{ width: `${stats.requestSuccessRate}%` }}
@@ -293,8 +293,8 @@ export function AnalyticsDashboard() {
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-neutral-700">
-          <div className="flex items-center justify-center gap-2 text-xs text-neutral-400">
+        <div className="mt-4 pt-4 dark:border-t dark:border-neutral-700 light:border-t light:border-gray-200">
+          <div className="flex items-center justify-center gap-2 text-xs dark:text-neutral-400 light:text-gray-500">
             <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
             <span>Auto-updating every 30 seconds</span>
           </div>

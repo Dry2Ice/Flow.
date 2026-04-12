@@ -173,14 +173,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-900 text-white flex flex-col">
+    <main className="min-h-screen dark:bg-neutral-900 dark:text-white light:bg-gray-50 light:text-gray-900 flex flex-col transition-colors duration-300">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900 border-b border-neutral-700 p-4 shadow-xl relative overflow-hidden">
+      <header className="dark:bg-gradient-to-r dark:from-blue-900 dark:via-purple-900 dark:to-indigo-900 light:bg-gradient-to-r light:from-blue-50 light:via-purple-50 light:to-indigo-50 border-b dark:border-neutral-700 light:border-gray-200 p-4 shadow-xl relative overflow-hidden transition-colors duration-300">
         {/* Animated background elements */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-1/4 w-32 h-32 bg-blue-400 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute top-4 right-1/3 w-24 h-24 bg-purple-400 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute bottom-2 right-1/4 w-20 h-20 bg-indigo-400 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-0 left-1/4 w-32 h-32 dark:bg-blue-400 light:bg-blue-300 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-4 right-1/3 w-24 h-24 dark:bg-purple-400 light:bg-purple-300 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-2 right-1/4 w-20 h-20 dark:bg-indigo-400 light:bg-indigo-300 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}}></div>
         </div>
 
         <div className="flex items-center justify-between relative z-10">
@@ -191,16 +191,16 @@ export default function Home() {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold dark:text-white light:text-gray-900 bg-gradient-to-r dark:from-white dark:to-blue-200 light:from-blue-600 light:to-purple-600 bg-clip-text text-transparent">
                 Flow
               </h1>
-              <p className="text-sm text-blue-200 font-medium">AI-Powered Development Platform</p>
+              <p className="text-sm dark:text-blue-200 light:text-blue-600 font-medium">AI-Powered Development Platform</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             {/* Connection status */}
-            <div className="flex items-center gap-2 text-sm text-neutral-300 bg-neutral-800/50 px-3 py-1 rounded-full backdrop-blur-sm border border-neutral-700/50">
+            <div className="flex items-center gap-2 text-sm dark:text-neutral-300 light:text-gray-600 dark:bg-neutral-800/50 light:bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm dark:border-neutral-700/50 light:border-gray-200/50 border">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-green-400/50 shadow-lg"></div>
                 <span className="font-medium">AI Connected</span>
@@ -208,7 +208,7 @@ export default function Home() {
             </div>
 
             {/* Quick stats */}
-            <div className="hidden md:flex items-center gap-4 text-xs text-neutral-400">
+            <div className="hidden md:flex items-center gap-4 text-xs dark:text-neutral-400 light:text-gray-500">
               <div className="flex items-center gap-1">
                 <Zap className="w-3 h-3" />
                 <span>Ultra Mode Ready</span>
@@ -230,15 +230,15 @@ export default function Home() {
         >
           {/* Left Panel - Files & Projects */}
           <Allotment.Pane minSize={200} maxSize={600}>
-            <div className="h-full bg-neutral-800 border-r border-neutral-700 flex flex-col">
+            <div className="h-full dark:bg-neutral-800 light:bg-white border-r dark:border-neutral-700 light:border-gray-200 flex flex-col transition-colors duration-300">
               {/* Tab Navigation */}
-              <div className="flex border-b border-neutral-700/50 bg-neutral-800/30 backdrop-blur-sm">
+              <div className="flex border-b dark:border-neutral-700/50 light:border-gray-200/50 dark:bg-neutral-800/30 light:bg-white/30 backdrop-blur-sm">
                 <button
                   onClick={() => setActiveTab('files')}
                   className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
                     activeTab === 'files'
-                      ? 'text-blue-400 bg-blue-500/10 border-b-2 border-blue-400 shadow-lg'
-                      : 'text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700/30'
+                      ? 'dark:text-blue-400 light:text-blue-600 border-b-2 border-blue-400 dark:bg-blue-500/10 light:bg-blue-50'
+                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
                   }`}
                 >
                   <FileText className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'files' ? 'scale-110' : 'group-hover:scale-105'}`} />
@@ -251,8 +251,8 @@ export default function Home() {
                   onClick={() => setActiveTab('projects')}
                   className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
                     activeTab === 'projects'
-                      ? 'text-purple-400 bg-purple-500/10 border-b-2 border-purple-400 shadow-lg'
-                      : 'text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700/30'
+                      ? 'dark:text-purple-400 light:text-purple-600 border-b-2 border-purple-400 dark:bg-purple-500/10 light:bg-purple-50'
+                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
                   }`}
                 >
                   <FolderOpen className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'projects' ? 'scale-110' : 'group-hover:scale-105'}`} />
@@ -265,8 +265,8 @@ export default function Home() {
                   onClick={() => setActiveTab('analytics')}
                   className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
                     activeTab === 'analytics'
-                      ? 'text-green-400 bg-green-500/10 border-b-2 border-green-400 shadow-lg'
-                      : 'text-neutral-400 hover:text-neutral-300 hover:bg-neutral-700/30'
+                      ? 'dark:text-green-400 light:text-green-600 border-b-2 border-green-400 dark:bg-green-500/10 light:bg-green-50'
+                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
                   }`}
                 >
                   <BarChart3 className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'analytics' ? 'scale-110' : 'group-hover:scale-105'}`} />

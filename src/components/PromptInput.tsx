@@ -301,25 +301,25 @@ export function PromptInput() {
   };
 
   return (
-    <div className="p-6 bg-gradient-to-r from-neutral-800 to-neutral-900 border-t border-neutral-700/50">
+    <div className="p-6 dark:bg-gradient-to-r dark:from-neutral-800 dark:to-neutral-900 light:bg-gradient-to-r light:from-gray-50 light:to-white border-t dark:border-neutral-700/50 light:border-gray-200/50 transition-colors duration-300">
       {ultraModeActive && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl hover-lift animate-fade-in">
+        <div className="mb-4 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl hover-lift animate-fade-in dark:bg-neutral-800/50 light:bg-yellow-50/50 dark:border-yellow-500/30 light:border-yellow-300/30">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
               <span className="text-sm font-medium text-yellow-400">Ultra Mode Active</span>
             </div>
-            <span className="text-xs text-neutral-400 bg-neutral-800 px-2 py-1 rounded-full">
+            <span className="text-xs dark:text-neutral-400 light:text-gray-600 dark:bg-neutral-800 light:bg-white px-2 py-1 rounded-full">
               {ultraModeStep} / {ultraModeTotalSteps}
             </span>
           </div>
-          <div className="w-full bg-neutral-700 rounded-full h-3 mb-3 overflow-hidden">
+          <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-3 mb-3 overflow-hidden">
             <div
               className="bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
               style={{ width: `${(ultraModeStep / ultraModeTotalSteps) * 100}%` }}
             />
           </div>
-          <p className="text-sm text-neutral-300 font-medium">{ultraModeCurrentStep}</p>
+          <p className="text-sm dark:text-neutral-300 light:text-gray-700 font-medium">{ultraModeCurrentStep}</p>
         </div>
       )}
 
@@ -344,8 +344,8 @@ export function PromptInput() {
               disabled={ultraModeActive}
               className={`p-4 rounded-xl border-2 transition-all duration-300 text-left hover-lift group animate-fade-in ${
                 activePreset?.id === preset.id
-                  ? 'border-blue-400 bg-gradient-to-br from-blue-500/20 to-purple-500/10 shadow-xl shadow-blue-500/30 scale-105'
-                  : 'border-neutral-600/50 bg-neutral-800/50 hover:border-neutral-500 hover:bg-neutral-700/70 hover:shadow-lg'
+                  ? 'dark:border-blue-400 dark:bg-gradient-to-br dark:from-blue-500/20 dark:to-purple-500/10 light:border-blue-500 light:bg-blue-50 shadow-xl shadow-blue-500/30 scale-105'
+                  : 'dark:border-neutral-600/50 dark:bg-neutral-800/50 light:border-gray-300/50 light:bg-gray-100/50 dark:hover:border-neutral-500 dark:hover:bg-neutral-700/70 light:hover:border-gray-400 light:hover:bg-gray-200/70 hover:shadow-lg'
               } ${ultraModeActive ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
               style={{animationDelay: `${index * 0.1}s`}}
             >
@@ -356,13 +356,13 @@ export function PromptInput() {
                   'bg-gradient-to-r from-green-400 to-emerald-400 shadow-green-400/50 shadow-lg'
                 } ${activePreset?.id === preset.id ? 'animate-pulse' : ''}`} />
                 <span className={`text-sm font-semibold transition-colors ${
-                  activePreset?.id === preset.id ? 'text-white' : 'text-neutral-200 group-hover:text-white'
+                  activePreset?.id === preset.id ? 'dark:text-white light:text-blue-900' : 'dark:text-neutral-200 dark:group-hover:text-white light:text-gray-700 light:group-hover:text-blue-900'
                 }`}>
                   {preset.name}
                 </span>
               </div>
               <p className={`text-xs leading-relaxed transition-colors ${
-                activePreset?.id === preset.id ? 'text-blue-200' : 'text-neutral-400 group-hover:text-neutral-300'
+                activePreset?.id === preset.id ? 'dark:text-blue-200 light:text-blue-700' : 'dark:text-neutral-400 dark:group-hover:text-neutral-300 light:text-gray-500 light:group-hover:text-gray-700'
               }`}>
                 {preset.description}
               </p>
@@ -380,8 +380,8 @@ export function PromptInput() {
             disabled={ultraModeActive || !projectPath}
             className={`px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-3 transition-all duration-300 hover-lift hover-glow ${
               ultraModeActive
-                ? 'bg-gradient-to-r from-yellow-600 to-orange-600 cursor-not-allowed opacity-75'
-                : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 shadow-xl hover:shadow-purple-500/30'
+                ? 'dark:bg-gradient-to-r dark:from-yellow-600 dark:to-orange-600 light:bg-gradient-to-r light:from-yellow-400 light:to-orange-400 cursor-not-allowed opacity-75'
+                : 'dark:bg-gradient-to-r dark:from-purple-600 dark:via-pink-600 dark:to-purple-700 dark:hover:from-purple-700 dark:hover:via-pink-700 dark:hover:to-purple-800 light:bg-gradient-to-r light:from-purple-500 light:via-pink-500 light:to-purple-600 light:hover:from-purple-600 light:hover:via-pink-600 light:hover:to-purple-700 shadow-xl hover:shadow-purple-500/30'
             }`}
           >
             <div className={`p-1 rounded-lg ${ultraModeActive ? 'bg-yellow-400/20' : 'bg-white/20'}`}>
@@ -407,16 +407,16 @@ export function PromptInput() {
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder="Describe what you want to build or modify with AI assistance..."
-            className={`w-full p-4 bg-neutral-800/50 border-2 rounded-xl resize-none transition-all duration-300 focus:outline-none focus:ring-2 backdrop-blur-sm ${
+            className={`w-full p-4 dark:bg-neutral-800/50 light:bg-white/50 border-2 rounded-xl resize-none transition-all duration-300 focus:outline-none focus:ring-2 backdrop-blur-sm ${
               ultraModeActive
-                ? 'border-neutral-600 cursor-not-allowed opacity-50'
-                : 'border-neutral-600/50 focus:border-blue-400 focus:bg-neutral-800 hover:border-neutral-500 hover:bg-neutral-800/70'
+                ? 'dark:border-neutral-600 light:border-gray-300 cursor-not-allowed opacity-50'
+                : 'dark:border-neutral-600/50 dark:focus:border-blue-400 dark:focus:bg-neutral-800 light:border-gray-300/50 light:focus:border-blue-500 light:focus:bg-white dark:hover:border-neutral-500 dark:hover:bg-neutral-800/70 light:hover:border-gray-400 light:hover:bg-white/70'
             }`}
             rows={3}
             disabled={ultraModeActive}
           />
           {!ultraModeActive && (
-            <div className="absolute bottom-3 right-3 text-xs text-neutral-500">
+            <div className="absolute bottom-3 right-3 text-xs dark:text-neutral-500 light:text-gray-500">
               {prompt.length}/1000
             </div>
           )}
@@ -426,25 +426,25 @@ export function PromptInput() {
           disabled={ultraModeActive || !prompt.trim()}
           className={`px-6 py-4 rounded-xl flex items-center gap-2 transition-all duration-300 hover-lift hover-glow font-semibold ${
             ultraModeActive || !prompt.trim()
-              ? 'bg-neutral-700 cursor-not-allowed opacity-50'
-              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-blue-500/30'
+              ? 'dark:bg-neutral-700 light:bg-gray-300 cursor-not-allowed opacity-50'
+              : 'dark:bg-gradient-to-r dark:from-blue-600 dark:to-purple-600 dark:hover:from-blue-700 dark:hover:to-purple-700 light:bg-gradient-to-r light:from-blue-500 light:to-purple-500 light:hover:from-blue-600 light:hover:to-purple-600 shadow-lg hover:shadow-blue-500/30'
           }`}
         >
           <Send className={`w-5 h-5 transition-transform duration-200 ${!ultraModeActive && prompt.trim() ? 'hover:scale-110' : ''}`} />
-          <span className="hidden sm:inline text-white">Send to AI</span>
+          <span className="hidden sm:inline dark:text-white light:text-white">Send to AI</span>
         </button>
       </form>
 
       {/* Request History */}
-      <div className="mt-4 bg-neutral-800/30 rounded-xl p-4 backdrop-blur-sm border border-neutral-700/30">
+      <div className="mt-4 dark:bg-neutral-800/30 light:bg-white/30 rounded-xl p-4 backdrop-blur-sm dark:border-neutral-700/30 light:border-gray-200/30 border">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-          <span className="text-sm font-medium text-neutral-300">Recent Requests</span>
-          <span className="text-xs text-neutral-500 ml-auto">{sessionRequests.length} total</span>
+          <span className="text-sm font-medium dark:text-neutral-300 light:text-gray-700">Recent Requests</span>
+          <span className="text-xs dark:text-neutral-500 light:text-gray-500 ml-auto">{sessionRequests.length} total</span>
         </div>
         <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
           {sessionRequests.length === 0 ? (
-            <div className="text-center py-4 text-neutral-500 text-sm">
+            <div className="text-center py-4 dark:text-neutral-500 light:text-gray-500 text-sm">
               No requests yet. Start by sending a prompt!
             </div>
           ) : (
@@ -452,10 +452,10 @@ export function PromptInput() {
               <div
                 key={request.id}
                 className={`flex items-center justify-between rounded-lg border backdrop-blur-sm px-3 py-2 text-sm transition-all duration-200 hover-scale animate-slide-in ${
-                  request.status === 'completed' ? 'border-green-500/30 bg-green-500/5' :
-                  request.status === 'running' ? 'border-blue-500/30 bg-blue-500/5' :
-                  request.status === 'failed' ? 'border-red-500/30 bg-red-500/5' :
-                  'border-neutral-700/50 bg-neutral-800/30'
+                  request.status === 'completed' ? 'dark:border-green-500/30 dark:bg-green-500/5 light:border-green-300/30 light:bg-green-50/50' :
+                  request.status === 'running' ? 'dark:border-blue-500/30 dark:bg-blue-500/5 light:border-blue-300/30 light:bg-blue-50/50' :
+                  request.status === 'failed' ? 'dark:border-red-500/30 dark:bg-red-500/5 light:border-red-300/30 light:bg-red-50/50' :
+                  'dark:border-neutral-700/50 dark:bg-neutral-800/30 light:border-gray-300/50 light:bg-gray-100/30'
                 }`}
                 style={{animationDelay: `${index * 0.05}s`}}
               >
@@ -466,16 +466,16 @@ export function PromptInput() {
                     request.status === 'failed' ? 'bg-red-400 shadow-red-400/50 shadow-lg' :
                     'bg-yellow-400 shadow-yellow-400/50 shadow-lg'
                   }`} />
-                  <span className="truncate text-neutral-300 font-medium" title={request.prompt}>
+                  <span className="truncate dark:text-neutral-300 light:text-gray-700 font-medium" title={request.prompt}>
                     {request.prompt}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${
-                    request.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                    request.status === 'running' ? 'bg-blue-500/20 text-blue-400' :
-                    request.status === 'failed' ? 'bg-red-500/20 text-red-400' :
-                    'bg-yellow-500/20 text-yellow-400'
+                    request.status === 'completed' ? 'dark:bg-green-500/20 dark:text-green-400 light:bg-green-100 light:text-green-700' :
+                    request.status === 'running' ? 'dark:bg-blue-500/20 dark:text-blue-400 light:bg-blue-100 light:text-blue-700' :
+                    request.status === 'failed' ? 'dark:bg-red-500/20 dark:text-red-400 light:bg-red-100 light:text-red-700' :
+                    'dark:bg-yellow-500/20 dark:text-yellow-400 light:bg-yellow-100 light:text-yellow-700'
                   }`}>
                     {request.status}
                   </span>
@@ -484,7 +484,7 @@ export function PromptInput() {
                       type="button"
                       onClick={() => cancelJob(request.jobId)}
                       disabled={request.status !== 'running'}
-                      className="p-1 rounded hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 rounded dark:hover:bg-neutral-700 light:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Cancel job"
                     >
                       <Square className="w-3 h-3 text-yellow-400" />
@@ -493,7 +493,7 @@ export function PromptInput() {
                       type="button"
                       onClick={() => retryJob(request.jobId)}
                       disabled={request.status === 'running'}
-                      className="p-1 rounded hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 rounded dark:hover:bg-neutral-700 light:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Retry job"
                     >
                       <RotateCcw className="w-3 h-3 text-blue-400" />
