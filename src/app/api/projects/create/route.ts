@@ -4,6 +4,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+function ensureDirectory(dirPath: string, createdDirectories: string[]) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    createdDirectories.push(dirPath);
+  }
+}
+
+function writeFileWithErrorHandling(
+  filePath: string,
+  content: string,
+  createdFiles: string[]
+) {
+  try {
+    fs.writeFileSync(filePath, content);
+    createdFiles.push(filePath);
+  } catch (error) {
+    throw new Error(
+      `Failed to write file "${filePath}": ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { name, path: projectPath } = await request.json();
@@ -15,22 +37,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create project directory if it doesn't exist
-    if (!fs.existsSync(projectPath)) {
-      fs.mkdirSync(projectPath, { recursive: true });
-    }
+    const createdDirectories: string[] = [];
+    const createdFiles: string[] = [];
 
-    // Create basic project structure
+    // Create project directory and base structure
+    ensureDirectory(projectPath, createdDirectories);
+
     const srcDir = path.join(projectPath, 'src');
+    const appDir = path.join(projectPath, 'src', 'app');
     const publicDir = path.join(projectPath, 'public');
 
-    if (!fs.existsSync(srcDir)) {
-      fs.mkdirSync(srcDir, { recursive: true });
-    }
-
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
+    ensureDirectory(srcDir, createdDirectories);
+    ensureDirectory(appDir, createdDirectories);
+    ensureDirectory(publicDir, createdDirectories);
 
     // Create basic files
     const packageJson = {
@@ -56,9 +75,56 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    fs.writeFileSync(
+    writeFileWithErrorHandling(
       path.join(projectPath, 'package.json'),
-      JSON.stringify(packageJson, null, 2)
+      JSON.stringify(packageJson, null, 2),
+      createdFiles
+    );
+
+    const tsconfigContent = JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2022',
+          lib: ['dom', 'dom.iterable', 'esnext'],
+          strict: true,
+          noEmit: true,
+          module: 'esnext',
+          moduleResolution: 'bundler',
+          resolveJsonModule: true,
+          isolatedModules: true,
+          jsx: 'preserve',
+          incremental: true,
+          plugins: [{ name: 'next' }]
+        },
+        include: ['next-env.d.ts', '**/*.ts', '**/*.tsx'],
+        exclude: ['node_modules']
+      },
+      null,
+      2
+    );
+
+    writeFileWithErrorHandling(
+      path.join(projectPath, 'tsconfig.json'),
+      tsconfigContent,
+      createdFiles
+    );
+
+    const gitignoreContent = `.next
+node_modules
+out
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+`;
+
+    writeFileWithErrorHandling(
+      path.join(projectPath, '.gitignore'),
+      gitignoreContent,
+      createdFiles
     );
 
     // Create basic Next.js files
@@ -83,12 +149,16 @@ export async function POST(request: NextRequest) {
   )
 }`;
 
-    fs.writeFileSync(path.join(srcDir, 'app', 'layout.tsx'), layoutContent);
-    fs.writeFileSync(path.join(srcDir, 'app', 'page.tsx'), pageContent);
+    writeFileWithErrorHandling(path.join(appDir, 'layout.tsx'), layoutContent, createdFiles);
+    writeFileWithErrorHandling(path.join(appDir, 'page.tsx'), pageContent, createdFiles);
 
     return NextResponse.json({
       success: true,
-      message: `Project ${name} created successfully at ${projectPath}`
+      message: `Project ${name} created successfully at ${projectPath}`,
+      created: {
+        directories: createdDirectories,
+        files: createdFiles
+      }
     });
   } catch (error) {
     console.error('Failed to create project:', error);

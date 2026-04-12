@@ -53,6 +53,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Project manager with tabbed interface for files and projects
 - [x] API endpoints for project creation and loading
 - [x] Persistent project management and switching
+- [x] Hardened project creation API with safe app dir creation, per-file write errors, template tsconfig/.gitignore, and created paths response
 
 ## Current Structure
 
@@ -129,3 +130,4 @@ export async function GET() {
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| 2026-04-12 | Hardened `POST /api/projects/create` with explicit `src/app` directory creation, robust file-write error handling, generated `tsconfig.json` + `.gitignore`, and response metadata for created files/directories |
