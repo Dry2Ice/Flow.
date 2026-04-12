@@ -8,6 +8,28 @@ import {
   WorkspaceSecurityError,
 } from '@/lib/workspace-security';
 
+function ensureDirectory(dirPath: string, createdDirectories: string[]) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    createdDirectories.push(dirPath);
+  }
+}
+
+function writeFileWithErrorHandling(
+  filePath: string,
+  content: string,
+  createdFiles: string[]
+) {
+  try {
+    fs.writeFileSync(filePath, content);
+    createdFiles.push(filePath);
+  } catch (error) {
+    throw new Error(
+      `Failed to write file "${filePath}": ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { name, path: projectPath } = await request.json();
@@ -58,7 +80,57 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    fs.writeFileSync(path.join(resolvedProjectPath, 'package.json'), JSON.stringify(packageJson, null, 2));
+    writeFileWithErrorHandling(
+      path.join(projectPath, 'package.json'),
+      JSON.stringify(packageJson, null, 2),
+      createdFiles
+    );
+
+    const tsconfigContent = JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2022',
+          lib: ['dom', 'dom.iterable', 'esnext'],
+          strict: true,
+          noEmit: true,
+          module: 'esnext',
+          moduleResolution: 'bundler',
+          resolveJsonModule: true,
+          isolatedModules: true,
+          jsx: 'preserve',
+          incremental: true,
+          plugins: [{ name: 'next' }]
+        },
+        include: ['next-env.d.ts', '**/*.ts', '**/*.tsx'],
+        exclude: ['node_modules']
+      },
+      null,
+      2
+    );
+
+    writeFileWithErrorHandling(
+      path.join(projectPath, 'tsconfig.json'),
+      tsconfigContent,
+      createdFiles
+    );
+
+    const gitignoreContent = `.next
+node_modules
+out
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+`;
+
+    writeFileWithErrorHandling(
+      path.join(projectPath, '.gitignore'),
+      gitignoreContent,
+      createdFiles
+    );
 
     const layoutContent = `export default function RootLayout({
   children,
@@ -81,13 +153,16 @@ export async function POST(request: NextRequest) {
   )
 }`;
 
-    fs.writeFileSync(path.join(appDir, 'layout.tsx'), layoutContent);
-    fs.writeFileSync(path.join(appDir, 'page.tsx'), pageContent);
+    writeFileWithErrorHandling(path.join(appDir, 'layout.tsx'), layoutContent, createdFiles);
+    writeFileWithErrorHandling(path.join(appDir, 'page.tsx'), pageContent, createdFiles);
 
     return NextResponse.json({
       success: true,
-      message: `Project ${name} created successfully`,
-      projectPath,
+      message: `Project ${name} created successfully at ${projectPath}`,
+      created: {
+        directories: createdDirectories,
+        files: createdFiles
+      }
     });
   } catch (error) {
     if (error instanceof WorkspaceSecurityError) {
