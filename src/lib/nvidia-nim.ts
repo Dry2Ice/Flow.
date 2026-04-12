@@ -344,6 +344,9 @@ class NvidiaNimService {
         ? `${baseSystemPrompt}\n\n${generalPrompt}\n\n${contextSummary}`
         : `${baseSystemPrompt}\n\n${contextSummary}`;
 
+      const isFiniteNumber = (value: unknown): value is number =>
+        typeof value === 'number' && Number.isFinite(value);
+
       const requestBody: any = {
         model: this.config.model,
         messages: [
@@ -386,17 +389,39 @@ ${numberedLines}
             content: request.prompt
           }
         ],
-        temperature: this.config.temperature ?? 0.7,
-        max_tokens: this.config.maxTokens ?? 4000
+        temperature: isFiniteNumber(this.config.temperature) && this.config.temperature >= 0
+          ? this.config.temperature
+          : 0.7,
+        max_tokens: isFiniteNumber(this.config.maxTokens) && Number.isInteger(this.config.maxTokens) && this.config.maxTokens > 0
+          ? this.config.maxTokens
+          : 4000
       };
 
-      // Add optional parameters if they exist
-      if (this.config.topP !== undefined) requestBody.top_p = this.config.topP;
-      if (this.config.topK !== undefined) requestBody.top_k = this.config.topK;
-      if (this.config.presencePenalty !== undefined) requestBody.presence_penalty = this.config.presencePenalty;
-      if (this.config.frequencyPenalty !== undefined) requestBody.frequency_penalty = this.config.frequencyPenalty;
-      if (this.config.stopSequences && this.config.stopSequences.length > 0) {
-        requestBody.stop = this.config.stopSequences;
+      // Add optional parameters if they exist and are valid
+      if (isFiniteNumber(this.config.topP) && this.config.topP >= 0 && this.config.topP <= 1) {
+        requestBody.top_p = this.config.topP;
+      }
+      if (isFiniteNumber(this.config.topK) && Number.isInteger(this.config.topK) && this.config.topK > 0) {
+        requestBody.top_k = this.config.topK;
+      }
+      if (isFiniteNumber(this.config.contextTokens) && Number.isInteger(this.config.contextTokens) && this.config.contextTokens > 0) {
+        requestBody.context_tokens = this.config.contextTokens;
+      }
+      if (isFiniteNumber(this.config.presencePenalty) && this.config.presencePenalty >= -2 && this.config.presencePenalty <= 2) {
+        requestBody.presence_penalty = this.config.presencePenalty;
+      }
+      if (isFiniteNumber(this.config.frequencyPenalty) && this.config.frequencyPenalty >= -2 && this.config.frequencyPenalty <= 2) {
+        requestBody.frequency_penalty = this.config.frequencyPenalty;
+      }
+      if (Array.isArray(this.config.stopSequences)) {
+        const stopSequences = this.config.stopSequences
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+
+        if (stopSequences.length > 0) {
+          requestBody.stop = stopSequences;
+        }
       }
 
       const response = await axios.post(
