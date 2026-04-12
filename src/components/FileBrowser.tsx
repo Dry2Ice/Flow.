@@ -94,37 +94,33 @@ export function FileBrowser() {
   };
 
   const handleFileClick = async (file: FileNode) => {
-    if (file.type === 'file') {
-      try {
-        if (!currentProject || currentProject.isDemo) {
-          const content = `// ${file.name}\n\n// This is placeholder content for ${file.name}`;
-          openFile(file.path, content);
-          return;
-        }
+    if (file.type !== 'file') {
+      return;
+    }
 
-        const response = await fetch('/api/project/file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            projectPath: currentProject.path,
-            filePath: file.path,
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || 'Failed to load file');
-        }
-
-        const content = data.content ?? '';
+    try {
+      if (!currentProject || currentProject.isDemo) {
+        const content = `// ${file.name}\n\n// This is placeholder content for ${file.name}`;
         openFile(file.path, content);
-      } catch (error) {
-        console.error('Failed to load file:', error);
+        return;
       }
 
-      openFile(file.path, data.content, data.lastModifiedMs);
+      const response = await fetch('/api/project/file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectPath: currentProject.path,
+          filePath: file.path,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load file');
+      }
+
+      openFile(file.path, data.content ?? '', data.lastModifiedMs);
     } catch (error) {
       console.error('Failed to load file:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to load file');
     }
   };
 

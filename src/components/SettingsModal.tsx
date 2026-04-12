@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Settings, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
@@ -28,10 +28,16 @@ export function SettingsModal() {
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
   const [generalPromptText, setGeneralPromptText] = useState('');
+  const hasLoadedSettings = useRef(false);
   const { activePreset, promptPresets, setActivePreset, updatePromptPreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
 
   // Load settings from localStorage on mount
   useEffect(() => {
+    if (hasLoadedSettings.current) {
+      return;
+    }
+    hasLoadedSettings.current = true;
+
     const saved = localStorage.getItem('nim-settings');
     if (saved) {
       try {
@@ -63,7 +69,7 @@ export function SettingsModal() {
         console.error('Failed to load settings:', error);
       }
     }
-  }, []);
+  }, [promptPresets, setActivePreset, setGeneralPrompt, setProjectPath]);
 
   const handleEditPreset = (presetId: string) => {
     const preset = promptPresets.find(p => p.id === presetId);

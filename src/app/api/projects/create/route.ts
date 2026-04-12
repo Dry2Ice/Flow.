@@ -33,8 +33,6 @@ function writeFileWithErrorHandling(
 export async function POST(request: NextRequest) {
   try {
     const { name, path: projectPath } = await request.json();
-    const createdDirectories: string[] = [];
-    const createdFiles: string[] = [];
 
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
