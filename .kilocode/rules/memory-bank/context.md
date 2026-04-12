@@ -98,6 +98,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Code editor now supports explicit save/reload workflow (Ctrl/Cmd+S) wired to project file API with conflict/error feedback
 - [x] Editable prompt presets now persist in localStorage and are restored on app startup
 - [x] Prompt preset updates now immediately refresh the selected preset context used by PromptInput
+- [x] Refreshed UI polish for theme switching, statistics panel, and settings modal with new appearance/dashboard preferences persisted in localStorage
 
 ## Current Structure
 
@@ -173,6 +174,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Improved design consistency for light/dark themes by syncing `dark`/`light` classes on `<html>`; updated header settings trigger to reliably open modal via event; added UI preferences storage (`autoRefreshSeconds`, `showAdvancedStats`) and wired it into Settings + Project Statistics; enhanced stats panel with focus score, language count, and configurable refresh text. |
 | 2026-04-12 | Fixed `FileBrowser` file-open error handling by consolidating `handleFileClick` into one coherent `try/catch` and keeping API response data scoped; removed duplicate `createdDirectories`/`createdFiles` declarations in `POST /api/projects/create`; updated `SettingsModal` settings-load effect dependencies with a one-time guard; restored missing `updatePromptPreset` implementation in Zustand store; re-ran lint/typecheck/build successfully. |
 | 2026-04-12 | Removed stale `react-diff-viewer` dependency entries from `bun.lock` to prevent React 19 peer-conflict reinstalls; verified npm install now completes without ERESOLVE (remaining `http-proxy` warning is environment-level npm config) |
 | 2026-04-12 | Fixed `POST /api/projects/create` to declare/use `createdDirectories` and `createdFiles`, route all file writes through `resolvedProjectPath`, and replace direct directory creation calls with `ensureDirectory(...)` for accurate creation reports |
