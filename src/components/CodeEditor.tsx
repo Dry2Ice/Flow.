@@ -1,6 +1,6 @@
 // src/components/CodeEditor.tsx
 
-'use client';
+"use client";
 
 import { useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';

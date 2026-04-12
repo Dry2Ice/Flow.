@@ -1,6 +1,6 @@
 // src/components/DevelopmentPlan.tsx
 
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { CheckCircle, Circle, Clock, AlertTriangle, Plus } from 'lucide-react';

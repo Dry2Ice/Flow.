@@ -1,6 +1,6 @@
 // src/components/FileBrowser.tsx
 
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';

@@ -1,3 +1,5 @@
+"use client";
+
 import { CodeEditor } from '@/components/CodeEditor';
 import { FileBrowser } from '@/components/FileBrowser';
 import { PromptInput } from '@/components/PromptInput';

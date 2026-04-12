@@ -1,6 +1,6 @@
 // src/components/DiffViewer.tsx
 
-'use client';
+"use client";
 
 import { X } from 'lucide-react';
 import ReactDiffViewer from 'react-diff-viewer-continued';

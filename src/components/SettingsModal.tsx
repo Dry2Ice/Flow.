@@ -1,6 +1,6 @@
 // src/components/SettingsModal.tsx
 
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { X, Settings } from 'lucide-react';
