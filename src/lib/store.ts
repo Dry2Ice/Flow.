@@ -742,6 +742,22 @@ export const useAppStore = create<AppState>()(
       });
     },
     setActivePreset: (preset) => set({ activePreset: preset }),
+    updatePromptPreset: (presetId, patch) => {
+      set((state) => {
+        const nextPromptPresets = state.promptPresets.map((preset) =>
+          preset.id === presetId ? { ...preset, ...patch } : preset
+        );
+        const nextActivePreset =
+          state.activePreset?.id === presetId
+            ? nextPromptPresets.find((preset) => preset.id === presetId) ?? state.activePreset
+            : state.activePreset;
+
+        return {
+          promptPresets: nextPromptPresets,
+          activePreset: nextActivePreset,
+        };
+      });
+    },
     setProjectPath: (path: string) => set({ projectPath: path }),
     createProject: async (name: string, path: string) => {
       try {
