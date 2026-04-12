@@ -43,6 +43,9 @@ interface AppState {
   ultraModeTotalSteps: number;
   ultraModeCurrentStep: string;
 
+  // General prompt
+  generalPrompt: string;
+
   // Actions
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
@@ -78,6 +81,9 @@ interface AppState {
   startUltraMode: (totalSteps: number) => void;
   updateUltraModeStep: (step: number, currentStep: string) => void;
   endUltraMode: () => void;
+
+  // General prompt actions
+  setGeneralPrompt: (prompt: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -173,6 +179,50 @@ Deliver production-ready code that solves the user's problem effectively.`
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
+    generalPrompt: `## Core Development Principles
+
+**Code Quality & Best Practices:**
+- Write clean, readable, and maintainable code following established patterns
+- Use meaningful variable and function names that clearly express intent
+- Follow language-specific conventions and style guides
+- Implement proper error handling and input validation
+- Add comments for complex logic, not obvious code
+
+**Security First:**
+- Never introduce security vulnerabilities (XSS, SQL injection, etc.)
+- Validate all inputs and sanitize outputs
+- Use secure coding practices and avoid dangerous functions
+- Implement proper authentication and authorization when needed
+
+**Performance & Efficiency:**
+- Write efficient algorithms and data structures
+- Avoid unnecessary computations and memory usage
+- Consider scalability and performance implications
+- Use appropriate libraries and frameworks
+
+**Type Safety & Reliability:**
+- Ensure type safety in statically typed languages
+- Handle edge cases and error conditions
+- Write testable code with clear interfaces
+- Follow SOLID principles and design patterns
+
+**Documentation & Communication:**
+- Provide clear explanations of changes and reasoning
+- Document important functions and complex logic
+- Explain trade-offs and alternative approaches considered
+- Use clear, professional language in all communications
+
+**Project-Specific Considerations:**
+- Respect existing codebase architecture and patterns
+- Maintain backward compatibility unless explicitly requested otherwise
+- Consider the impact on existing functionality
+- Follow project's established conventions and standards
+
+**Response Format:**
+- Be specific and actionable in recommendations
+- Provide concrete code examples when suggesting changes
+- Explain the reasoning behind each suggestion
+- Prioritize solutions by importance and impact`,
 
     // Project actions
     setCurrentProject: (project) => set({ currentProject: project }),
@@ -247,5 +297,8 @@ Deliver production-ready code that solves the user's problem effectively.`
       ultraModeTotalSteps: 0,
       ultraModeCurrentStep: ''
     }),
+
+    // General prompt actions
+    setGeneralPrompt: (prompt: string) => set({ generalPrompt: prompt }),
   }))
 );

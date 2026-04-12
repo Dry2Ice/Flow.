@@ -26,7 +26,9 @@ export function SettingsModal() {
   const [message, setMessage] = useState('');
   const [editingPreset, setEditingPreset] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState('');
-  const { activePreset, promptPresets, setActivePreset, setProjectPath } = useAppStore();
+  const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
+  const [generalPromptText, setGeneralPromptText] = useState('');
+  const { activePreset, promptPresets, setActivePreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -45,8 +47,10 @@ export function SettingsModal() {
         setPresencePenalty(settings.presencePenalty ?? 0.0);
         setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
         setStopSequences(settings.stopSequences?.join(', ') || '');
-        setProjectPathLocal(settings.projectPath || '');
         setProjectPath(settings.projectPath || '');
+        if (settings.generalPrompt) {
+          setGeneralPrompt(settings.generalPrompt);
+        }
 
         // Load active preset
         if (settings.activePresetId) {
@@ -90,6 +94,24 @@ export function SettingsModal() {
     setEditedPrompt('');
   };
 
+  const handleEditGeneralPrompt = () => {
+    setEditingGeneralPrompt(true);
+    setGeneralPromptText(generalPrompt);
+  };
+
+  const handleSaveGeneralPrompt = () => {
+    setGeneralPrompt(generalPromptText);
+    setEditingGeneralPrompt(false);
+    setGeneralPromptText('');
+    setMessage('General prompt updated successfully!');
+    setTimeout(() => setMessage(''), 2000);
+  };
+
+  const handleCancelGeneralPromptEdit = () => {
+    setEditingGeneralPrompt(false);
+    setGeneralPromptText('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -120,7 +142,8 @@ export function SettingsModal() {
         // Save settings to localStorage with active preset
         const settingsToSave = {
           ...config,
-          activePresetId: activePreset?.id || null
+          activePresetId: activePreset?.id || null,
+          generalPrompt
         };
         localStorage.setItem('nim-settings', JSON.stringify(settingsToSave));
         setMessage('AI configured successfully!');
@@ -354,6 +377,57 @@ export function SettingsModal() {
                     />
                     <div className="text-xs text-neutral-400 mt-1">Sequences where generation should stop (comma-separated)</div>
                   </div>
+                </div>
+              </div>
+
+              {/* General Prompt Section */}
+              <div>
+                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                  General System Prompt
+                </h4>
+                <p className="text-sm text-neutral-400 mb-3">
+                  Core principles and guidelines that are always applied to all AI interactions, regardless of the selected preset.
+                </p>
+                <div className="space-y-3">
+                  {editingGeneralPrompt ? (
+                    <div>
+                      <textarea
+                        value={generalPromptText}
+                        onChange={(e) => setGeneralPromptText(e.target.value)}
+                        className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={12}
+                        placeholder="Enter general system prompt..."
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={handleSaveGeneralPrompt}
+                          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelGeneralPromptEdit}
+                          className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="p-3 bg-neutral-800 rounded border border-neutral-600 max-h-48 overflow-y-auto">
+                        <pre className="text-xs text-neutral-300 whitespace-pre-wrap">
+                          {generalPrompt}
+                        </pre>
+                      </div>
+                      <button
+                        onClick={handleEditGeneralPrompt}
+                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      >
+                        Edit General Prompt
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

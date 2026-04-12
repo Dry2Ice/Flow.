@@ -41,6 +41,8 @@ Switch between three specialized modes directly in the prompt input:
 
 **Customizable Prompts**: Edit system prompts for each preset in settings to tailor AI behavior to your needs.
 
+**General System Prompt**: Core development principles and guidelines that are always applied to all AI interactions, ensuring consistent quality standards across all operations.
+
 #### Ultra Mode
 **Comprehensive Code Enhancement**: One-click execution of complete development workflow:
 - **Step 1**: Code Analysis & Planning - Deep codebase analysis and improvement roadmap

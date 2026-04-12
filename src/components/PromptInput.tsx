@@ -21,6 +21,7 @@ export function PromptInput() {
     promptPresets,
     setActivePreset,
     projectPath,
+    generalPrompt,
     ultraModeActive,
     ultraModeStep,
     ultraModeTotalSteps,
@@ -96,6 +97,7 @@ export function PromptInput() {
         const request: PromptRequest = {
           prompt: step.prompt,
           preset: preset || undefined,
+          generalPrompt,
           context: {
             currentFile: activeFile || undefined,
             selectedCode: currentFile?.content,
@@ -186,15 +188,16 @@ export function PromptInput() {
         }
       }
 
-      const request: PromptRequest = {
-        prompt,
-        preset: activePreset || undefined,
-        context: {
-          currentFile: activeFile || undefined,
-          selectedCode: currentFile?.content,
-          projectFiles
-        },
-      };
+        const request: PromptRequest = {
+          prompt,
+          preset: activePreset || undefined,
+          generalPrompt,
+          context: {
+            currentFile: activeFile || undefined,
+            selectedCode: currentFile?.content,
+            projectFiles
+          },
+        };
 
       const response = await nvidiaNimService.generateCode(request);
 

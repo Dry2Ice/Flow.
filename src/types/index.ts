@@ -45,6 +45,7 @@ export interface PromptPreset {
 export interface PromptRequest {
   prompt: string;
   preset?: PromptPreset;
+  generalPrompt?: string;
   context?: {
     currentFile?: string;
     selectedCode?: string;

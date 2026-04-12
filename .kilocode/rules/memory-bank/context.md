@@ -25,6 +25,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Persistent settings storage in localStorage
 - [x] AI behavior presets (bug detection, analysis, development) with inline switching
 - [x] Editable system prompts for custom AI behavior
+- [x] General system prompt with core development principles
 - [x] Ultra Mode: 4-step comprehensive code enhancement workflow
 - [x] Project directory integration for full codebase context
 - [x] Local file system integration with intelligent context limiting
