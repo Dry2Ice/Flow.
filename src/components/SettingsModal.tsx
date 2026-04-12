@@ -26,6 +26,114 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       setInternalIsOpen(false);
     }
   };
+
+  const loadAvailableModels = async () => {
+    if (!apiKey || !baseUrl) {
+      alert('Please enter API Key and Base URL first');
+      return;
+    }
+
+    setIsLoadingModels(true);
+    try {
+      const response = await fetch(`${baseUrl}/models`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data?.map((model: any) => model.id) || [];
+        setAvailableModels(models);
+      } else {
+        alert('Failed to load models. Please check your API credentials.');
+      }
+    } catch (error) {
+      console.error('Error loading models:', error);
+      alert('Error loading models. Please try again.');
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!apiKey || !baseUrl || !model) {
+      alert('Please fill in API Key, Base URL, and Model');
+      return;
+    }
+
+    setConnectionStatus('connecting');
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: 'Hello' }],
+          max_tokens: 10,
+        }),
+      });
+
+      if (response.ok) {
+        setConnectionStatus('connected');
+        setTimeout(() => setConnectionStatus('idle'), 3000);
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('error');
+      setTimeout(() => setConnectionStatus('idle'), 3000);
+      alert('Connection failed. Please check your settings.');
+    }
+  };
+
+  const sendTestMessage = async () => {
+    if (!apiKey || !baseUrl || !model) {
+      alert('Please fill in API Key, Base URL, and Model');
+      return;
+    }
+
+    setTestMessageStatus('sending');
+    try {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: 'Say "Hello from Flow!" and nothing else.' }],
+          max_tokens: 50,
+          temperature: 0.1,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const reply = data.choices?.[0]?.message?.content;
+        if (reply) {
+          setTestMessageStatus('success');
+          alert(`Test successful! AI replied: "${reply}"`);
+        } else {
+          throw new Error('No response content');
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Test message failed:', error);
+      setTestMessageStatus('error');
+      alert('Test message failed. Please check your settings.');
+    } finally {
+      setTimeout(() => setTestMessageStatus('idle'), 3000);
+    }
+  };
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [model, setModel] = useState('');
@@ -34,9 +142,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [topK, setTopK] = useState(50);
   const [maxTokens, setMaxTokens] = useState(4000);
   const [contextTokens, setContextTokens] = useState(0); // 0 = unlimited
-  const [presencePenalty, setPresencePenalty] = useState(0.0);
-  const [frequencyPenalty, setFrequencyPenalty] = useState(0.0);
+  const [presencePenalty, setPresencePenalty] = useState(0);
+  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
   const [stopSequences, setStopSequences] = useState('');
+
+  // Model management
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+  const [testMessageStatus, setTestMessageStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [projectPath, setProjectPathLocal] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -255,19 +369,43 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     />
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Model
-                    </label>
-                    <input
-                      type="text"
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="meta/llama3-70b-instruct"
-                      required
-                    />
-                  </div>
+                   <div className="md:col-span-2">
+                     <label className="block text-sm font-medium text-neutral-300 mb-1">
+                       Model
+                     </label>
+                     <div className="flex gap-2">
+                       <select
+                         value={model}
+                         onChange={(e) => setModel(e.target.value)}
+                         className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         required
+                       >
+                         <option value="">Select a model...</option>
+                         {availableModels.map((modelName) => (
+                           <option key={modelName} value={modelName}>
+                             {modelName}
+                           </option>
+                         ))}
+                       </select>
+                       <button
+                         type="button"
+                         onClick={loadAvailableModels}
+                         disabled={isLoadingModels || !apiKey || !baseUrl}
+                         className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 rounded text-sm font-medium transition-colors flex items-center gap-1"
+                       >
+                         {isLoadingModels ? (
+                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                         ) : (
+                           'Load'
+                         )}
+                       </button>
+                     </div>
+                     {availableModels.length === 0 && !isLoadingModels && (
+                        <div className="text-xs text-neutral-400 mt-1">
+                          Click &quot;Load&quot; to fetch available models from your API
+                        </div>
+                     )}
+                   </div>
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
@@ -283,9 +421,66 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     <div className="text-xs text-neutral-400 mt-1">Path to your local project directory for file operations</div>
                   </div>
                 </div>
-              </div>
+               </div>
 
-              {/* Generation Parameters Section */}
+               {/* Connection Testing Section */}
+               <div className="border-b border-neutral-600 pb-4">
+                 <h4 className="text-md font-medium text-neutral-200 mb-3">
+                   Connection & Testing
+                 </h4>
+                 <div className="flex gap-3 flex-wrap">
+                   <button
+                     type="button"
+                     onClick={testConnection}
+                     disabled={!apiKey || !baseUrl || !model || connectionStatus === 'connecting'}
+                     className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
+                       connectionStatus === 'connected'
+                         ? 'bg-green-600 hover:bg-green-700'
+                         : connectionStatus === 'error'
+                         ? 'bg-red-600 hover:bg-red-700'
+                         : 'bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600'
+                     }`}
+                   >
+                     {connectionStatus === 'connecting' ? (
+                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                     ) : connectionStatus === 'connected' ? (
+                       <Check className="w-4 h-4" />
+                     ) : connectionStatus === 'error' ? (
+                       <X className="w-4 h-4" />
+                     ) : (
+                       'Test Connection'
+                     )}
+                   </button>
+
+                   <button
+                     type="button"
+                     onClick={sendTestMessage}
+                     disabled={!apiKey || !baseUrl || !model || testMessageStatus === 'sending'}
+                     className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
+                       testMessageStatus === 'success'
+                         ? 'bg-green-600 hover:bg-green-700'
+                         : testMessageStatus === 'error'
+                         ? 'bg-red-600 hover:bg-red-700'
+                         : 'bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600'
+                     }`}
+                   >
+                     {testMessageStatus === 'sending' ? (
+                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                     ) : testMessageStatus === 'success' ? (
+                       <Check className="w-4 h-4" />
+                     ) : testMessageStatus === 'error' ? (
+                       <X className="w-4 h-4" />
+                     ) : (
+                       'Send Test Message'
+                     )}
+                   </button>
+                 </div>
+                 <div className="text-xs text-neutral-400 mt-2">
+                   Test your API connection and send a simple test message to verify everything works
+                 </div>
+               </div>
+
+               {/* Generation Parameters Section */}
               <div>
                 <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
                   Generation Parameters
@@ -338,35 +533,35 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     <div className="text-xs text-neutral-400 mt-1">Top-K sampling (1-100)</div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens})
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100000"
-                      value={contextTokens}
-                      onChange={(e) => setContextTokens(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">Maximum context tokens (0 = unlimited)</div>
-                  </div>
+                   <div>
+                     <label className="block text-sm font-medium text-neutral-300 mb-1">
+                       Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens.toLocaleString()})
+                     </label>
+                     <input
+                       type="number"
+                       min="0"
+                       value={contextTokens}
+                       onChange={(e) => setContextTokens(parseInt(e.target.value) || 0)}
+                       className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="0 for unlimited"
+                     />
+                     <div className="text-xs text-neutral-400 mt-1">Maximum context tokens (0 = unlimited)</div>
+                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Max Response Tokens ({maxTokens})
-                    </label>
-                    <input
-                      type="number"
-                      min="100"
-                      max="8000"
-                      value={maxTokens}
-                      onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">Maximum response length</div>
-                  </div>
+                   <div>
+                     <label className="block text-sm font-medium text-neutral-300 mb-1">
+                       Max Response Tokens ({maxTokens.toLocaleString()})
+                     </label>
+                     <input
+                       type="number"
+                       min="1"
+                       value={maxTokens}
+                       onChange={(e) => setMaxTokens(parseInt(e.target.value) || 100)}
+                       className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="4000"
+                     />
+                     <div className="text-xs text-neutral-400 mt-1">Maximum response tokens</div>
+                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
