@@ -20,6 +20,16 @@ class GitService {
     }
   }
 
+  async isRepo(path: string) {
+    try {
+      await this.git.cwd(path);
+      return await this.git.checkIsRepo();
+    } catch (error) {
+      console.error('Failed to check git repo:', error);
+      return false;
+    }
+  }
+
   async addAll(path: string) {
     try {
       await this.git.cwd(path);
@@ -71,6 +81,17 @@ class GitService {
       return true;
     } catch (error) {
       console.error('Failed to checkout:', error);
+      return false;
+    }
+  }
+
+  async restoreFile(path: string, filePath: string) {
+    try {
+      await this.git.cwd(path);
+      await this.git.checkout(['--', filePath]);
+      return true;
+    } catch (error) {
+      console.error('Failed to restore file:', error);
       return false;
     }
   }
