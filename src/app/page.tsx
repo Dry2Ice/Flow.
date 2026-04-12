@@ -6,15 +6,18 @@ import { PromptInput } from '@/components/PromptInput';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { DiffViewer } from '@/components/DiffViewer';
 import { SettingsModal } from '@/components/SettingsModal';
+import { ProjectManager } from '@/components/ProjectManager';
 import { useAppStore } from '@/lib/store';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { FolderOpen, FileText } from 'lucide-react';
 
 export default function Home() {
-  const { sidebarOpen, diffViewerOpen, currentProject, addProject } = useAppStore();
+  const { sidebarOpen, diffViewerOpen, currentProject, projects, setCurrentProject } = useAppStore();
+  const [activeTab, setActiveTab] = useState<'files' | 'projects'>('files');
 
   // Create demo project on first load
   useEffect(() => {
-    if (!currentProject) {
+    if (projects.length === 0) {
       const demoProject = {
         id: 'demo',
         name: 'Demo Project',
@@ -37,11 +40,20 @@ export default function Home() {
           }
         ],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        isDemo: true
       };
-      addProject(demoProject);
+
+      // Add demo project to store
+      useAppStore.setState({
+        projects: [demoProject],
+        currentProject: demoProject
+      });
+    } else if (!currentProject && projects.length > 0) {
+      // Set current project if none is selected
+      setCurrentProject(projects[0]);
     }
-  }, [currentProject, addProject]);
+  }, [projects, currentProject, setCurrentProject]);
 
   return (
     <main className="min-h-screen bg-neutral-900 text-white flex flex-col">
@@ -52,10 +64,40 @@ export default function Home() {
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - File Browser */}
+        {/* Sidebar */}
         {sidebarOpen && (
-          <div className="w-64 bg-neutral-800 border-r border-neutral-700">
-            <FileBrowser />
+          <div className="w-96 bg-neutral-800 border-r border-neutral-700 flex flex-col">
+            {/* Tab Navigation */}
+            <div className="flex border-b border-neutral-700">
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === 'files'
+                    ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
+                    : 'text-neutral-400 hover:text-neutral-300'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                Files
+              </button>
+              <button
+                onClick={() => setActiveTab('projects')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === 'projects'
+                    ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
+                    : 'text-neutral-400 hover:text-neutral-300'
+                }`}
+              >
+                <FolderOpen className="w-4 h-4" />
+                Projects
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-hidden">
+              {activeTab === 'files' && <FileBrowser />}
+              {activeTab === 'projects' && <ProjectManager />}
+            </div>
           </div>
         )}
 

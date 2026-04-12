@@ -14,6 +14,7 @@ export interface Project {
   files: FileNode[];
   createdAt: Date;
   updatedAt: Date;
+  isDemo?: boolean;
 }
 
 export interface CodeChange {

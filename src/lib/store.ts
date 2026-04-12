@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { FileNode, Project, CodeChange, DevelopmentTask, AIMessage, PromptPreset } from '@/types';
+import fs from 'fs';
+import path from 'path';
 
 interface AppState {
   // Current project
@@ -76,6 +78,10 @@ interface AppState {
 
   // Project actions
   setProjectPath: (path: string) => void;
+  createProject: (name: string, path: string) => Promise<Project>;
+  loadProject: (path: string) => Promise<Project>;
+  switchProject: (projectId: string) => void;
+  deleteProject: (projectId: string) => void;
 
   // Ultra mode actions
   startUltraMode: (totalSteps: number) => void;
@@ -293,6 +299,77 @@ Deliver production-ready code that solves the user's problem effectively.`
 
     // Project actions
     setProjectPath: (path: string) => set({ projectPath: path }),
+    createProject: async (name: string, path: string) => {
+      try {
+        // Create project directory if it doesn't exist
+        const response = await fetch('/api/projects/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, path }),
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const project: Project = {
+            id: crypto.randomUUID(),
+            name,
+            path,
+            files: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          set((state) => ({
+            projects: [...state.projects, project],
+            currentProject: project
+          }));
+          return project;
+        } else {
+          throw new Error(data.error || 'Failed to create project');
+        }
+      } catch (error) {
+        console.error('Failed to create project:', error);
+        throw error;
+      }
+    },
+    loadProject: async (path: string) => {
+      try {
+        const response = await fetch('/api/projects/load', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path }),
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const project: Project = {
+            id: crypto.randomUUID(),
+            name: path.split('/').pop() || 'Project',
+            path,
+            files: data.files || [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          set((state) => ({
+            projects: [...state.projects, project],
+            currentProject: project
+          }));
+          return project;
+        } else {
+          throw new Error(data.error || 'Failed to load project');
+        }
+      } catch (error) {
+        console.error('Failed to load project:', error);
+        throw error;
+      }
+    },
+    switchProject: (projectId: string) => set((state) => {
+      const project = state.projects.find(p => p.id === projectId);
+      return { currentProject: project || null };
+    }),
+    deleteProject: (projectId: string) => set((state) => ({
+      projects: state.projects.filter(p => p.id !== projectId),
+      currentProject: state.currentProject?.id === projectId ? null : state.currentProject
+    })),
 
     // Ultra mode actions
     startUltraMode: (totalSteps: number) => set({

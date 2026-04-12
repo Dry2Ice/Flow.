@@ -13,7 +13,25 @@ A web-based code editor powered by Nvidia NIM AI for intelligent code generation
 
 ## Getting Started
 
-### 1. Configure AI Settings
+### 1. Set Up Your Project
+
+**Option A: Create New Project**
+1. Click the "Projects" tab in the left sidebar
+2. Click "New" button
+3. Enter project name and directory path
+4. The system will create a basic Next.js project structure
+
+**Option B: Load Existing Project**
+1. Click the "Projects" tab in the left sidebar
+2. Enter the path to your existing project directory
+3. Click "Load Project" to import it
+
+**Switch Between Projects**
+- Use the "Projects" tab to see all your projects
+- Click on any project to switch to it
+- The "Files" tab shows the current project's file structure
+
+### 2. Configure AI Settings
 
 1. Click the settings gear icon (⚙️) in the top-right corner
 2. Configure your AI service in two sections:
