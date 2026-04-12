@@ -53,6 +53,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Project manager with tabbed interface for files and projects
 - [x] API endpoints for project creation and loading
 - [x] Persistent project management and switching
+- [x] Workspace-scoped API path hardening (env-based root, traversal blocking, recursion caps, security warning logs)
 - [x] Session-aware AI chat state with isolated message/history per session
 - [x] Job-level AI request tracking with `sessionId`/`jobId` for requests, logs, and messages
 - [x] Job execution manager with per-job cancel/retry controls via `AbortController`
@@ -133,6 +134,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
 | 2026-04-12 | Added multi-session chat/request architecture, per-job cancel/retry flow, and execution manager integration |
 | 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
