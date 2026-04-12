@@ -48,6 +48,8 @@ export interface DevelopmentTask {
 
 export interface LogEntry {
   id: string;
+  sessionId?: string;
+  jobId?: string;
   timestamp: Date;
   type: 'info' | 'warning' | 'error' | 'success';
   message: string;
@@ -59,6 +61,8 @@ export interface LogEntry {
 
 export interface ProjectContext {
   id: string;
+  sessionId?: string;
+  jobId?: string;
   projectId: string;
   summary: string;
   keyComponents: string[];
@@ -78,10 +82,12 @@ export interface ProjectContext {
 
 export interface AIRequest {
   id: string;
+  sessionId: string;
+  jobId: string;
   type: 'analysis' | 'implementation' | 'review' | 'optimization' | 'debugging';
   prompt: string;
   context: any;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'blocked' | 'running' | 'completed' | 'failed';
   priority: 'low' | 'medium' | 'high' | 'critical';
   dependencies: string[]; // IDs of requests this depends on
   createdAt: Date;
@@ -151,10 +157,15 @@ export interface PromptRequest {
     selectedCode?: string;
     projectId?: string;
     projectFiles?: FileWithMetadata[];
+    sessionId?: string;
+    jobId?: string;
   };
 }
 
 export interface AIMessage {
+  id: string;
+  sessionId: string;
+  jobId?: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
