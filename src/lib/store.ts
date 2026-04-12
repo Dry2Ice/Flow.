@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { FileNode, Project, CodeChange, DevelopmentTask, AIMessage, PromptPreset } from '@/types';
+import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, AIMessage, PromptPreset } from '@/types';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,6 +16,8 @@ interface AppState {
   activeFile: string | null;
 
   // Development plan
+  plans: DevelopmentPlan[];
+  currentPlan: DevelopmentPlan | null;
   tasks: DevelopmentTask[];
   currentTask: DevelopmentTask | null;
 
@@ -66,6 +68,13 @@ interface AppState {
   updateFileContent: (path: string, content: string) => void;
   setActiveFile: (path: string) => void;
 
+  // Plans
+  addPlan: (plan: DevelopmentPlan) => void;
+  updatePlan: (planId: string, updates: Partial<DevelopmentPlan>) => void;
+  setCurrentPlan: (plan: DevelopmentPlan | null) => void;
+  deletePlan: (planId: string) => void;
+
+  // Tasks
   addTask: (task: DevelopmentTask) => void;
   updateTask: (taskId: string, updates: Partial<DevelopmentTask>) => void;
   setCurrentTask: (task: DevelopmentTask | null) => void;
@@ -110,6 +119,8 @@ export const useAppStore = create<AppState>()(
     projects: [],
     openFiles: [],
     activeFile: null,
+    plans: [],
+    currentPlan: null,
     tasks: [],
     currentTask: null,
     messages: [],
@@ -291,34 +302,58 @@ Deliver production-ready code that solves the user's problem effectively.`
     })),
     setActiveFile: (path) => set({ activeFile: path }),
 
+    // Plan actions
+    addPlan: (plan) => set((state) => ({ plans: [...state.plans, plan] })),
+    updatePlan: (planId, updates) => set((state) => ({
+      plans: state.plans.map(p => p.id === planId ? { ...p, ...updates, updatedAt: new Date() } : p)
+    })),
+    setCurrentPlan: (plan) => set({ currentPlan: plan }),
+    deletePlan: (planId) => set((state) => ({
+      plans: state.plans.filter(p => p.id !== planId),
+      currentPlan: state.currentPlan?.id === planId ? null : state.currentPlan
+    })),
+
     // Task actions
     addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
     updateTask: (taskId, updates) => set((state) => ({
-      tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+      tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...updates, updatedAt: new Date() } : t)
     })),
     setCurrentTask: (task) => set({ currentTask: task }),
 
-    // Message actions
     addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
     setGenerating: (generating) => set({ isGenerating: generating }),
 
-    // UI actions
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setDiffViewerOpen: (open) => set({ diffViewerOpen: open }),
     setCurrentDiff: (diff) => set({ currentDiff: diff }),
 
-    // Git actions
+    // Ultra mode actions
+    startUltraMode: (totalSteps: number) => set({
+      ultraModeActive: true,
+      ultraModeStep: 0,
+      ultraModeTotalSteps: totalSteps,
+      ultraModeCurrentStep: ''
+    }),
+    updateUltraModeStep: (step: number, currentStep: string) => set({
+      ultraModeStep: step,
+      ultraModeCurrentStep: currentStep
+    }),
+    endUltraMode: () => set({
+      ultraModeActive: false,
+      ultraModeStep: 0,
+      ultraModeTotalSteps: 0,
+      ultraModeCurrentStep: ''
+    }),
+
+    // General prompt actions
+    setGeneralPrompt: (prompt: string) => set({ generalPrompt: prompt }),
+
     setGitInitialized: (initialized) => set({ gitInitialized: initialized }),
     setCommits: (commits) => set({ commits }),
-
-    // Prompt preset actions
     setActivePreset: (preset) => set({ activePreset: preset }),
-
-    // Project actions
     setProjectPath: (path: string) => set({ projectPath: path }),
     createProject: async (name: string, path: string) => {
       try {
-        // Create project directory if it doesn't exist
         const response = await fetch('/api/projects/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -387,27 +422,6 @@ Deliver production-ready code that solves the user's problem effectively.`
       projects: state.projects.filter(p => p.id !== projectId),
       currentProject: state.currentProject?.id === projectId ? null : state.currentProject
     })),
-
-    // Ultra mode actions
-    startUltraMode: (totalSteps: number) => set({
-      ultraModeActive: true,
-      ultraModeStep: 0,
-      ultraModeTotalSteps: totalSteps,
-      ultraModeCurrentStep: ''
-    }),
-    updateUltraModeStep: (step: number, currentStep: string) => set({
-      ultraModeStep: step,
-      ultraModeCurrentStep: currentStep
-    }),
-    endUltraMode: () => set({
-      ultraModeActive: false,
-      ultraModeStep: 0,
-      ultraModeTotalSteps: 0,
-      ultraModeCurrentStep: ''
-    }),
-
-    // General prompt actions
-    setGeneralPrompt: (prompt: string) => set({ generalPrompt: prompt }),
 
     // Workspace actions
     setPanelSizes: (sizes) => set((state) => ({

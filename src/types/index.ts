@@ -26,12 +26,34 @@ export interface CodeChange {
   description: string;
 }
 
+export interface TaskItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: Date;
+}
+
 export interface DevelopmentTask {
   id: string;
   title: string;
   description: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'completed' | 'partially_completed' | 'cancelled';
   priority: 'high' | 'medium' | 'low';
+  items: TaskItem[];
+  autoExecute?: boolean;
+  lastChecked?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DevelopmentPlan {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'partially_completed' | 'cancelled';
+  tasks: DevelopmentTask[];
+  autoExecute?: boolean;
+  lastChecked?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

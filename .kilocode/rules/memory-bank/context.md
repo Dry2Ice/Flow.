@@ -35,6 +35,11 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Professional Monaco Editor with advanced features
 - [x] Context-aware file prioritization and analysis
 - [x] Customizable resizable workspace layout with four distinct zones
+- [x] Interactive planning system with hierarchical task management
+- [x] Auto-execution capabilities for plans and tasks with preset switching
+- [x] Multi-status task tracking (pending, in-progress, partially-completed, completed)
+- [x] AI-powered task checking and execution with Code Analysis & Active Development presets
+- [x] Item-level task breakdown with individual completion tracking
 - [x] Horizontal and vertical panel splitting for optimal workflow
 - [x] Live code preview with HTML rendering and execution simulation
 - [x] Persistent panel sizing with reset to default functionality
