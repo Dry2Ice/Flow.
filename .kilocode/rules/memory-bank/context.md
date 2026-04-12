@@ -15,11 +15,14 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Memory bank documentation
 - [x] Recipe system for common features
 - [x] AI Code Assistant interface with Monaco editor
-- [x] Nvidia NIM API integration
+- [x] Nvidia NIM API integration with comprehensive settings
 - [x] File browser and project management
 - [x] Development plan tracking system
 - [x] Code diff viewer
 - [x] Prompt input for AI interaction
+- [x] Git integration for version control and rollbacks
+- [x] Advanced AI generation parameters (temperature, top-p, top-k, penalties)
+- [x] Persistent settings storage in localStorage
 
 ## Current Structure
 

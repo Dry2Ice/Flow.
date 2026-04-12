@@ -13,13 +13,26 @@ A web-based code editor powered by Nvidia NIM AI for intelligent code generation
 
 ## Getting Started
 
-### 1. Configure Nvidia NIM
+### 1. Configure AI Settings
 
 1. Click the settings gear icon (⚙️) in the top-right corner
-2. Enter your Nvidia NIM API credentials:
+2. Configure your AI service in two sections:
+
+#### API Configuration
    - **API Key**: Your Nvidia NIM API key
    - **Base URL**: Usually `https://api.nvidia.com/v1`
    - **Model**: Choose your preferred model (e.g., `meta/llama3-70b-instruct`)
+
+#### Generation Parameters
+   - **Temperature**: Controls randomness (0 = deterministic, 2 = very random)
+   - **Top P**: Nucleus sampling (0.1 = very focused, 1.0 = diverse)
+   - **Top K**: Top-K sampling (1-100)
+   - **Max Tokens**: Maximum response length (100-8000)
+   - **Presence Penalty**: Penalize new topics (-2 to 2)
+   - **Frequency Penalty**: Penalize token repetition (-2 to 2)
+   - **Stop Sequences**: Comma-separated sequences where generation should stop
+
+Settings are automatically saved and persist between sessions.
 
 ### 2. Start Coding
 

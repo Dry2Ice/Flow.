@@ -7,6 +7,13 @@ export interface NvidiaNimConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  maxTokens?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+  stopSequences?: string[];
 }
 
 export interface GenerateCodeRequest {
@@ -39,27 +46,38 @@ class NvidiaNimService {
     }
 
     try {
+      const requestBody: any = {
+        model: this.config.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert software engineer. Generate code based on the user's request.
+            Provide the code and an explanation. If making changes to existing code, provide the old and new content.
+            If this involves multiple steps, suggest development tasks.
+
+            Context: ${JSON.stringify(request.context || {})}`
+          },
+          {
+            role: 'user',
+            content: request.prompt
+          }
+        ],
+        temperature: this.config.temperature ?? 0.7,
+        max_tokens: this.config.maxTokens ?? 4000
+      };
+
+      // Add optional parameters if they exist
+      if (this.config.topP !== undefined) requestBody.top_p = this.config.topP;
+      if (this.config.topK !== undefined) requestBody.top_k = this.config.topK;
+      if (this.config.presencePenalty !== undefined) requestBody.presence_penalty = this.config.presencePenalty;
+      if (this.config.frequencyPenalty !== undefined) requestBody.frequency_penalty = this.config.frequencyPenalty;
+      if (this.config.stopSequences && this.config.stopSequences.length > 0) {
+        requestBody.stop = this.config.stopSequences;
+      }
+
       const response = await axios.post(
         `${this.config.baseUrl}/chat/completions`,
-        {
-          model: this.config.model,
-          messages: [
-            {
-              role: 'system',
-              content: `You are an expert software engineer. Generate code based on the user's request. 
-              Provide the code and an explanation. If making changes to existing code, provide the old and new content.
-              If this involves multiple steps, suggest development tasks.
-              
-              Context: ${JSON.stringify(request.context || {})}`
-            },
-            {
-              role: 'user',
-              content: request.prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 4000
-        },
+        requestBody,
         {
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
