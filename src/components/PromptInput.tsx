@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Send, Settings, Zap } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
+import { aiService } from '@/lib/ai-service';
 import { DevelopmentTask, PromptRequest } from '@/types';
 
 export function PromptInput() {

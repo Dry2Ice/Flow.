@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, AIMessage, PromptPreset } from '@/types';
+import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
 import fs from 'fs';
 import path from 'path';
 
@@ -24,6 +24,11 @@ interface AppState {
   // Logging and error tracking
   logs: LogEntry[];
   bugs: BugReport[];
+
+  // Project context and AI requests
+  projectContexts: ProjectContext[];
+  aiRequests: AIRequest[];
+  maxConcurrentRequests: number;
 
   // AI chat
   messages: AIMessage[];
@@ -120,6 +125,17 @@ interface AppState {
   addBug: (bug: BugReport) => void;
   updateBug: (bugId: string, updates: Partial<BugReport>) => void;
   deleteBug: (bugId: string) => void;
+
+  // Project context management
+  updateProjectContext: (context: ProjectContext) => void;
+  getProjectContext: (projectId: string) => ProjectContext | undefined;
+
+  // AI request management
+  addAIRequest: (request: AIRequest) => void;
+  updateAIRequest: (requestId: string, updates: Partial<AIRequest>) => void;
+  removeAIRequest: (requestId: string) => void;
+  getPendingRequests: () => AIRequest[];
+  getRunningRequests: () => AIRequest[];
 }
 
 export const useAppStore = create<AppState>()(
@@ -135,6 +151,9 @@ export const useAppStore = create<AppState>()(
     currentTask: null,
     logs: [],
     bugs: [],
+    projectContexts: [],
+    aiRequests: [],
+    maxConcurrentRequests: 3,
     messages: [],
     isGenerating: false,
     sidebarOpen: true,
@@ -449,5 +468,37 @@ Deliver production-ready code that solves the user's problem effectively.`
     deleteBug: (bugId) => set((state) => ({
       bugs: state.bugs.filter(b => b.id !== bugId)
     })),
+
+    // Project context management
+    updateProjectContext: (context) => set((state) => ({
+      projectContexts: state.projectContexts
+        .filter(c => c.projectId !== context.projectId)
+        .concat(context)
+    })),
+    getProjectContext: (projectId) => {
+      const state = get();
+      return state.projectContexts.find(c => c.projectId === projectId);
+    },
+
+    // AI request management
+    addAIRequest: (request) => set((state) => ({
+      aiRequests: [...state.aiRequests, request]
+    })),
+    updateAIRequest: (requestId, updates) => set((state) => ({
+      aiRequests: state.aiRequests.map(r =>
+        r.id === requestId ? { ...r, ...updates } : r
+      )
+    })),
+    removeAIRequest: (requestId) => set((state) => ({
+      aiRequests: state.aiRequests.filter(r => r.id !== requestId)
+    })),
+    getPendingRequests: () => {
+      const state = get();
+      return state.aiRequests.filter(r => r.status === 'pending');
+    },
+    getRunningRequests: () => {
+      const state = get();
+      return state.aiRequests.filter(r => r.status === 'running');
+    },
   }))
 );

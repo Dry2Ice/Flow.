@@ -124,6 +124,9 @@ function analyzeProjectStructure(files: any[]): any {
     notes: [] as string[]
   };
 
+  let hasDjango = false;
+  let hasExpress = false;
+
   // Analyze each file
   files.forEach(file => {
     const extension = file.metadata?.extension || '';
@@ -141,9 +144,26 @@ function analyzeProjectStructure(files: any[]): any {
       analysis.primaryFramework = 'Angular';
     } else if (content.includes('express') || content.includes('app.listen')) {
       analysis.primaryFramework = 'Express.js';
+      hasExpress = true;
     } else if (content.includes('django') || content.includes('from django')) {
       analysis.primaryFramework = 'Django';
+      hasDjango = true;
+    } else if (content.includes('flask')) {
+      analysis.primaryFramework = 'Flask';
     }
+  });
+
+  // Structure summary
+  const fileTypes = [...analysis.languages];
+  if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
+    analysis.structureSummary = 'Frontend web application';
+  } else if (fileTypes.includes('python') && hasDjango) {
+    analysis.structureSummary = 'Django web application';
+  } else if (fileTypes.includes('javascript') && hasExpress) {
+    analysis.structureSummary = 'Node.js backend application';
+  } else {
+    analysis.structureSummary = `${fileTypes.join('/')} codebase`;
+  }
 
     // Key components detection
     if (extension === 'js' || extension === 'ts') {
@@ -190,7 +210,7 @@ function analyzeProjectStructure(files: any[]): any {
   const fileTypes = [...analysis.languages];
   if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
     analysis.structureSummary = 'Frontend web application';
-  } else if (fileTypes.includes('python') && content.includes('django')) {
+  } else if (fileTypes.includes('python') && hasDjango) {
     analysis.structureSummary = 'Django web application';
   } else if (fileTypes.includes('javascript') && content.includes('express')) {
     analysis.structureSummary = 'Node.js backend application';
@@ -209,7 +229,6 @@ function analyzeProjectStructure(files: any[]): any {
     analysis.notes.push(`Follow ${analysis.primaryFramework} best practices and conventions`);
   }
 
-  analysis.languages = [...analysis.languages];
   return analysis;
 }
 

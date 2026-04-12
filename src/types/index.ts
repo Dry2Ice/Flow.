@@ -57,6 +57,42 @@ export interface LogEntry {
   relatedPlan?: string;
 }
 
+export interface ProjectContext {
+  id: string;
+  projectId: string;
+  summary: string;
+  keyComponents: string[];
+  dependencies: string[];
+  patterns: string[];
+  architecture: string;
+  lastUpdated: Date;
+  version: number;
+  fileCount: number;
+  totalLines: number;
+  languages: string[];
+  framework: string;
+  complexity: 'low' | 'medium' | 'high' | 'very_high';
+  insights: string[];
+  recommendations: string[];
+}
+
+export interface AIRequest {
+  id: string;
+  type: 'analysis' | 'implementation' | 'review' | 'optimization' | 'debugging';
+  prompt: string;
+  context: any;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  dependencies: string[]; // IDs of requests this depends on
+  createdAt: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  result?: any;
+  error?: string;
+  estimatedTokens: number;
+  actualTokens?: number;
+}
+
 export interface BugReport {
   id: string;
   title: string;
