@@ -270,6 +270,8 @@ class AIService {
 
           addLog({
             id: crypto.randomUUID(),
+            sessionId: request.sessionId,
+            jobId: request.jobId,
             timestamp: new Date(),
             type: 'info',
             message: `Starting ${request.type} request: ${request.prompt.substring(0, 50)}...`,
@@ -292,6 +294,8 @@ class AIService {
 
           addLog({
             id: crypto.randomUUID(),
+            sessionId: request.sessionId,
+            jobId: request.jobId,
             timestamp: new Date(),
             type: 'success',
             message: `Completed ${request.type} request successfully`,
@@ -307,6 +311,8 @@ class AIService {
 
           addLog({
             id: crypto.randomUUID(),
+            sessionId: request.sessionId,
+            jobId: request.jobId,
             timestamp: new Date(),
             type: 'error',
             message: `Failed ${request.type} request: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -325,6 +331,8 @@ class AIService {
 
     const aiRequest: AIRequest = {
       id: crypto.randomUUID(),
+      sessionId: request.sessionId,
+      jobId: request.jobId,
       status: 'pending',
       createdAt: new Date(),
       estimatedTokens: Math.ceil(request.prompt.length / 4),

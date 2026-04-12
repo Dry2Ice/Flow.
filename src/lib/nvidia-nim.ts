@@ -19,6 +19,7 @@ export interface NvidiaNimConfig {
 
 export interface GenerateCodeRequest extends PromptRequest {
   generalPrompt?: string;
+  signal?: AbortSignal;
 }
 
 export interface GenerateCodeResponse {
@@ -127,20 +128,19 @@ function analyzeProjectStructure(files: any[]): any {
   let hasDjango = false;
   let hasExpress = false;
 
-  // Analyze each file
-  files.forEach(file => {
+  files.forEach((file) => {
     const extension = file.metadata?.extension || '';
     const language = file.metadata?.language || '';
     const content = file.content || '';
+    const fileName = file.path.split('/').pop();
 
     if (language) analysis.languages.add(language);
 
-    // Framework detection
     if (content.includes('React') || content.includes('react')) {
       analysis.primaryFramework = 'React';
     } else if (content.includes('Vue') || content.includes('vue')) {
       analysis.primaryFramework = 'Vue.js';
-    } else if (content.includes('Angular') || extension === 'ts' && content.includes('@Component')) {
+    } else if (content.includes('Angular') || (extension === 'ts' && content.includes('@Component'))) {
       analysis.primaryFramework = 'Angular';
     } else if (content.includes('express') || content.includes('app.listen')) {
       analysis.primaryFramework = 'Express.js';
@@ -151,31 +151,16 @@ function analyzeProjectStructure(files: any[]): any {
     } else if (content.includes('flask')) {
       analysis.primaryFramework = 'Flask';
     }
-  });
 
-  // Structure summary
-  const fileTypes = [...analysis.languages];
-  if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
-    analysis.structureSummary = 'Frontend web application';
-  } else if (fileTypes.includes('python') && hasDjango) {
-    analysis.structureSummary = 'Django web application';
-  } else if (fileTypes.includes('javascript') && hasExpress) {
-    analysis.structureSummary = 'Node.js backend application';
-  } else {
-    analysis.structureSummary = `${fileTypes.join('/')} codebase`;
-  }
-
-    // Key components detection
-    if (extension === 'js' || extension === 'ts') {
+    if (extension === 'js' || extension === 'ts' || extension === 'tsx') {
       const functions = content.match(/(?:export\s+)?(?:function|const|let|var)\s+(\w+)\s*[=(]/g) || [];
       const classes = content.match(/(?:export\s+)?class\s+(\w+)/g) || [];
       const components = [...functions, ...classes].slice(0, 5);
       if (components.length > 0) {
-        analysis.keyComponents.push(`${file.path.split('/').pop()}: ${components.join(', ')}`);
+        analysis.keyComponents.push(`${fileName}: ${components.join(', ')}`);
       }
     }
 
-    // Dependencies analysis
     if (file.path.includes('package.json')) {
       try {
         const pkg = JSON.parse(content);
@@ -183,36 +168,33 @@ function analyzeProjectStructure(files: any[]): any {
         if (deps.length > 0) {
           analysis.dependencies.push(`NPM: ${deps.join(', ')}`);
         }
-      } catch (e) {
+      } catch {
         // Invalid JSON
       }
     }
 
-    // Import analysis
     const imports = content.match(/import\s+.*?\s+from\s+['"]([^'"]+)['"]/g) || [];
     if (imports.length > 3) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: ${imports.length} imports`);
+      analysis.patterns.push(`${fileName}: ${imports.length} imports`);
     }
 
-    // Architecture patterns
     if (content.includes('useState') || content.includes('useEffect')) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: React hooks`);
+      analysis.patterns.push(`${fileName}: React hooks`);
     }
     if (content.includes('async') && content.includes('await')) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: Async/await patterns`);
+      analysis.patterns.push(`${fileName}: Async/await patterns`);
     }
     if (content.includes('interface') || content.includes('type')) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: TypeScript types`);
+      analysis.patterns.push(`${fileName}: TypeScript types`);
     }
   });
 
-  // Structure summary
   const fileTypes = [...analysis.languages];
   if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
     analysis.structureSummary = 'Frontend web application';
   } else if (fileTypes.includes('python') && hasDjango) {
     analysis.structureSummary = 'Django web application';
-  } else if (fileTypes.includes('javascript') && content.includes('express')) {
+  } else if (fileTypes.includes('javascript') && hasExpress) {
     analysis.structureSummary = 'Node.js backend application';
   } else {
     analysis.structureSummary = `${fileTypes.join('/')} codebase`;
@@ -401,6 +383,7 @@ ${numberedLines}
         `${this.config.baseUrl}/chat/completions`,
         requestBody,
         {
+          signal: request.signal,
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json'

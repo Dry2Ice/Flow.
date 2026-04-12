@@ -3,17 +3,28 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, X } from 'lucide-react';
+import { Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, Plus } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { LogEntry } from '@/types';
 
 export function AIChat() {
-  const { messages, isGenerating, logs, addLog, addBug } = useAppStore();
+  const {
+    sessions,
+    activeSessionId,
+    setActiveSession,
+    createSession,
+    logs,
+    addBug
+  } = useAppStore();
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'chat' | 'logs'>('chat');
   const [newBugTitle, setNewBugTitle] = useState('');
   const [newBugDescription, setNewBugDescription] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeSession = sessions[activeSessionId] ?? { messages: [], isGenerating: false };
+  const messages = activeSession.messages;
+  const isGenerating = activeSession.isGenerating;
+  const sessionLogs = logs.filter((log) => !log.sessionId || log.sessionId === activeSessionId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,8 +116,29 @@ export function AIChat() {
             )}
           </h3>
           <div className="text-xs text-neutral-500">
-            {activeTab === 'chat' ? `${messages.length} messages` : `${logs.length} logs`}
+            {activeTab === 'chat' ? `${messages.length} messages` : `${sessionLogs.length} logs`}
           </div>
+        </div>
+        <div className="px-3 pb-3 flex items-center gap-2">
+          <select
+            value={activeSessionId}
+            onChange={(e) => setActiveSession(e.target.value)}
+            className="flex-1 px-2 py-1 bg-neutral-700 border border-neutral-600 rounded text-xs"
+          >
+            {Object.keys(sessions).map((sessionId) => (
+              <option key={sessionId} value={sessionId}>
+                Session: {sessionId.slice(0, 8)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => createSession()}
+            className="px-2 py-1 bg-neutral-700 hover:bg-neutral-600 rounded text-xs flex items-center gap-1"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New
+          </button>
         </div>
       </div>
 
@@ -124,7 +156,7 @@ export function AIChat() {
             ) : (
               messages.map((message) => (
                 <div
-                  key={message.timestamp.getTime()}
+                  key={message.id}
                   className={`flex gap-3 ${
                     message.role === 'user' ? 'justify-end' : 'justify-start'
                   }`}
@@ -174,10 +206,10 @@ export function AIChat() {
 
                     {message.role === 'assistant' && (
                       <button
-                        onClick={() => copyToClipboard(message.content, message.timestamp.getTime().toString())}
+                        onClick={() => copyToClipboard(message.content, message.id)}
                         className="mt-2 flex items-center gap-1 text-xs opacity-70 hover:opacity-100 transition-opacity"
                       >
-                        {copiedMessageId === message.timestamp.getTime().toString() ? (
+                        {copiedMessageId === message.id ? (
                           <>
                             <Check className="w-3 h-3" />
                             Copied
@@ -249,14 +281,14 @@ export function AIChat() {
 
             {/* Logs List */}
             <div className="space-y-2">
-              {logs.length === 0 ? (
+              {sessionLogs.length === 0 ? (
                 <div className="text-center text-neutral-500 py-8">
                   <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p className="text-sm">No logs yet</p>
                   <p className="text-xs mt-2">Logs will appear here during AI operations</p>
                 </div>
               ) : (
-                logs.slice().reverse().map((log) => (
+                sessionLogs.slice().reverse().map((log) => (
                   <div key={log.id} className="p-3 bg-neutral-700 rounded border border-neutral-600">
                     <div className="flex items-start gap-3">
                       {getLogIcon(log.type)}
