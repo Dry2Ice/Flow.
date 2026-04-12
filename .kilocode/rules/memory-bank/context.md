@@ -88,6 +88,8 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Centralized control buttons in header center (Statistics toggle, Theme toggle, Settings)
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
+- [x] Unified AI executor service extracted from `PromptInput` and reused by Development Plan actions with preset-based routing (`analyze` / `develop` / `debug`)
+- [x] Development Plan/Bug actions now execute real AI calls, update status + `lastChecked`, and write action/result logs
 - [x] Secure file-level read/write API routes with workspace path validation, binary-file detection, permission handling, and write conflict detection
 - [x] File browser now loads real file contents from project API instead of placeholder text
 - [x] Code editor now supports explicit save/reload workflow (Ctrl/Cmd+S) wired to project file API with conflict/error feedback
@@ -168,6 +170,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-12 | Replaced DevelopmentPlan placeholders with real AI execution via shared `executeAIRequest` service; added preset routing for check/execute/fix flows and post-response status/lastChecked/log updates |
 | 2026-04-12 | Added persistent prompt preset storage/loading in Zustand store, implemented `updatePromptPreset`, and wired SettingsModal preset saving to update active PromptInput system prompt immediately |
 | 2026-04-12 | Resolved npm dependency installation issue by removing legacy `react-diff-viewer` (React 15/16 peer requirement), keeping `react-diff-viewer-continued`, and generating an npm `package-lock.json` so `npm ci` works reliably |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
