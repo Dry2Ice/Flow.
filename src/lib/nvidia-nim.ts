@@ -88,7 +88,7 @@ function buildIntelligentContextSummary(context?: any): string {
     '',
     `### 📊 Project Overview`,
     `- Total files: ${files.length}`,
-    `- Languages: ${projectAnalysis.languages.join(', ')}`,
+    `- Languages: ${[...projectAnalysis.languages].join(', ')}`,
     `- Primary framework: ${projectAnalysis.primaryFramework || 'Not detected'}`,
     `- Code structure: ${projectAnalysis.structureSummary}`,
     '',
@@ -112,26 +112,46 @@ function buildIntelligentContextSummary(context?: any): string {
   return sections.join('\n');
 }
 
+interface ProjectFileForAnalysis {
+  path: string;
+  content?: string;
+  metadata?: {
+    extension?: string;
+    language?: string;
+  };
+}
+
+interface ProjectStructureAnalysis {
+  languages: Set<string>;
+  primaryFramework: string;
+  structureSummary: string;
+  keyComponents: string[];
+  dependencies: string[];
+  patterns: string[];
+  notes: string[];
+}
+
 // Comprehensive project structure analysis
-function analyzeProjectStructure(files: any[]): any {
-  const analysis = {
+function analyzeProjectStructure(files: ProjectFileForAnalysis[]): ProjectStructureAnalysis {
+  const analysis: ProjectStructureAnalysis = {
     languages: new Set<string>(),
     primaryFramework: '',
     structureSummary: '',
-    keyComponents: [] as string[],
-    dependencies: [] as string[],
-    patterns: [] as string[],
-    notes: [] as string[]
+    keyComponents: [],
+    dependencies: [],
+    patterns: [],
+    notes: []
   };
 
   let hasDjango = false;
   let hasExpress = false;
 
   // Analyze each file
-  files.forEach(file => {
+  files.forEach((file) => {
     const extension = file.metadata?.extension || '';
     const language = file.metadata?.language || '';
     const content = file.content || '';
+    const fileName = file.path.split('/').pop() || file.path;
 
     if (language) analysis.languages.add(language);
 
@@ -140,7 +160,7 @@ function analyzeProjectStructure(files: any[]): any {
       analysis.primaryFramework = 'React';
     } else if (content.includes('Vue') || content.includes('vue')) {
       analysis.primaryFramework = 'Vue.js';
-    } else if (content.includes('Angular') || extension === 'ts' && content.includes('@Component')) {
+    } else if (content.includes('Angular') || (extension === 'ts' && content.includes('@Component'))) {
       analysis.primaryFramework = 'Angular';
     } else if (content.includes('express') || content.includes('app.listen')) {
       analysis.primaryFramework = 'Express.js';
@@ -151,6 +171,46 @@ function analyzeProjectStructure(files: any[]): any {
     } else if (content.includes('flask')) {
       analysis.primaryFramework = 'Flask';
     }
+
+    // Key components detection
+    if (extension === 'js' || extension === 'ts') {
+      const functions = content.match(/(?:export\s+)?(?:function|const|let|var)\s+(\w+)\s*[=(]/g) || [];
+      const classes = content.match(/(?:export\s+)?class\s+(\w+)/g) || [];
+      const components = [...functions, ...classes].slice(0, 5);
+      if (components.length > 0) {
+        analysis.keyComponents.push(`${fileName}: ${components.join(', ')}`);
+      }
+    }
+
+    // Dependencies analysis
+    if (file.path.includes('package.json')) {
+      try {
+        const pkg = JSON.parse(content) as { dependencies?: Record<string, string> };
+        const deps = Object.keys(pkg.dependencies || {}).slice(0, 5);
+        if (deps.length > 0) {
+          analysis.dependencies.push(`NPM: ${deps.join(', ')}`);
+        }
+      } catch {
+        // Invalid JSON
+      }
+    }
+
+    // Import analysis
+    const imports = content.match(/import\s+.*?\s+from\s+['"]([^'"]+)['"]/g) || [];
+    if (imports.length > 3) {
+      analysis.patterns.push(`${fileName}: ${imports.length} imports`);
+    }
+
+    // Architecture patterns
+    if (content.includes('useState') || content.includes('useEffect')) {
+      analysis.patterns.push(`${fileName}: React hooks`);
+    }
+    if (content.includes('async') && content.includes('await')) {
+      analysis.patterns.push(`${fileName}: Async/await patterns`);
+    }
+    if (content.includes('interface') || content.includes('type')) {
+      analysis.patterns.push(`${fileName}: TypeScript types`);
+    }
   });
 
   // Structure summary
@@ -160,59 +220,6 @@ function analyzeProjectStructure(files: any[]): any {
   } else if (fileTypes.includes('python') && hasDjango) {
     analysis.structureSummary = 'Django web application';
   } else if (fileTypes.includes('javascript') && hasExpress) {
-    analysis.structureSummary = 'Node.js backend application';
-  } else {
-    analysis.structureSummary = `${fileTypes.join('/')} codebase`;
-  }
-
-    // Key components detection
-    if (extension === 'js' || extension === 'ts') {
-      const functions = content.match(/(?:export\s+)?(?:function|const|let|var)\s+(\w+)\s*[=(]/g) || [];
-      const classes = content.match(/(?:export\s+)?class\s+(\w+)/g) || [];
-      const components = [...functions, ...classes].slice(0, 5);
-      if (components.length > 0) {
-        analysis.keyComponents.push(`${file.path.split('/').pop()}: ${components.join(', ')}`);
-      }
-    }
-
-    // Dependencies analysis
-    if (file.path.includes('package.json')) {
-      try {
-        const pkg = JSON.parse(content);
-        const deps = Object.keys(pkg.dependencies || {}).slice(0, 5);
-        if (deps.length > 0) {
-          analysis.dependencies.push(`NPM: ${deps.join(', ')}`);
-        }
-      } catch (e) {
-        // Invalid JSON
-      }
-    }
-
-    // Import analysis
-    const imports = content.match(/import\s+.*?\s+from\s+['"]([^'"]+)['"]/g) || [];
-    if (imports.length > 3) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: ${imports.length} imports`);
-    }
-
-    // Architecture patterns
-    if (content.includes('useState') || content.includes('useEffect')) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: React hooks`);
-    }
-    if (content.includes('async') && content.includes('await')) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: Async/await patterns`);
-    }
-    if (content.includes('interface') || content.includes('type')) {
-      analysis.patterns.push(`${file.path.split('/').pop()}: TypeScript types`);
-    }
-  });
-
-  // Structure summary
-  const fileTypes = [...analysis.languages];
-  if (fileTypes.includes('javascript') && fileTypes.includes('html')) {
-    analysis.structureSummary = 'Frontend web application';
-  } else if (fileTypes.includes('python') && hasDjango) {
-    analysis.structureSummary = 'Django web application';
-  } else if (fileTypes.includes('javascript') && content.includes('express')) {
     analysis.structureSummary = 'Node.js backend application';
   } else {
     analysis.structureSummary = `${fileTypes.join('/')} codebase`;
