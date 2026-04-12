@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { FileNode, Project, CodeChange, DevelopmentTask, AIMessage } from '@/types';
+import { FileNode, Project, CodeChange, DevelopmentTask, AIMessage, PromptPreset } from '@/types';
 
 interface AppState {
   // Current project
@@ -30,6 +30,13 @@ interface AppState {
   gitInitialized: boolean;
   commits: any[];
 
+  // Prompt presets
+  activePreset: PromptPreset | null;
+  promptPresets: PromptPreset[];
+
+  // Project settings
+  projectPath: string;
+
   // Actions
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
@@ -54,6 +61,12 @@ interface AppState {
   // Git actions
   setGitInitialized: (initialized: boolean) => void;
   setCommits: (commits: any[]) => void;
+
+  // Prompt preset actions
+  setActivePreset: (preset: PromptPreset | null) => void;
+
+  // Project actions
+  setProjectPath: (path: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -72,6 +85,79 @@ export const useAppStore = create<AppState>()(
     currentDiff: null,
     gitInitialized: false,
     commits: [],
+    activePreset: null,
+    promptPresets: [
+      {
+        id: 'debug',
+        name: 'Bug Detection & Fixing',
+        description: 'Search for bugs, analyze code issues, and suggest fixes',
+        systemPrompt: `You are an expert software engineer specializing in debugging and code quality. Your task is to:
+
+1. Analyze the provided code and project files for potential bugs, security issues, and code quality problems
+2. Identify specific problems with line numbers and explanations
+3. Suggest concrete fixes with code examples
+4. Explain the reasoning behind each suggested change
+5. Prioritize critical issues that could cause runtime errors or security vulnerabilities
+
+When analyzing the project, consider:
+- Logic errors and edge cases
+- Type safety issues
+- Performance bottlenecks
+- Security vulnerabilities
+- Code maintainability
+- Best practices compliance
+
+Provide actionable recommendations that can be implemented immediately.`
+      },
+      {
+        id: 'analyze',
+        name: 'Code Analysis & Planning',
+        description: 'Analyze codebase and create improvement plans',
+        systemPrompt: `You are a senior software architect specializing in code analysis and strategic planning. Your task is to:
+
+1. Thoroughly analyze the entire codebase structure, patterns, and architecture
+2. Identify areas for improvement, refactoring opportunities, and modernization needs
+3. Create detailed development plans with prioritized tasks
+4. Suggest architectural improvements and design patterns
+5. Provide technical debt assessment and recommendations
+6. Outline implementation strategies with clear milestones
+
+Consider:
+- Code organization and modularity
+- Design patterns and architectural decisions
+- Technology stack appropriateness
+- Scalability and maintainability
+- Testing coverage and quality assurance
+- Documentation and developer experience
+
+Generate a comprehensive improvement roadmap with measurable goals and success criteria.`
+      },
+      {
+        id: 'develop',
+        name: 'Active Development',
+        description: 'Implement features, make changes, and enhance functionality',
+        systemPrompt: `You are a skilled software developer ready to implement features and make code changes. Your task is to:
+
+1. Understand the user's requirements and current codebase context
+2. Implement requested features with clean, maintainable code
+3. Follow existing code patterns and conventions
+4. Ensure type safety and error handling
+5. Provide complete, working solutions that integrate well with existing code
+6. Create appropriate tests when needed
+7. Update documentation if necessary
+
+When making changes:
+- Preserve existing functionality
+- Follow the established architecture and patterns
+- Write self-documenting code with clear variable names
+- Handle edge cases and error conditions
+- Optimize for performance where appropriate
+- Ensure compatibility with existing dependencies
+
+Deliver production-ready code that solves the user's problem effectively.`
+      }
+    ],
+    projectPath: '',
 
     // Project actions
     setCurrentProject: (project) => set({ currentProject: project }),
@@ -122,5 +208,11 @@ export const useAppStore = create<AppState>()(
     // Git actions
     setGitInitialized: (initialized) => set({ gitInitialized: initialized }),
     setCommits: (commits) => set({ commits }),
+
+    // Prompt preset actions
+    setActivePreset: (preset) => set({ activePreset: preset }),
+
+    // Project actions
+    setProjectPath: (path: string) => set({ projectPath: path }),
   }))
 );

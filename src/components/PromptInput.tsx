@@ -6,12 +6,12 @@ import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
-import { DevelopmentTask } from '@/types';
+import { DevelopmentTask, PromptRequest } from '@/types';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { addMessage, setGenerating, activeFile, openFiles, addTask } = useAppStore();
+  const { addMessage, setGenerating, activeFile, openFiles, addTask, activePreset, projectPath } = useAppStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +30,41 @@ export function PromptInput() {
     try {
       const currentFile = openFiles.find(f => f.path === activeFile);
 
-      const response = await nvidiaNimService.generateCode({
+      // Load project files if project path is set
+      let projectFiles = openFiles.map(f => ({
+        path: f.path,
+        content: f.content
+      }));
+
+      if (projectPath) {
+        try {
+          const projectResponse = await fetch('/api/project/files', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ projectPath }),
+          });
+          const projectData = await projectResponse.json();
+          if (projectData.files) {
+            projectFiles = [...projectFiles, ...projectData.files];
+          }
+        } catch (error) {
+          console.error('Failed to load project files:', error);
+        }
+      }
+
+      const request: PromptRequest = {
         prompt,
+        preset: activePreset || undefined,
         context: {
-          currentCode: currentFile?.content,
-          filePath: activeFile || undefined,
+          currentFile: activeFile || undefined,
+          selectedCode: currentFile?.content,
+          projectFiles
         },
-      });
+      };
+
+      const response = await nvidiaNimService.generateCode(request);
 
       const assistantMessage = {
         role: 'assistant' as const,

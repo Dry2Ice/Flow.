@@ -42,3 +42,6 @@ Starting a new Next.js project involves boilerplate setup, configuration decisio
 - **Database**: Use add-database recipe for Drizzle + SQLite
 - **Styling**: Tailwind CSS pre-configured
 - **AI Assistance**: Memory bank for context persistence
+- **Local Projects**: Direct integration with user's local project files
+- **Specialized AI Modes**: Three distinct behavior presets for different coding tasks
+- **Advanced Generation Control**: Full parameter control for AI responses

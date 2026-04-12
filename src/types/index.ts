@@ -35,12 +35,24 @@ export interface DevelopmentTask {
   updatedAt: Date;
 }
 
+export interface PromptPreset {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+}
+
 export interface PromptRequest {
   prompt: string;
+  preset?: PromptPreset;
   context?: {
     currentFile?: string;
     selectedCode?: string;
     projectId?: string;
+    projectFiles?: Array<{
+      path: string;
+      content: string;
+    }>;
   };
 }
 

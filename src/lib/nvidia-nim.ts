@@ -1,7 +1,7 @@
 // src/lib/nvidia-nim.ts
 
 import axios from 'axios';
-import { DevelopmentTask, CodeChange } from '@/types';
+import { DevelopmentTask, CodeChange, PromptRequest } from '@/types';
 
 export interface NvidiaNimConfig {
   apiKey: string;
@@ -16,15 +16,7 @@ export interface NvidiaNimConfig {
   stopSequences?: string[];
 }
 
-export interface GenerateCodeRequest {
-  prompt: string;
-  context?: {
-    language?: string;
-    framework?: string;
-    currentCode?: string;
-    filePath?: string;
-  };
-}
+export interface GenerateCodeRequest extends PromptRequest {}
 
 export interface GenerateCodeResponse {
   code: string;
@@ -46,16 +38,19 @@ class NvidiaNimService {
     }
 
     try {
+      const systemPrompt = request.preset?.systemPrompt ||
+        `You are an expert software engineer. Generate code based on the user's request.
+        Provide the code and an explanation. If making changes to existing code, provide the old and new content.
+        If this involves multiple steps, suggest development tasks.
+
+        Context: ${JSON.stringify(request.context || {})}`;
+
       const requestBody: any = {
         model: this.config.model,
         messages: [
           {
             role: 'system',
-            content: `You are an expert software engineer. Generate code based on the user's request.
-            Provide the code and an explanation. If making changes to existing code, provide the old and new content.
-            If this involves multiple steps, suggest development tasks.
-
-            Context: ${JSON.stringify(request.context || {})}`
+            content: `${systemPrompt}\n\nProject Context:\n${request.context?.projectFiles ? request.context.projectFiles.map(f => `File: ${f.path}\n${f.content}`).join('\n\n---\n\n') : 'No project files available'}`
           },
           {
             role: 'user',

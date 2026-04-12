@@ -3,8 +3,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Settings } from 'lucide-react';
+import { X, Settings, Check } from 'lucide-react';
 import axios from 'axios';
+import { useAppStore } from '@/lib/store';
+import { PromptPreset } from '@/types';
 
 export function SettingsModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,8 +20,10 @@ export function SettingsModal() {
   const [presencePenalty, setPresencePenalty] = useState(0.0);
   const [frequencyPenalty, setFrequencyPenalty] = useState(0.0);
   const [stopSequences, setStopSequences] = useState('');
+  const [projectPath, setProjectPathLocal] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { activePreset, promptPresets, setActivePreset, setProjectPath } = useAppStore();
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -37,6 +41,16 @@ export function SettingsModal() {
         setPresencePenalty(settings.presencePenalty ?? 0.0);
         setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
         setStopSequences(settings.stopSequences?.join(', ') || '');
+        setProjectPathLocal(settings.projectPath || '');
+        setProjectPath(settings.projectPath || '');
+
+        // Load active preset
+        if (settings.activePresetId) {
+          const preset = promptPresets.find(p => p.id === settings.activePresetId);
+          if (preset) {
+            setActivePreset(preset);
+          }
+        }
       } catch (error) {
         console.error('Failed to load settings:', error);
       }
@@ -60,13 +74,21 @@ export function SettingsModal() {
         presencePenalty,
         frequencyPenalty,
         stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
+        projectPath,
       };
 
       const response = await axios.post('/api/nim/config', config);
 
       if (response.data.success) {
-        // Save settings to localStorage
-        localStorage.setItem('nim-settings', JSON.stringify(config));
+        // Update store
+        setProjectPath(projectPath);
+
+        // Save settings to localStorage with active preset
+        const settingsToSave = {
+          ...config,
+          activePresetId: activePreset?.id || null
+        };
+        localStorage.setItem('nim-settings', JSON.stringify(settingsToSave));
         setMessage('AI configured successfully!');
         setTimeout(() => {
           setIsOpen(false);
@@ -152,6 +174,20 @@ export function SettingsModal() {
                       placeholder="meta/llama3-70b-instruct"
                       required
                     />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Project Directory
+                    </label>
+                    <input
+                      type="text"
+                      value={projectPath}
+                      onChange={(e) => setProjectPathLocal(e.target.value)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="/path/to/your/project"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Path to your local project directory for file operations</div>
                   </div>
                 </div>
               </div>
@@ -270,6 +306,56 @@ export function SettingsModal() {
                     <div className="text-xs text-neutral-400 mt-1">Sequences where generation should stop (comma-separated)</div>
                   </div>
                 </div>
+              </div>
+
+              {/* Prompt Presets Section */}
+              <div>
+                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                  AI Behavior Presets
+                </h4>
+                <div className="space-y-3">
+                  {promptPresets.map((preset) => (
+                    <div
+                      key={preset.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        activePreset?.id === preset.id
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-neutral-600 hover:border-neutral-500 hover:bg-neutral-700/50'
+                      }`}
+                      onClick={() => setActivePreset(preset)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          activePreset?.id === preset.id
+                            ? 'border-blue-500'
+                            : 'border-neutral-400'
+                        }`}>
+                          {activePreset?.id === preset.id && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-medium text-neutral-200 mb-1">{preset.name}</h5>
+                          <p className="text-sm text-neutral-400 mb-2">{preset.description}</p>
+                          <details className="text-xs text-neutral-500">
+                            <summary className="cursor-pointer hover:text-neutral-400">View system prompt</summary>
+                            <div className="mt-2 p-3 bg-neutral-800 rounded text-neutral-300 whitespace-pre-wrap">
+                              {preset.systemPrompt}
+                            </div>
+                          </details>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {activePreset && (
+                  <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded">
+                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                      <Check className="w-4 h-4" />
+                      Active preset: <strong>{activePreset.name}</strong>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {message && (

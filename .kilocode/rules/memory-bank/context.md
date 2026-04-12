@@ -23,6 +23,9 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Git integration for version control and rollbacks
 - [x] Advanced AI generation parameters (temperature, top-p, top-k, penalties)
 - [x] Persistent settings storage in localStorage
+- [x] AI behavior presets (bug detection, analysis, development)
+- [x] Project directory integration for full codebase context
+- [x] Local file system integration for project analysis
 
 ## Current Structure
 

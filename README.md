@@ -32,6 +32,16 @@ A web-based code editor powered by Nvidia NIM AI for intelligent code generation
    - **Frequency Penalty**: Penalize token repetition (-2 to 2)
    - **Stop Sequences**: Comma-separated sequences where generation should stop
 
+#### AI Behavior Presets
+Choose from three specialized modes:
+- **Bug Detection & Fixing**: Analyzes code for bugs, security issues, and suggests fixes
+- **Code Analysis & Planning**: Comprehensive codebase analysis and improvement planning
+- **Active Development**: Implements features, makes changes, and enhances functionality
+
+#### Project Integration
+- **Project Directory**: Set the path to your local project for full codebase context
+- **File Integration**: AI analyzes all project files for better understanding and suggestions
+
 Settings are automatically saved and persist between sessions.
 
 ### 2. Start Coding
