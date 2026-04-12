@@ -18,12 +18,32 @@ The application features a fully customizable four-zone workspace:
 - **Zone 1 (Left)**: Files & Projects - File browser and project management with tabs
 - **Zone 2 (Center Left)**: Code Editor - Monaco Editor with professional coding features
 - **Zone 3 (Center Right)**: Code Preview - Live preview with HTML rendering and execution
-- **Zone 4 (Right)**: Plan & Chat - Development plan and AI conversation history (vertically split)
+- **Zone 4 (Right)**: Plans & Chat - Development plans/bug reports and AI chat/logs (vertically split)
 - **Bottom Bar**: AI Prompt Input - Always accessible prompt interface
 
 **Resizable Panels**: Drag the borders between zones to customize the layout to your preference. Panel sizes are automatically saved.
 
 **Reset Layout**: Use the settings gear icon → "Reset Workspace Layout" to restore default panel sizes.
+
+## Advanced Features
+
+### Interactive Planning System
+- **Hierarchical Tasks**: Create plans containing tasks with checklist items
+- **Multi-Status Tracking**: Pending, In Progress, Partially Completed, Completed, Cancelled
+- **AI-Powered Execution**: Check and execute tasks using specialized AI presets
+- **Auto-Execution**: Set plans/tasks to run automatically with appropriate presets
+
+### Comprehensive Logging & Bug Tracking
+- **Real-time Logs**: Track all AI operations, file operations, and system events
+- **Bug Reports**: Automatically generated or user-created issue tracking
+- **Severity Levels**: Critical, High, Medium, Low priority classification
+- **Resolution Tracking**: Document bug fixes and verification steps
+
+### AI Interaction Modes
+- **Chat Mode**: Standard conversational AI interaction
+- **Logs Mode**: View detailed operation logs and system events
+- **Bug Reporting**: Create and manage bug reports with AI assistance
+- **Task Execution**: AI-powered task checking and implementation
 
 ## Getting Started
 

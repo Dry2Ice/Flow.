@@ -22,6 +22,8 @@ export function PromptInput() {
     setActivePreset,
     projectPath,
     generalPrompt,
+    addLog,
+    addBug,
     ultraModeActive,
     ultraModeStep,
     ultraModeTotalSteps,
@@ -68,6 +70,15 @@ export function PromptInput() {
       }
 
       try {
+        // Log the start of AI interaction
+        addLog({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          type: 'info',
+          message: `Starting AI interaction with preset: ${activePreset?.name || 'Default'}`,
+          source: 'ai_execution'
+        });
+
         const currentFile = openFiles.find(f => f.path === activeFile);
 
         // Load project files
@@ -89,8 +100,23 @@ export function PromptInput() {
             if (projectData.files) {
               projectFiles = [...projectFiles, ...projectData.files];
             }
+
+            addLog({
+              id: crypto.randomUUID(),
+              timestamp: new Date(),
+              type: 'info',
+              message: `Loaded ${projectData.files?.length || 0} project files from ${projectPath}`,
+              source: 'file_operation'
+            });
           } catch (error) {
             console.error('Failed to load project files:', error);
+            addLog({
+              id: crypto.randomUUID(),
+              timestamp: new Date(),
+              type: 'warning',
+              message: `Failed to load project files: ${error}`,
+              source: 'file_operation'
+            });
           }
         }
 
@@ -199,16 +225,25 @@ export function PromptInput() {
           },
         };
 
-      const response = await nvidiaNimService.generateCode(request);
+        const response = await nvidiaNimService.generateCode(request);
 
-      const assistantMessage = {
-        role: 'assistant' as const,
-        content: response.explanation,
-        timestamp: new Date(),
-        changes: response.changes,
-      };
+        // Log successful AI response
+        addLog({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          type: 'success',
+          message: `AI generated response using ${activePreset?.name || 'Default'} preset`,
+          source: 'ai_execution'
+        });
 
-      addMessage(assistantMessage);
+        const assistantMessage = {
+          role: 'assistant' as const,
+          content: response.explanation,
+          timestamp: new Date(),
+          changes: response.changes,
+        };
+
+        addMessage(assistantMessage);
 
       // Apply code changes if any
       if (response.changes && response.changes.length > 0) {
@@ -225,15 +260,42 @@ export function PromptInput() {
         });
       }
 
-    } catch (error) {
-      console.error('Failed to generate code:', error);
-      const errorMessage = {
-        role: 'assistant' as const,
-        content: 'Sorry, I encountered an error while generating code. Please try again.',
-        timestamp: new Date(),
-      };
-      addMessage(errorMessage);
-    } finally {
+      } catch (error) {
+        console.error('Failed to generate code:', error);
+
+        // Log the error
+        addLog({
+          id: crypto.randomUUID(),
+          timestamp: new Date(),
+          type: 'error',
+          message: `AI execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          details: error instanceof Error ? error.stack : undefined,
+          source: 'ai_execution'
+        });
+
+        // Auto-create bug report for critical errors
+        if (error instanceof Error && error.message.includes('API')) {
+          addBug({
+            id: crypto.randomUUID(),
+            title: 'AI API Connection Error',
+            description: `Failed to connect to AI service: ${error.message}`,
+            status: 'open',
+            severity: 'high',
+            source: 'program_error',
+            relatedFiles: [],
+            relatedTasks: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+
+        const errorMessage = {
+          role: 'assistant' as const,
+          content: 'Sorry, I encountered an error while generating code. Please try again.',
+          timestamp: new Date(),
+        };
+        addMessage(errorMessage);
+      } finally {
       setIsLoading(false);
       setGenerating(false);
       setPrompt('');

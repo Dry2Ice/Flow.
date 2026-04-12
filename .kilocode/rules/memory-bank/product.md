@@ -56,6 +56,9 @@ Starting a new Next.js project involves boilerplate setup, configuration decisio
 - **Interactive Planning**: Hierarchical plan and task management with AI assistance
 - **Auto-Execution**: Automated task execution with intelligent preset switching
 - **Status Tracking**: Comprehensive progress monitoring with multiple completion states
+- **Advanced Logging**: Real-time tracking of AI operations and system events
+- **Bug Management**: Comprehensive issue tracking with severity and resolution
+- **Dual Interfaces**: Tabbed chat/logs and plans/bugs for comprehensive oversight
 - **Multi-Project Management**: Create new projects or load existing ones
 - **Project Persistence**: Save and switch between multiple projects
 - **Tabbed Interface**: Organized file browser and project manager

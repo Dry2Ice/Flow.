@@ -46,6 +46,32 @@ export interface DevelopmentTask {
   updatedAt: Date;
 }
 
+export interface LogEntry {
+  id: string;
+  timestamp: Date;
+  type: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+  details?: string;
+  source?: 'ai_execution' | 'program_run' | 'environment_setup' | 'file_operation' | 'user_action';
+  relatedTask?: string;
+  relatedPlan?: string;
+}
+
+export interface BugReport {
+  id: string;
+  title: string;
+  description: string;
+  status: 'open' | 'investigating' | 'fixing' | 'resolved' | 'closed';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  source: 'ai_detected' | 'program_error' | 'user_reported' | 'test_failure';
+  relatedFiles: string[];
+  relatedTasks: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  lastChecked?: Date;
+  resolution?: string;
+}
+
 export interface DevelopmentPlan {
   id: string;
   title: string;

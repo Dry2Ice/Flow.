@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, AIMessage, PromptPreset } from '@/types';
+import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, AIMessage, PromptPreset } from '@/types';
 import fs from 'fs';
 import path from 'path';
 
@@ -20,6 +20,10 @@ interface AppState {
   currentPlan: DevelopmentPlan | null;
   tasks: DevelopmentTask[];
   currentTask: DevelopmentTask | null;
+
+  // Logging and error tracking
+  logs: LogEntry[];
+  bugs: BugReport[];
 
   // AI chat
   messages: AIMessage[];
@@ -110,6 +114,12 @@ interface AppState {
 
   // Workspace actions
   setPanelSizes: (sizes: Partial<AppState['panelSizes']>) => void;
+
+  // Logging and bug tracking
+  addLog: (log: LogEntry) => void;
+  addBug: (bug: BugReport) => void;
+  updateBug: (bugId: string, updates: Partial<BugReport>) => void;
+  deleteBug: (bugId: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -123,6 +133,8 @@ export const useAppStore = create<AppState>()(
     currentPlan: null,
     tasks: [],
     currentTask: null,
+    logs: [],
+    bugs: [],
     messages: [],
     isGenerating: false,
     sidebarOpen: true,
@@ -426,6 +438,16 @@ Deliver production-ready code that solves the user's problem effectively.`
     // Workspace actions
     setPanelSizes: (sizes) => set((state) => ({
       panelSizes: { ...state.panelSizes, ...sizes }
+    })),
+
+    // Logging and bug tracking
+    addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
+    addBug: (bug) => set((state) => ({ bugs: [...state.bugs, bug] })),
+    updateBug: (bugId, updates) => set((state) => ({
+      bugs: state.bugs.map(b => b.id === bugId ? { ...b, ...updates, updatedAt: new Date() } : b)
+    })),
+    deleteBug: (bugId) => set((state) => ({
+      bugs: state.bugs.filter(b => b.id !== bugId)
     })),
   }))
 );
