@@ -45,3 +45,5 @@ Starting a new Next.js project involves boilerplate setup, configuration decisio
 - **Local Projects**: Direct integration with user's local project files
 - **Specialized AI Modes**: Three distinct behavior presets for different coding tasks
 - **Advanced Generation Control**: Full parameter control for AI responses
+- **Ultra Mode**: Automated 4-step comprehensive code enhancement workflow
+- **Progress Tracking**: Visual indicators for multi-step operations

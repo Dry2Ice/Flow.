@@ -41,6 +41,15 @@ Switch between three specialized modes directly in the prompt input:
 
 **Customizable Prompts**: Edit system prompts for each preset in settings to tailor AI behavior to your needs.
 
+#### Ultra Mode
+**Comprehensive Code Enhancement**: One-click execution of complete development workflow:
+- **Step 1**: Code Analysis & Planning - Deep codebase analysis and improvement roadmap
+- **Step 2**: Task Implementation - Execute all identified improvements and refactoring
+- **Step 3**: Bug Detection & Fixing - Thorough code review and bug elimination
+- **Step 4**: Final Verification - Quality assurance and summary of changes
+
+**Progress Tracking**: Visual progress indicator shows current step and completion status.
+
 #### Project Integration
 - **Project Directory**: Set the path to your local project for file operations
 - **Intelligent Context**: AI analyzes project files with token limits for optimal performance

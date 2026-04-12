@@ -37,6 +37,12 @@ interface AppState {
   // Project settings
   projectPath: string;
 
+  // Ultra mode
+  ultraModeActive: boolean;
+  ultraModeStep: number;
+  ultraModeTotalSteps: number;
+  ultraModeCurrentStep: string;
+
   // Actions
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
@@ -67,6 +73,11 @@ interface AppState {
 
   // Project actions
   setProjectPath: (path: string) => void;
+
+  // Ultra mode actions
+  startUltraMode: (totalSteps: number) => void;
+  updateUltraModeStep: (step: number, currentStep: string) => void;
+  endUltraMode: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -158,6 +169,10 @@ Deliver production-ready code that solves the user's problem effectively.`
       }
     ],
     projectPath: '',
+    ultraModeActive: false,
+    ultraModeStep: 0,
+    ultraModeTotalSteps: 0,
+    ultraModeCurrentStep: '',
 
     // Project actions
     setCurrentProject: (project) => set({ currentProject: project }),
@@ -214,5 +229,23 @@ Deliver production-ready code that solves the user's problem effectively.`
 
     // Project actions
     setProjectPath: (path: string) => set({ projectPath: path }),
+
+    // Ultra mode actions
+    startUltraMode: (totalSteps: number) => set({
+      ultraModeActive: true,
+      ultraModeStep: 0,
+      ultraModeTotalSteps: totalSteps,
+      ultraModeCurrentStep: ''
+    }),
+    updateUltraModeStep: (step: number, currentStep: string) => set({
+      ultraModeStep: step,
+      ultraModeCurrentStep: currentStep
+    }),
+    endUltraMode: () => set({
+      ultraModeActive: false,
+      ultraModeStep: 0,
+      ultraModeTotalSteps: 0,
+      ultraModeCurrentStep: ''
+    }),
   }))
 );
