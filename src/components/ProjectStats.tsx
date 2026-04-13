@@ -10,6 +10,7 @@ import {
   Database,
   HardDrive,
   Activity,
+  Zap,
   TrendingUp,
   GitBranch,
   Clock,
@@ -83,7 +84,19 @@ export function ProjectStats() {
     }, { lines: 0, size: 0 });
 
     // AI usage statistics
-    const totalTokens = aiRequests.reduce((sum, r) => sum + (r.actualTokens || 0), 0);
+    const totalTokensSpent = aiRequests.reduce((sum, r) => sum + (r.actualTokens || 0), 0);
+    const lastRequest = [...aiRequests]
+      .reverse()
+      .find(r => r.status === 'completed' || r.status === 'running');
+    const currentContextTokens = lastRequest?.estimatedTokens ?? 0;
+    const contextLimit = (() => {
+      try {
+        const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
+        return typeof s.contextTokens === 'number' && s.contextTokens > 0 ? s.contextTokens : null;
+      } catch {
+        return null;
+      }
+    })();
     const totalRequests = aiRequests.length;
     const successfulRequests = aiRequests.filter(r => r.status === 'completed').length;
     const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
@@ -96,7 +109,9 @@ export function ProjectStats() {
       openFileCount,
       languageStats,
       codeStats,
-      totalTokens,
+      totalTokensSpent,
+      currentContextTokens,
+      contextLimit,
       totalRequests,
       successRate,
       recentLogs,
@@ -155,10 +170,35 @@ export function ProjectStats() {
           icon={HardDrive}
           color="purple"
         />
+        <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4 hover-lift">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg dark:bg-orange-500/20 light:bg-orange-100">
+              <Zap className="w-5 h-5 dark:text-orange-400 light:text-orange-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700">Context Tokens (est.)</h4>
+              <p className="text-lg font-bold dark:text-white light:text-gray-900">{stats.currentContextTokens.toLocaleString()}</p>
+            </div>
+          </div>
+          <p className="text-xs dark:text-neutral-500 light:text-gray-500 mt-2">last request size</p>
+          {stats.contextLimit !== null && (
+            <div className="mt-3">
+              <div className="w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 h-2 rounded-full"
+                  style={{ width: `${Math.min((stats.currentContextTokens / stats.contextLimit) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs dark:text-neutral-500 light:text-gray-500 mt-2">
+                {stats.currentContextTokens.toLocaleString()} / {stats.contextLimit.toLocaleString()} ({((stats.currentContextTokens / stats.contextLimit) * 100).toFixed(0)}%)
+              </p>
+            </div>
+          )}
+        </div>
         <StatCard
-          title="AI Tokens"
-          value={stats.totalTokens.toLocaleString()}
-          subtitle={`${stats.successRate.toFixed(1)}% success rate`}
+          title="Session Tokens"
+          value={stats.totalTokensSpent.toLocaleString()}
+          subtitle="total spent"
           icon={Activity}
           color="orange"
         />

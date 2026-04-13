@@ -100,6 +100,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Removed unused legacy `SettingsButton` event-dispatch helper from `src/app/page.tsx` to keep modal-opening flow consistent with direct state control
 - [x] AI responses now support structured FILE blocks that are parsed/applied to in-memory editor state and persisted to disk for non-demo projects
 - [x] Demo-project AI edits now emit an informational log entry clarifying that changes are applied in-editor only and intentionally not written to disk
+- [x] Project Statistics token metrics now separate estimated current context size from cumulative session token spend, with optional context-limit progress display from settings
 
 ## Current Structure
 
@@ -197,6 +198,7 @@ export async function GET() {
 | 2026-04-13 | Added `@variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` to switch Tailwind v4 dark mode from media-query-based behavior to `.dark` class-based behavior used by `ThemeToggle`; verified `src/app/layout.tsx` `<html>` has no hardcoded `dark`/`light` class. |
 | 2026-04-13 | Reduced five primary workspace pane minimum widths to 180/280 thresholds and rebalanced default horizontal layout percentages (`17/36/19/16/12`) across store initialization and Settings reset to prevent minSize overflow and horizontal scrollbar pressure at default viewport widths. |
 | 2026-04-13 | Replaced starter metadata in `src/app/layout.tsx` with Flow-specific title/description and gated header "Ultra Mode Ready"/"Real-time Sync" status chips behind configured API + non-demo project checks in `src/app/page.tsx`. |
+| 2026-04-13 | Updated `ProjectStats` AI token cards to distinguish `Context Tokens (est.)` (last running/completed request `estimatedTokens`) from `Session Tokens` (sum of `actualTokens`), and added optional context-limit utilization bar sourced from `nim-settings.contextTokens`. |
 
 | 2026-04-13 | Fixed AI file-application pipeline: NIM system prompt now mandates `<<<FILE>>>` blocks, parser extracts file edits into `changes`, and executor applies updates to open files plus writes non-demo project changes to disk via `/api/project/file/write`. |
 | 2026-04-13 | Added demo-mode AI file-change logging in executor so users see that edits are applied in-memory and intentionally skipped for disk persistence when working in the demo project. |
