@@ -105,6 +105,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Added dedicated diagnostics widgets for session logs and tracked errors in `WorkspaceDiagnostics`
 - [x] Persisted workspace layout topology/state in localStorage under `flow.ide-layout.v2` for immediate restoration on load
 - [x] Top navigation redesigned to a minimal centered control cluster (Settings, Theme toggle, Statistics) with compact icon buttons, tooltips, motion states, and slide-over analytics panel toggle
+- [x] Chat UX compactness pass: minimized prompt composer, embedded in-composer preset switching, compact send + Ultra controls, and logs view sections for AI actions/file changes/errors
 
 ## Current Structure
 
@@ -209,3 +210,4 @@ export async function GET() {
 
 | 2026-04-13 | Refactored main UI into a professional IDE workspace with four resizable/collapsible panels, nested center editor/preview split, right/bottom tab systems, resettable persisted layout state, and new diagnostics components for logs/errors. |
 | 2026-04-13 | Redesigned the top header into a minimal centered nav with only Settings/Theme/Statistics controls, added compact interactive icon buttons with tooltips and active states, and wired Statistics to a right slide-over `AnalyticsDashboard` panel. |
+| 2026-04-13 | Refined chat usability: replaced the large prompt control surface with a compact composer, moved preset selection directly into the input area, added a dedicated compact Ultra button beside Send, and expanded AIChat logs tab into explicit AI Actions / File Changes / Errors sections. |
