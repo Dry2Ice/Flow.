@@ -281,16 +281,18 @@ export default function Home() {
             </div>
 
             {/* Quick stats */}
-            <div className="hidden md:flex items-center gap-4 text-xs dark:text-neutral-400 light:text-gray-500">
-              <div className="flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                <span>Ultra Mode Ready</span>
+            {apiConfigured && currentProject && !currentProject.isDemo && (
+              <div className="hidden md:flex items-center gap-4 text-xs dark:text-neutral-400 light:text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  <span>Ultra Mode Ready</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Activity className="w-3 h-3" />
+                  <span>Real-time Sync</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Activity className="w-3 h-3" />
-                <span>Real-time Sync</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </header>

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Template",
-  description: "A minimal Next.js starter template",
+  title: "Flow — AI-Powered Development Platform",
+  description: "Flow is an AI coding assistant powered by NVIDIA NIM. Write, debug, plan and ship code with an intelligent AI partner in a unified web interface.",
 };
 
 export default function RootLayout({
