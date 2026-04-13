@@ -2,12 +2,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Eye, Code, RefreshCw } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 export function CodePreview() {
-  const { openFiles, activeFile } = useAppStore();
+  const { openFiles, activeFile, addLog, activeSessionId } = useAppStore();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewMode, setPreviewMode] = useState<'code' | 'preview'>('code');
   const [previewContent, setPreviewContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +66,21 @@ export function CodePreview() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+
+  const handleIframeLoad = () => {
+    iframeRef.current?.contentWindow?.addEventListener('error', (event) => {
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: 'error',
+        message: `Preview error: ${event.message}`,
+        details: `${event.filename}:${event.lineno}:${event.colno}`,
+        source: 'program_run',
+      });
+    });
   };
 
   const runCode = async () => {
@@ -137,7 +153,9 @@ export function CodePreview() {
               <div className="h-full">
                 {currentFile.path.endsWith('.html') ? (
                   <iframe
+                    ref={iframeRef}
                     srcDoc={previewContent}
+                    onLoad={handleIframeLoad}
                     className="w-full h-full border-0 bg-white"
                     title="HTML Preview"
                   />
