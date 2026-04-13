@@ -99,14 +99,14 @@ export function CodePreview() {
   };
 
   return (
-    <div className="h-full bg-neutral-900 flex flex-col">
+    <div className="flex h-full flex-col bg-neutral-950/40">
       {/* Preview Header */}
-      <div className="flex items-center justify-between p-3 border-b border-neutral-700">
-        <h3 className="text-sm font-medium text-neutral-200">Preview</h3>
+      <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-300">Preview</h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPreviewMode('code')}
-            className={`p-1 rounded transition-colors ${
+            className={`rounded-md p-1.5 transition-colors ${
               previewMode === 'code'
                 ? 'bg-blue-600 text-white'
                 : 'text-neutral-400 hover:text-neutral-300'
@@ -117,7 +117,7 @@ export function CodePreview() {
           </button>
           <button
             onClick={() => setPreviewMode('preview')}
-            className={`p-1 rounded transition-colors ${
+            className={`rounded-md p-1.5 transition-colors ${
               previewMode === 'preview'
                 ? 'bg-blue-600 text-white'
                 : 'text-neutral-400 hover:text-neutral-300'
@@ -129,7 +129,7 @@ export function CodePreview() {
           <button
             onClick={runCode}
             disabled={isLoading}
-            className="p-1 text-green-400 hover:text-green-300 disabled:text-neutral-500 transition-colors"
+            className="rounded-md p-1.5 text-emerald-300 transition-colors hover:bg-emerald-500/10 hover:text-emerald-200 disabled:text-neutral-500"
             title="Run Code"
           >
             {isLoading ? (
@@ -142,11 +142,11 @@ export function CodePreview() {
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-3">
         {currentFile ? (
           <div className="h-full">
             {previewMode === 'code' ? (
-              <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono">
+              <pre className="whitespace-pre-wrap rounded-md border border-neutral-800/80 bg-neutral-950/60 p-3 text-xs text-neutral-300 font-mono">
                 {previewContent}
               </pre>
             ) : (
@@ -160,7 +160,7 @@ export function CodePreview() {
                     title="HTML Preview"
                   />
                 ) : (
-                  <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono">
+                  <pre className="whitespace-pre-wrap rounded-md border border-neutral-800/80 bg-neutral-950/60 p-3 text-xs text-neutral-300 font-mono">
                     {previewContent}
                   </pre>
                 )}

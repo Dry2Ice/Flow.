@@ -67,10 +67,10 @@ export function AIChat() {
   };
 
   return (
-    <div className="h-full bg-neutral-800 flex flex-col">
+    <div className="flex h-full flex-col bg-neutral-950/30">
       {/* Header with tabs */}
-      <div className="border-b border-neutral-700">
-        <div className="flex border-b border-neutral-700">
+      <div className="border-b border-neutral-800">
+        <div className="flex border-b border-neutral-800">
           <button
             onClick={() => setActiveTab('chat')}
             className={`flex-1 px-2 py-2 text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
@@ -95,7 +95,7 @@ export function AIChat() {
           </button>
         </div>
 
-        <div className="flex items-center justify-between p-3">
+        <div className="flex items-center justify-between px-3 py-2.5">
           <h3 className="text-sm font-medium text-neutral-200">
             {activeTab === 'chat' ? (
               <>AI Assistant</>
@@ -107,11 +107,11 @@ export function AIChat() {
             {activeTab === 'chat' ? `${messages.length} messages` : `${sessionLogs.length} logs`}
           </div>
         </div>
-        <div className="px-2 pb-2 flex items-center gap-2">
+        <div className="flex items-center gap-2 px-2 pb-2">
           <select
             value={activeSessionId}
             onChange={(e) => setActiveSession(e.target.value)}
-            className="flex-1 px-2 py-1 bg-neutral-700 border border-neutral-600 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
           >
             {Object.keys(sessions).map((sessionId) => (
               <option key={sessionId} value={sessionId}>
@@ -122,7 +122,7 @@ export function AIChat() {
           <button
             type="button"
             onClick={() => createSession()}
-            className="px-2 py-1 bg-neutral-700 hover:bg-neutral-600 rounded text-xs flex items-center gap-1"
+            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500"
             title="New Session"
           >
             <Plus className="w-3 h-3" />

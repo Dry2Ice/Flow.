@@ -116,6 +116,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Development Plan panel upgraded with focused Plan/Errors tabs, plan-level controls ("Check all tasks" + "Execute plan"), sequential full-plan execution feedback, task continuation actions, editable task descriptions, and checkbox-only subtasks that auto-roll task status
 - [x] Error Tracking UI expanded with auto-ingest from logs/failed AI actions, manual user error intake form, explicit Description/Status/Source display, and direct AI actions for "Check bug" (analysis preset) + "Fix bug" (debug preset)
 - [x] Ultra Mode chat control upgraded with explicit labeled button, per-step checklist progress states, and session-scoped stage logs (start/completion per phase) displayed inline during execution
+- [x] Full workspace UI/UX refinement pass: unified glass-panel styling, consistent segmented tab controls, cleaner header hierarchy, improved button/input consistency across explorer/editor/chat/preview panels, and tighter responsive constraints for smaller viewports
 
 ## Current Structure
 
@@ -198,6 +199,7 @@ export async function GET() {
 | 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
 | 2026-04-12 | Refactored `analyzeProjectStructure` in `src/lib/nvidia-nim.ts`: removed duplicate structure summary block, moved all per-file logic into `forEach`, replaced out-of-scope `content` usage with `hasExpress`, and introduced strict analysis types (`ProjectStructureAnalysis`, `ProjectFileForAnalysis`). |
 | 2026-04-12 | Improved AI workflow efficiency: enabled parallel prompt submissions, added per-session active request counters, attached project context snapshots to each AI request, and introduced adaptive context summarization timeline/focus areas. |
+| 2026-04-13 | Executed a full UI polish sweep focused on spacing/typography consistency, clutter reduction, modernized control treatments, and more resilient panel sizing on compact layouts. |
 | 2026-04-13 | Updated Settings modal preset saving to call `updatePromptPreset` action; added `useAppStore.subscribe` selectors to persist prompt presets and active preset id in localStorage so edited prompts survive reload and are reflected immediately in PromptInput flows. |
 | 2026-04-13 | Updated NIM configuration flow to accept `contextTokens = 0` as unlimited: backend validation now allows zero, request builder explicitly omits `context_tokens` when value is zero, and Settings modal helper text/input handling now matches the backend contract. |
 | 2026-04-13 | Relaxed token constraints end-to-end: removed `min`/`max` HTML limits for Context/Max tokens, replaced fallback parsing with safe integer parsing in Settings modal, loosened API validation for these fields to integer-only checks, and updated NIM request builder to forward exact user-provided integer values (except invalid inputs). |

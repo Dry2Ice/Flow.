@@ -130,7 +130,7 @@ export function FileBrowser() {
     return (
       <div key={node.path}>
         <div
-          className={`flex items-center py-1 px-2 hover:bg-neutral-700 cursor-pointer text-sm group ${
+          className={`group flex items-center rounded-md px-2 py-1.5 text-sm text-neutral-300 hover:bg-neutral-800/80 ${
             depth > 0 ? 'ml-4' : ''
           }`}
           onClick={() => node.type === 'directory' ? toggleDir(node.path) : handleFileClick(node)}
@@ -182,23 +182,23 @@ export function FileBrowser() {
   }
 
   return (
-    <div className="p-2">
-      <h3 className="text-sm font-semibold mb-2 text-neutral-300">
+    <div className="p-3">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
         {currentProject.name}
       </h3>
       {!currentProject.isDemo && (
-        <div className="space-y-2 mb-3 pb-3 border-b border-neutral-700/70">
+        <div className="mb-3 space-y-2 border-b border-neutral-700/70 pb-3">
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => void initializeGitRepo()}
-              className="px-2 py-1.5 bg-neutral-700 hover:bg-neutral-600 rounded text-xs flex items-center justify-center gap-1"
+              className="flex items-center justify-center gap-1 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-xs hover:border-neutral-500"
             >
               <GitCommit className="w-3.5 h-3.5" />
               Init Repo
             </button>
             <button
               onClick={() => void loadCommitHistory()}
-              className="px-2 py-1.5 bg-neutral-700 hover:bg-neutral-600 rounded text-xs flex items-center justify-center gap-1"
+              className="flex items-center justify-center gap-1 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-xs hover:border-neutral-500"
             >
               <History className="w-3.5 h-3.5" />
               History
@@ -206,7 +206,7 @@ export function FileBrowser() {
             <button
               onClick={() => void saveActiveFile()}
               disabled={!activeFile}
-              className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-700 disabled:text-neutral-500 rounded text-xs flex items-center justify-center gap-1"
+              className="flex items-center justify-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1.5 text-xs text-sky-200 hover:bg-sky-500/25 disabled:border-neutral-700 disabled:bg-neutral-800 disabled:text-neutral-500"
             >
               <Save className="w-3.5 h-3.5" />
               Save
@@ -214,7 +214,7 @@ export function FileBrowser() {
             <button
               onClick={() => void restoreActiveFile()}
               disabled={!activeFile}
-              className="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-neutral-700 disabled:text-neutral-500 rounded text-xs flex items-center justify-center gap-1"
+              className="flex items-center justify-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-1.5 text-xs text-amber-200 hover:bg-amber-500/25 disabled:border-neutral-700 disabled:bg-neutral-800 disabled:text-neutral-500"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Restore
@@ -225,7 +225,7 @@ export function FileBrowser() {
             <select
               value={selectedCommit}
               onChange={(event) => setSelectedCommit(event.target.value)}
-              className="flex-1 px-2 py-1 bg-neutral-700 border border-neutral-600 rounded text-xs"
+              className="flex-1 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-xs"
             >
               <option value="">Select commit…</option>
               {commits.map((commit) => (
@@ -237,7 +237,7 @@ export function FileBrowser() {
             <button
               onClick={() => selectedCommit && void rollbackToCommit(selectedCommit)}
               disabled={!selectedCommit}
-              className="px-2 py-1 bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:text-neutral-500 rounded text-xs flex items-center gap-1"
+              className="flex items-center gap-1 rounded-md border border-rose-500/40 bg-rose-500/15 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/25 disabled:border-neutral-700 disabled:bg-neutral-800 disabled:text-neutral-500"
             >
               <Undo2 className="w-3.5 h-3.5" />
               Rollback
@@ -245,7 +245,7 @@ export function FileBrowser() {
           </div>
         </div>
       )}
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {currentProject.files.map(file => renderFileNode(file))}
       </div>
     </div>

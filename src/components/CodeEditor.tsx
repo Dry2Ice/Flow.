@@ -153,7 +153,7 @@ export function CodeEditor() {
     <div className="h-full w-full">
       {currentFile ? (
         <div className="h-full flex flex-col">
-          <div className="flex items-center justify-between border-b border-neutral-700 px-3 py-2 text-xs text-neutral-300">
+          <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2 text-xs text-neutral-300">
             <div className="truncate">{currentFile.path}</div>
             <div className="flex items-center gap-2">
               {saveMessage && (
@@ -165,7 +165,7 @@ export function CodeEditor() {
                 type="button"
                 onClick={reloadFile}
                 disabled={isReloading}
-                className="inline-flex items-center gap-1 rounded border border-neutral-600 px-2 py-1 hover:bg-neutral-700 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900/70 px-2 py-1 hover:border-neutral-500 disabled:opacity-50"
                 title="Reload from disk"
               >
                 <RefreshCcw className="h-3.5 w-3.5" />
@@ -175,7 +175,7 @@ export function CodeEditor() {
                 type="button"
                 onClick={saveFile}
                 disabled={saveState === 'saving'}
-                className="inline-flex items-center gap-1 rounded border border-neutral-600 px-2 py-1 hover:bg-neutral-700 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1 text-sky-100 hover:bg-sky-500/25 disabled:opacity-50"
                 title="Save file (Ctrl/Cmd+S)"
               >
                 <Save className="h-3.5 w-3.5" />

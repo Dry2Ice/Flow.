@@ -54,13 +54,13 @@ export function ProjectManager() {
   };
 
   return (
-    <div className="p-4 bg-neutral-800 border-b border-neutral-700">
+    <div className="space-y-4 p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-neutral-200">Projects</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-300">Projects</h3>
         <div className="flex gap-2">
           <button
             onClick={() => setIsCreating(!isCreating)}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm flex items-center gap-1 transition-colors"
+            className="flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-3 py-1.5 text-sm text-sky-100 transition-colors hover:bg-sky-500/25"
             disabled={isLoading}
           >
             <Plus className="w-4 h-4" />
@@ -73,7 +73,7 @@ export function ProjectManager() {
                 loadProject(currentProject.path);
               }
             }}
-            className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm flex items-center gap-1 transition-colors"
+            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm transition-colors hover:border-neutral-500"
             disabled={isLoading || !currentProject}
           >
             <RefreshCw className="w-4 h-4" />
@@ -84,7 +84,7 @@ export function ProjectManager() {
 
       {/* Current Project */}
       {currentProject && (
-        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded">
+        <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-3">
           <div className="flex items-center gap-2 mb-1">
             <FolderOpen className="w-4 h-4 text-blue-400" />
             <span className="font-medium text-blue-400">Current Project</span>
@@ -101,7 +101,7 @@ export function ProjectManager() {
 
       {/* Create New Project */}
       {isCreating && (
-        <div className="mb-4 p-3 bg-neutral-700 rounded border border-neutral-600">
+        <div className="rounded-lg border border-neutral-700 bg-neutral-900/60 p-3">
           <h4 className="text-sm font-medium text-neutral-200 mb-3">Create New Project</h4>
           <div className="space-y-3">
             <div>
@@ -110,7 +110,7 @@ export function ProjectManager() {
                 type="text"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
                 placeholder="My Awesome Project"
               />
             </div>
@@ -120,7 +120,7 @@ export function ProjectManager() {
                 type="text"
                 value={newProjectPath}
                 onChange={(e) => setNewProjectPath(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
                 placeholder="/path/to/project"
               />
             </div>
@@ -128,7 +128,7 @@ export function ProjectManager() {
               <button
                 onClick={handleCreateProject}
                 disabled={isLoading || !newProjectName.trim() || !newProjectPath.trim()}
-                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-neutral-600 disabled:cursor-not-allowed rounded text-sm transition-colors"
+                className="flex-1 rounded-md border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-sm text-emerald-100 transition-colors hover:bg-emerald-500/25 disabled:border-neutral-700 disabled:bg-neutral-800 disabled:text-neutral-500"
               >
                 {isLoading ? 'Creating...' : 'Create Project'}
               </button>
@@ -138,7 +138,7 @@ export function ProjectManager() {
                   setNewProjectName('');
                   setNewProjectPath('');
                 }}
-                className="px-3 py-2 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
+                className="rounded-md border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm transition-colors hover:border-neutral-500"
               >
                 Cancel
               </button>
@@ -148,7 +148,7 @@ export function ProjectManager() {
       )}
 
       {/* Load Existing Project */}
-      <div className="mb-4 p-3 bg-neutral-700 rounded border border-neutral-600">
+      <div className="rounded-lg border border-neutral-700 bg-neutral-900/60 p-3">
         <h4 className="text-sm font-medium text-neutral-200 mb-3">Load Existing Project</h4>
         <div className="space-y-3">
           <div>
@@ -157,14 +157,14 @@ export function ProjectManager() {
               type="text"
               value={loadProjectPath}
               onChange={(e) => setLoadProjectPath(e.target.value)}
-              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/70"
               placeholder="/path/to/existing/project"
             />
           </div>
           <button
             onClick={handleLoadProject}
             disabled={isLoading || !loadProjectPath.trim()}
-            className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600 disabled:cursor-not-allowed rounded text-sm transition-colors"
+            className="w-full rounded-md border border-violet-500/40 bg-violet-500/15 px-3 py-2 text-sm text-violet-100 transition-colors hover:bg-violet-500/25 disabled:border-neutral-700 disabled:bg-neutral-800 disabled:text-neutral-500"
           >
             {isLoading ? 'Loading...' : 'Load Project'}
           </button>
@@ -179,10 +179,10 @@ export function ProjectManager() {
             {projects.map((project) => (
               <div
                 key={project.id}
-                className={`p-3 border rounded cursor-pointer transition-colors ${
+                className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                   currentProject?.id === project.id
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-neutral-600 hover:border-neutral-500 hover:bg-neutral-700/50'
+                    ? 'border-sky-500/60 bg-sky-500/10'
+                    : 'border-neutral-700 bg-neutral-900/40 hover:border-neutral-500 hover:bg-neutral-900/80'
                 }`}
                 onClick={() => switchProject(project.id)}
               >
