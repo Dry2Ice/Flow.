@@ -2,8 +2,8 @@
 
 "use client";
 
-import { useState } from 'react';
-import { Send, Zap } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Send, Zap, CheckCircle2, LoaderCircle, Circle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { AIRequest, PromptRequest } from '@/types';
@@ -12,6 +12,23 @@ import { aiService } from '@/lib/ai-service';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
+  const ultraSteps = useMemo(() => ([
+    {
+      name: 'Code Analysis & Planning',
+      presetId: 'analyze',
+      prompt: 'Analyze the entire codebase comprehensively. Examine all files, identify architectural issues, code quality problems, potential improvements, and create a detailed development plan with all prioritized tasks. Focus on scalability, maintainability, security, performance, and best practices. Provide a complete roadmap for codebase enhancement.',
+    },
+    {
+      name: 'Active Development',
+      presetId: 'develop',
+      prompt: 'Execute all tasks identified in the previous analysis perfectly. Implement every improvement, refactor all problematic code sections, enhance overall codebase quality, and make all necessary concrete code changes. Ensure all planned tasks are completed to the highest standard.',
+    },
+    {
+      name: 'Bug Detection & Fixing',
+      presetId: 'debug',
+      prompt: 'Perform a thorough code review to detect any bugs, security vulnerabilities, runtime errors, or logic issues. Fix all identified problems comprehensively and ensure the code is production-ready and error-free. Verify that all changes work correctly and no new issues were introduced.',
+    },
+  ]), []);
 
   const {
     addMessage,
@@ -40,7 +57,12 @@ export function PromptInput() {
     updateAIRequest,
     currentProject,
     getProjectContext,
+    logs,
   } = useAppStore();
+  const ultraLogs = logs
+    .filter((log) => log.sessionId === activeSessionId && log.message.startsWith('[Ultra]'))
+    .slice()
+    .reverse();
 
   const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
     const jobId = crypto.randomUUID();
@@ -229,34 +251,40 @@ export function PromptInput() {
   };
 
   const executeUltraMode = async () => {
-    const ultraSteps = [
-      {
-        name: 'Code Analysis & Planning',
-        presetId: 'analyze',
-        prompt: 'Analyze the entire codebase comprehensively. Examine all files, identify architectural issues, code quality problems, potential improvements, and create a detailed development plan with all prioritized tasks. Focus on scalability, maintainability, security, performance, and best practices. Provide a complete roadmap for codebase enhancement.',
-      },
-      {
-        name: 'Active Development',
-        presetId: 'develop',
-        prompt: 'Execute all tasks identified in the previous analysis perfectly. Implement every improvement, refactor all problematic code sections, enhance overall codebase quality, and make all necessary concrete code changes. Ensure all planned tasks are completed to the highest standard.',
-      },
-      {
-        name: 'Bug Detection & Fixing',
-        presetId: 'debug',
-        prompt: 'Perform a thorough code review to detect any bugs, security vulnerabilities, runtime errors, or logic issues. Fix all identified problems comprehensively and ensure the code is production-ready and error-free. Verify that all changes work correctly and no new issues were introduced.',
-      },
-    ];
-
     startUltraMode(ultraSteps.length);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: '[Ultra] Ultra Mode started',
+      source: 'user_action',
+    });
 
     for (let i = 0; i < ultraSteps.length; i++) {
       const step = ultraSteps[i];
       updateUltraModeStep(i + 1, step.name);
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: 'info',
+        message: `[Ultra] Step ${i + 1}/${ultraSteps.length} started: ${step.name}`,
+        source: 'ai_execution',
+      });
 
       await runRequest({
         prompt: `[${step.name}] ${step.prompt}`,
         requestType: 'analysis',
         presetId: step.presetId,
+      });
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: 'success',
+        message: `[Ultra] Step ${i + 1}/${ultraSteps.length} completed: ${step.name}`,
+        source: 'ai_execution',
       });
       await new Promise((resolve) => setTimeout(resolve, 1200));
     }
@@ -268,6 +296,14 @@ export function PromptInput() {
     }
 
     endUltraMode();
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'success',
+      message: '[Ultra] Ultra Mode completed',
+      source: 'user_action',
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -298,7 +334,43 @@ export function PromptInput() {
               style={{ width: `${(ultraModeStep / ultraModeTotalSteps) * 100}%` }}
             />
           </div>
-          <p className="text-xs text-neutral-300">{ultraModeCurrentStep}</p>
+          <p className="mb-3 text-xs text-neutral-300">{ultraModeCurrentStep}</p>
+
+          <div className="space-y-1.5 rounded-md border border-neutral-700/70 bg-neutral-900/40 p-2">
+            {ultraSteps.map((step, index) => {
+              const stepNumber = index + 1;
+              const isDone = ultraModeStep > stepNumber;
+              const isCurrent = ultraModeStep === stepNumber;
+              return (
+                <div key={step.name} className="flex items-center gap-2 text-xs">
+                  {isDone ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                  ) : isCurrent ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin text-yellow-300" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 text-neutral-500" />
+                  )}
+                  <span className={`${isCurrent ? 'text-yellow-200' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
+                    {stepNumber}. {step.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {ultraLogs.length > 0 && (
+            <div className="mt-2 rounded-md border border-neutral-700/70 bg-neutral-950/60 p-2">
+              <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">Stage logs</div>
+              <div className="max-h-24 space-y-1 overflow-y-auto pr-1">
+                {ultraLogs.slice(0, 5).map((log) => (
+                  <p key={log.id} className="text-[11px] text-neutral-300">
+                    <span className="text-neutral-500">{log.timestamp.toLocaleTimeString()} </span>
+                    {log.message.replace('[Ultra] ', '')}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -338,9 +410,10 @@ export function PromptInput() {
           onClick={executeUltraMode}
           disabled={ultraModeActive || !projectPath}
           aria-label="Run Ultra Mode"
-          className="h-9 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-purple-200 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 items-center gap-1.5 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-xs font-medium text-purple-200 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Zap className="h-4 w-4" />
+          Ultra
         </button>
         <button
           type="submit"
