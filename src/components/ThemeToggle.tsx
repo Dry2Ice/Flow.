@@ -19,6 +19,7 @@ export function ThemeToggle() {
   useEffect(() => {
     // Apply theme to document
     document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle('light', !isDark);
     localStorage.setItem('flow-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
