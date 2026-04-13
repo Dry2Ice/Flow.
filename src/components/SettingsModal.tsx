@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Settings, Check, RotateCcw } from 'lucide-react';
+import { X, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 
@@ -282,6 +282,22 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     handleIntegerFieldChange(value, setMaxTokens);
   };
 
+  const handleFloatFieldChange = (
+    value: string,
+    onValidValue: (nextValue: number) => void,
+  ) => {
+    if (value.trim() === '') {
+      return;
+    }
+
+    const parsedValue = Number(value);
+    if (!Number.isFinite(parsedValue)) {
+      return;
+    }
+
+    onValidValue(parsedValue);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -424,13 +440,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                          {isLoadingModels ? (
                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                          ) : (
-                           'Load'
+                           'Load Models'
                          )}
                        </button>
                      </div>
                      {availableModels.length === 0 && !isLoadingModels && (
                         <div className="text-xs text-neutral-400 mt-1">
-                          Click &quot;Load&quot; to fetch available models from your API
+                          Click &quot;Load Models&quot; to fetch available models from your API
                         </div>
                      )}
                    </div>
@@ -516,109 +532,100 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Temperature ({temperature.toFixed(1)})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      value={temperature}
-                      onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">Controls randomness (0 = deterministic, 2 = very random)</div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Top P ({topP.toFixed(2)})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={topP}
-                      onChange={(e) => setTopP(parseFloat(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">Nucleus sampling (0.1 = very focused, 1.0 = diverse)</div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Top K ({topK})
+                      Temperature
                     </label>
                     <input
                       type="number"
-                      min="1"
-                      max="100"
-                      value={topK}
-                      onChange={(e) => setTopK(parseInt(e.target.value))}
+                      value={temperature}
+                      onChange={(e) => handleFloatFieldChange(e.target.value, setTemperature)}
                       className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.7"
                     />
-                    <div className="text-xs text-neutral-400 mt-1">Top-K sampling (1-100)</div>
-                  </div>
-
-                   <div>
-                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                       Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens.toLocaleString()})
-                     </label>
-                     <input
-                       type="number"
-                       value={contextTokens}
-                       onChange={(e) => handleContextTokensChange(e.target.value)}
-                       className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="0 for unlimited"
-                     />
-                     <div className="text-xs text-neutral-400 mt-1">Allowed values: 0 (unlimited) or any integer ≥ 1</div>
-                   </div>
-
-                   <div>
-                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                       Max Response Tokens ({maxTokens.toLocaleString()})
-                     </label>
-                     <input
-                       type="number"
-                       value={maxTokens}
-                       onChange={(e) => handleMaxTokensChange(e.target.value)}
-                       className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="4000"
-                     />
-                     <div className="text-xs text-neutral-400 mt-1">Maximum response tokens</div>
-                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Presence Penalty ({presencePenalty.toFixed(1)})
-                    </label>
-                    <input
-                      type="range"
-                      min="-2"
-                      max="2"
-                      step="0.1"
-                      value={presencePenalty}
-                      onChange={(e) => setPresencePenalty(parseFloat(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">Penalize new topics (-2 to 2)</div>
+                    <div className="text-xs text-neutral-400 mt-1">Manual input with no UI limits</div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Frequency Penalty ({frequencyPenalty.toFixed(1)})
+                      Top-p
                     </label>
                     <input
-                      type="range"
-                      min="-2"
-                      max="2"
-                      step="0.1"
+                      type="number"
+                      value={topP}
+                      onChange={(e) => handleFloatFieldChange(e.target.value, setTopP)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="1"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Manual input with no UI limits</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Top-k
+                    </label>
+                    <input
+                      type="number"
+                      value={topK}
+                      onChange={(e) => handleIntegerFieldChange(e.target.value, setTopK)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="50"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Manual integer input with no UI limits</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Frequency penalty
+                    </label>
+                    <input
+                      type="number"
                       value={frequencyPenalty}
-                      onChange={(e) => setFrequencyPenalty(parseFloat(e.target.value))}
-                      className="w-full"
+                      onChange={(e) => handleFloatFieldChange(e.target.value, setFrequencyPenalty)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
                     />
-                    <div className="text-xs text-neutral-400 mt-1">Penalize token repetition (-2 to 2)</div>
+                    <div className="text-xs text-neutral-400 mt-1">Manual input with no UI limits</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Presence penalty
+                    </label>
+                    <input
+                      type="number"
+                      value={presencePenalty}
+                      onChange={(e) => handleFloatFieldChange(e.target.value, setPresencePenalty)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Manual input with no UI limits</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens.toLocaleString()})
+                    </label>
+                    <input
+                      type="number"
+                      value={contextTokens}
+                      onChange={(e) => handleContextTokensChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0 for unlimited"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Use 0 for Unlimited. Manual integer input with no UI limits.</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Max Response Tokens ({maxTokens.toLocaleString()})
+                    </label>
+                    <input
+                      type="number"
+                      value={maxTokens}
+                      onChange={(e) => handleMaxTokensChange(e.target.value)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="4000"
+                    />
+                    <div className="text-xs text-neutral-400 mt-1">Manual integer input with no UI limits</div>
                   </div>
 
                   <div className="md:col-span-2">
@@ -643,7 +650,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   General System Prompt
                 </h4>
                 <p className="text-sm text-neutral-400 mb-3">
-                  Core principles and guidelines that are always applied to all AI interactions, regardless of the selected preset.
+                  Global system prompt appended to every request, regardless of selected preset.
                 </p>
                 <div className="space-y-3">
                   {editingGeneralPrompt ? (
@@ -657,12 +664,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       />
                       <div className="flex gap-2 mt-2">
                         <button
+                          type="button"
                           onClick={handleSaveGeneralPrompt}
                           className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
                         >
                           Save
                         </button>
                         <button
+                          type="button"
                           onClick={handleCancelGeneralPromptEdit}
                           className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
                         >
@@ -678,6 +687,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                         </pre>
                       </div>
                       <button
+                        type="button"
                         onClick={handleEditGeneralPrompt}
                         className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                       >
@@ -691,10 +701,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               {/* Prompt Presets Section */}
               <div>
                 <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
-                  AI Behavior Presets
+                  Prompt Presets (3 editable)
                 </h4>
                 <div className="space-y-3">
-                  {promptPresets.map((preset) => (
+                  {promptPresets.slice(0, 3).map((preset) => (
                     <div
                       key={preset.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -729,12 +739,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                               />
                               <div className="flex gap-2">
                                 <button
+                                  type="button"
                                   onClick={handleSavePreset}
                                   className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
                                 >
                                   Save
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={handleCancelEdit}
                                   className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
                                 >
@@ -751,6 +763,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                                 </div>
                               </details>
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEditPreset(preset.id);

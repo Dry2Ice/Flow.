@@ -402,7 +402,7 @@ ${numberedLines}
             content: request.prompt
           }
         ],
-        temperature: isFiniteNumber(this.config.temperature) && this.config.temperature >= 0
+        temperature: isFiniteNumber(this.config.temperature)
           ? this.config.temperature
           : 0.7,
         max_tokens: isFiniteNumber(this.config.maxTokens) && Number.isInteger(this.config.maxTokens)
@@ -411,19 +411,19 @@ ${numberedLines}
       };
 
       // Add optional parameters if they exist and are valid
-      if (isFiniteNumber(this.config.topP) && this.config.topP >= 0 && this.config.topP <= 1) {
+      if (isFiniteNumber(this.config.topP)) {
         requestBody.top_p = this.config.topP;
       }
-      if (isFiniteNumber(this.config.topK) && Number.isInteger(this.config.topK) && this.config.topK > 0) {
+      if (isFiniteNumber(this.config.topK) && Number.isInteger(this.config.topK)) {
         requestBody.top_k = this.config.topK;
       }
       if (isFiniteNumber(this.config.contextTokens) && Number.isInteger(this.config.contextTokens)) {
         requestBody.context_tokens = this.config.contextTokens;
       }
-      if (isFiniteNumber(this.config.presencePenalty) && this.config.presencePenalty >= -2 && this.config.presencePenalty <= 2) {
+      if (isFiniteNumber(this.config.presencePenalty)) {
         requestBody.presence_penalty = this.config.presencePenalty;
       }
-      if (isFiniteNumber(this.config.frequencyPenalty) && this.config.frequencyPenalty >= -2 && this.config.frequencyPenalty <= 2) {
+      if (isFiniteNumber(this.config.frequencyPenalty)) {
         requestBody.frequency_penalty = this.config.frequencyPenalty;
       }
       if (Array.isArray(this.config.stopSequences)) {
