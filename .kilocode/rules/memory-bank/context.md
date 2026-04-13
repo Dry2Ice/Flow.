@@ -81,6 +81,8 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Professional request history with status badges and action buttons
 - [x] Live status indicators and real-time updates throughout the interface
 - [x] Comprehensive dark/light mode support across all components with proper color theming
+- [x] Token-driven theme foundation: light/dark palettes now remap Tailwind neutral/gray variables so legacy component utility classes stay visually correct in both modes
+- [x] Global motion tokens and transition orchestration applied to interactive controls for smoother theme switching
 - [x] Theme-aware gradients, borders, backgrounds, and text colors throughout the application
 - [x] Smooth theme transitions with proper contrast ratios and accessibility
 - [x] Enhanced theme toggle with tooltip and visual feedback
@@ -218,6 +220,7 @@ export async function GET() {
 | 2026-04-13 | Added demo-mode AI file-change logging in executor so users see that edits are applied in-memory and intentionally skipped for disk persistence when working in the demo project. |
 
 | 2026-04-13 | Refactored main UI into a professional IDE workspace with four resizable/collapsible panels, nested center editor/preview split, right/bottom tab systems, resettable persisted layout state, and new diagnostics components for logs/errors. |
+| 2026-04-13 | Reworked the styling foundation into a tokenized theme system: added spacing/motion/color tokens in `globals.css`, remapped Tailwind neutral/gray palettes per mode for cross-component compatibility, unified scrollbar/glass styles with semantic tokens, and added no-flash theme bootstrap script in `layout.tsx`. |
 | 2026-04-13 | Redesigned the top header into a minimal centered nav with only Settings/Theme/Statistics controls, added compact interactive icon buttons with tooltips and active states, and wired Statistics to a right slide-over `AnalyticsDashboard` panel. |
 | 2026-04-13 | Refined chat usability: replaced the large prompt control surface with a compact composer, moved preset selection directly into the input area, added a dedicated compact Ultra button beside Send, and expanded AIChat logs tab into explicit AI Actions / File Changes / Errors sections. |
 | 2026-04-13 | Reworked `DevelopmentPlan` UI into an interactive plan workspace: added Plan/Errors tab wording, active-plan picker, task-level Execute/Continue + Check controls, editable descriptions, checkbox-only subtasks with status recomputation, and dedicated plan actions for "Check all tasks" and "Execute plan" with progress feedback. |
