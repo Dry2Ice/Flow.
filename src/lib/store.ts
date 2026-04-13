@@ -199,10 +199,12 @@ interface AppState {
 
   // Workspace layout
   panelSizes: {
-    sidebar: number;
+    filesPanel: number;
+    codePanel: number;
+    chatPanel: number;
+    planPanel: number;
+    statsPanel: number;
     centerVertical: number;
-    rightVertical: number;
-    rightPanel: number;
   };
 
   // Actions
@@ -325,10 +327,12 @@ export const useAppStore = create<AppState>()(
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
     panelSizes: {
-      sidebar: 20, // percentage - left panel (files/stats)
-      centerVertical: 50, // percentage of center area for code editor
-      rightVertical: 50, // percentage of right area for plans
-      rightPanel: 30, // percentage of total width for right panel (plans + chat)
+      filesPanel: 18, // percentage - Files/Projects panel
+      codePanel: 34, // percentage - Code+Preview panel
+      chatPanel: 18, // percentage - Chat/Logs panel
+      planPanel: 16, // percentage - Plan/Bugs panel
+      statsPanel: 14, // percentage - Statistics panel
+      centerVertical: 50, // percentage of code panel for code editor
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 

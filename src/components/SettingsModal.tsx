@@ -245,10 +245,12 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
   const handleResetLayout = () => {
     const defaultSizes = {
-      sidebar: 20,
+      filesPanel: 18,
+      codePanel: 34,
+      chatPanel: 18,
+      planPanel: 16,
+      statsPanel: 14,
       centerVertical: 60,
-      rightVertical: 50,
-      rightPanel: 25,
     };
     useAppStore.setState({ panelSizes: defaultSizes });
     localStorage.setItem('workspace-layout', JSON.stringify(defaultSizes));
