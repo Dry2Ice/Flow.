@@ -36,6 +36,8 @@ export function DevelopmentPlan() {
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'plans' | 'bugs'>('plans');
+  const [executingPlanId, setExecutingPlanId] = useState<string | null>(null);
+  const [planExecutionProgress, setPlanExecutionProgress] = useState({ current: 0, total: 0 });
 
   const getStatusIcon = (status: DevelopmentTask['status'] | DevelopmentPlan['status']) => {
     switch (status) {
@@ -171,6 +173,15 @@ Tasks count: ${plan.tasks.length}`,
   };
 
   const handleExecutePlan = async (plan: DevelopmentPlan) => {
+    const planTaskEntries = Array.isArray(plan.tasks) ? plan.tasks : [];
+    const planTaskIds = planTaskEntries
+      .map((task) => (typeof task === 'string' ? task : task?.id))
+      .filter((taskId): taskId is string => Boolean(taskId));
+
+    const relatedTasks = planTaskIds.length > 0
+      ? tasks.filter((task) => planTaskIds.includes(task.id))
+      : tasks.filter((task) => (task as DevelopmentTask & { planId?: string }).planId === plan.id);
+
     updatePlan(plan.id, { status: 'in_progress' });
     addLog({
       id: crypto.randomUUID(),
@@ -182,31 +193,111 @@ Tasks count: ${plan.tasks.length}`,
       relatedPlan: plan.id,
     });
 
-    const result = await executeAIRequest({
-      requestType: 'implementation',
-      presetId: 'develop',
-      prompt: `Execute this development plan.
-Plan title: ${plan.title}
-Plan description: ${plan.description || 'No description'}
-Current status: ${plan.status}
-Tasks: ${plan.tasks.map((task) => task.title).join(', ') || 'No tasks yet'}`,
-    });
-
-    const nextStatus = inferWorkStatus(result.responseText, 'in_progress');
-    updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
-
     addLog({
       id: crypto.randomUUID(),
       sessionId: activeSessionId,
-      jobId: result.jobId,
       timestamp: new Date(),
-      type: result.ok ? 'success' : 'error',
-      message: result.ok
-        ? `Plan "${plan.title}" execution updated status to ${nextStatus}.`
-        : `Failed to execute plan "${plan.title}": ${result.error || 'Unknown error'}`,
-      source: 'ai_execution',
+      type: 'info',
+      message: `Запуск последовательного выполнения плана: ${relatedTasks.length} задач`,
+      source: 'user_action',
       relatedPlan: plan.id,
     });
+
+    if (relatedTasks.length === 0) {
+      const result = await executeAIRequest({
+        requestType: 'implementation',
+        presetId: 'develop',
+        prompt: `Execute this development plan.
+Plan title: ${plan.title}
+Plan description: ${plan.description || 'No description'}
+Current status: ${plan.status}
+Tasks: ${planTaskEntries
+  .map((task) => (typeof task === 'string' ? task : task?.title || task?.id))
+  .join(', ') || 'No tasks yet'}`,
+      });
+
+      const nextStatus = inferWorkStatus(result.responseText, 'in_progress');
+      updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
+
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        jobId: result.jobId,
+        timestamp: new Date(),
+        type: result.ok ? 'success' : 'error',
+        message: result.ok
+          ? `Plan "${plan.title}" execution updated status to ${nextStatus}.`
+          : `Failed to execute plan "${plan.title}": ${result.error || 'Unknown error'}`,
+        source: 'ai_execution',
+        relatedPlan: plan.id,
+      });
+
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: result.ok ? 'success' : 'error',
+        message: result.ok ? 'План выполнен' : 'Выполнение плана завершено с ошибками',
+        source: 'user_action',
+        relatedPlan: plan.id,
+      });
+
+      return;
+    }
+
+    setExecutingPlanId(plan.id);
+    setPlanExecutionProgress({ current: 0, total: relatedTasks.length });
+
+    let hadErrors = false;
+
+    try {
+      let completedCount = 0;
+      for (const task of relatedTasks) {
+        if (task.status === 'completed') {
+          completedCount += 1;
+          setPlanExecutionProgress({ current: completedCount, total: relatedTasks.length });
+          continue;
+        }
+
+        try {
+          await handleExecuteTask(task);
+        } catch (error) {
+          hadErrors = true;
+        } finally {
+          completedCount += 1;
+          setPlanExecutionProgress({ current: completedCount, total: relatedTasks.length });
+        }
+      }
+    } finally {
+      const latestTasks = useAppStore.getState().tasks;
+      const latestRelatedTasks = relatedTasks
+        .map((task) => latestTasks.find((storeTask) => storeTask.id === task.id))
+        .filter((task): task is DevelopmentTask => Boolean(task));
+
+      const allCompleted = latestRelatedTasks.length > 0 && latestRelatedTasks.every((task) => task.status === 'completed');
+      const hasInProgress = latestRelatedTasks.some(
+        (task) => task.status === 'in_progress' || task.status === 'partially_completed'
+      );
+
+      if (allCompleted) {
+        updatePlan(plan.id, { status: 'completed', lastChecked: new Date() });
+      } else if (hasInProgress) {
+        updatePlan(plan.id, { status: 'in_progress', lastChecked: new Date() });
+      }
+
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: hadErrors ? 'error' : 'success',
+        message: hadErrors ? 'Выполнение плана завершено с ошибками' : 'План выполнен',
+        source: 'user_action',
+        relatedPlan: plan.id,
+      });
+
+      setExecutingPlanId(null);
+      setPlanExecutionProgress({ current: 0, total: 0 });
+    }
   };
 
   const handleCheckTask = async (task: DevelopmentTask) => {
@@ -515,11 +606,17 @@ Related files: ${bug.relatedFiles.join(', ') || 'N/A'}`,
                           </button>
                           <button
                             onClick={() => handleExecutePlan(plan)}
+                            disabled={executingPlanId === plan.id}
                             className="p-1 text-neutral-400 hover:text-green-400 transition-colors"
                             title="Execute plan"
                           >
                             <Play className="w-4 h-4" />
                           </button>
+                          {executingPlanId === plan.id && planExecutionProgress.total > 0 && (
+                            <span className="text-xs text-neutral-400 ml-1">
+                              {planExecutionProgress.current} / {planExecutionProgress.total} задач
+                            </span>
+                          )}
                           <button
                             onClick={() => deletePlan(plan.id)}
                             className="p-1 text-neutral-400 hover:text-red-400 transition-colors"

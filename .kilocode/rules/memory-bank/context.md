@@ -93,6 +93,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Trusted-root allowlist for project APIs: absolute project paths now require explicit trusted root confirmation while preserving traversal/out-of-bound protections
 - [x] Configurable project indexing policies in `POST /api/project/files` (extensions, depth/file/size limits) with optional full-scan mode and skipped-files completeness reporting
 - [x] Ultra Mode request execution now passes per-step `presetId` directly into request dispatch to avoid active preset race conditions; UI preset switch updates once after workflow completion
+- [x] Sequential plan execution in DevelopmentPlan: plan-level run now executes related tasks one by one with progress indicator, start/finish logs, and status rollup based on task outcomes
 
 ## Current Structure
 
@@ -183,3 +184,4 @@ export async function GET() {
 | 2026-04-13 | Refactored `POST /api/project/files` indexing into explicit policies (default/full) with configurable extension/depth/file-size limits, added full-scan performance warning mode via request flag, and introduced skipped-files report grouped by reason (`size`/`type`/`limit`) for context completeness visibility. |
 | 2026-04-13 | Redesigned `PromptInput` preset selector into compact segmented chips, reduced prompt submit button footprint, and tuned hover/focus behavior for accessibility plus narrow-screen resilience in both themes. |
 | 2026-04-13 | Fixed `PromptInput` Ultra Mode preset race condition by adding optional `presetId` to `runRequest`, forwarding it into request preset resolution, and deferring `setActivePreset` until the full Ultra Mode loop completes. |
+| 2026-04-13 | Updated `DevelopmentPlan` plan execution flow: if a plan has related tasks, run `handleExecuteTask` sequentially (await each), show live `current / total` progress near the execute button, add start/end execution logs in Russian, and roll up final plan status from task statuses (`completed` / `in_progress`). |
