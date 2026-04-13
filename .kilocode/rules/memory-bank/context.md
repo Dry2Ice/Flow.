@@ -186,5 +186,6 @@ export async function GET() {
 | 2026-04-13 | Redesigned `PromptInput` preset selector into compact segmented chips, reduced prompt submit button footprint, and tuned hover/focus behavior for accessibility plus narrow-screen resilience in both themes. |
 | 2026-04-13 | Fixed `PromptInput` Ultra Mode preset race condition by adding optional `presetId` to `runRequest`, forwarding it into request preset resolution, and deferring `setActivePreset` until the full Ultra Mode loop completes. |
 | 2026-04-13 | Updated `DevelopmentPlan` plan execution flow: if a plan has related tasks, run `handleExecuteTask` sequentially (await each), show live `current / total` progress near the execute button, add start/end execution logs in Russian, and roll up final plan status from task statuses (`completed` / `in_progress`). |
+| 2026-04-13 | Header AI status is now derived from `nim-settings` presence (`apiKey` + `baseUrl`), listens to `settings-saved` window events for live updates, and `SettingsModal` now dispatches `settings-saved` after successful configuration save. |
 
 | 2026-04-13 | Added `@variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` to switch Tailwind v4 dark mode from media-query-based behavior to `.dark` class-based behavior used by `ThemeToggle`; verified `src/app/layout.tsx` `<html>` has no hardcoded `dark`/`light` class. |

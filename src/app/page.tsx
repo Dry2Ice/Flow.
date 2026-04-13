@@ -37,6 +37,7 @@ export default function Home() {
   const { diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
   const [activeTab, setActiveTab] = useState<'files' | 'projects'>('files');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [apiConfigured, setApiConfigured] = useState(false);
 
   // Create demo project on first load
   useEffect(() => {
@@ -176,6 +177,33 @@ export default function Home() {
     }
   }, [setPanelSizes]);
 
+  useEffect(() => {
+    const syncApiConfigurationState = () => {
+      const savedSettings = localStorage.getItem('nim-settings');
+      if (!savedSettings) {
+        setApiConfigured(false);
+        return;
+      }
+
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        const hasApiKey = typeof parsedSettings.apiKey === 'string' && parsedSettings.apiKey.trim().length > 0;
+        const hasBaseUrl = typeof parsedSettings.baseUrl === 'string' && parsedSettings.baseUrl.trim().length > 0;
+        setApiConfigured(hasApiKey && hasBaseUrl);
+      } catch (error) {
+        console.error('Failed to parse nim-settings:', error);
+        setApiConfigured(false);
+      }
+    };
+
+    syncApiConfigurationState();
+    window.addEventListener('settings-saved', syncApiConfigurationState);
+
+    return () => {
+      window.removeEventListener('settings-saved', syncApiConfigurationState);
+    };
+  }, []);
+
   const handleCenterResize = (sizes: number[]) => {
     // sizes[0] is code editor percentage, sizes[1] is preview percentage
     setPanelSizes({
@@ -253,8 +281,18 @@ export default function Home() {
             {/* Connection status */}
             <div className="flex items-center gap-2 text-sm dark:text-neutral-300 light:text-gray-600 dark:bg-neutral-800/50 light:bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm dark:border-neutral-700/50 light:border-gray-200/50 border">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-green-400/50 shadow-lg"></div>
-                <span className="font-medium">AI Connected</span>
+                <div className={`w-2 h-2 rounded-full animate-pulse shadow-lg ${apiConfigured ? 'bg-green-400 shadow-green-400/50' : 'bg-yellow-400 shadow-yellow-400/50'}`}></div>
+                {apiConfigured ? (
+                  <span className="font-medium">AI Ready</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSettingsModalOpen(true)}
+                    className="font-medium hover:underline"
+                  >
+                    Configure API
+                  </button>
+                )}
               </div>
             </div>
 
