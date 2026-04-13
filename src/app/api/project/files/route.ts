@@ -3,8 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import { FileWithMetadata } from '@/types';
 import {
+  getConfiguredTrustedRoots,
   getWorkspaceRoot,
   logSecurityWarning,
+  registerTrustedProjectRoot,
   resolveWorkspacePath,
   WorkspaceSecurityError,
 } from '@/lib/workspace-security';
@@ -54,9 +56,14 @@ function getLanguageFromExtension(extension: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { projectPath } = await request.json();
+    const body = await request.json();
+    const { projectPath, trustedRoot, confirmTrustedRoot } = body;
     const workspaceRoot = getWorkspaceRoot();
-    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
+    const trustedRoots = registerTrustedProjectRoot(getConfiguredTrustedRoots(workspaceRoot), projectPath, {
+      trustedRoot,
+      confirm: confirmTrustedRoot,
+    });
+    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot, { trustedRoots });
 
     if (!fs.existsSync(resolvedProjectPath)) {
       return NextResponse.json({ error: 'Project directory does not exist' }, { status: 404 });

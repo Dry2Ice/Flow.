@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import {
+  getConfiguredTrustedRoots,
   getWorkspaceRoot,
   logSecurityWarning,
+  registerTrustedProjectRoot,
   resolveWorkspacePath,
   WorkspaceSecurityError,
 } from '@/lib/workspace-security';
@@ -20,9 +22,14 @@ type ProjectStructureItem = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { path: projectPath } = await request.json();
+    const body = await request.json();
+    const { path: projectPath, trustedRoot, confirmTrustedRoot } = body;
     const workspaceRoot = getWorkspaceRoot();
-    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
+    const trustedRoots = registerTrustedProjectRoot(getConfiguredTrustedRoots(workspaceRoot), projectPath, {
+      trustedRoot,
+      confirm: confirmTrustedRoot,
+    });
+    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot, { trustedRoots });
 
     if (!fs.existsSync(resolvedProjectPath)) {
       return NextResponse.json({ error: 'Project directory does not exist' }, { status: 404 });

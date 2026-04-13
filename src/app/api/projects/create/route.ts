@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import {
+  getConfiguredTrustedRoots,
   getWorkspaceRoot,
   logSecurityWarning,
+  registerTrustedProjectRoot,
   resolveWorkspacePath,
   WorkspaceSecurityError,
 } from '@/lib/workspace-security';
@@ -32,14 +34,19 @@ function writeFileWithErrorHandling(
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, path: projectPath } = await request.json();
+    const body = await request.json();
+    const { name, path: projectPath, trustedRoot, confirmTrustedRoot } = body;
 
     if (!name || typeof name !== 'string') {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     const workspaceRoot = getWorkspaceRoot();
-    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
+    const trustedRoots = registerTrustedProjectRoot(getConfiguredTrustedRoots(workspaceRoot), projectPath, {
+      trustedRoot,
+      confirm: confirmTrustedRoot,
+    });
+    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot, { trustedRoots });
     const createdDirectories: string[] = [];
     const createdFiles: string[] = [];
 
