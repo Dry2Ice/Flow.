@@ -332,7 +332,7 @@ export default function Home() {
           }}
         >
           {/* Files / Projects */}
-          <Allotment.Pane minSize={200} maxSize={600}>
+          <Allotment.Pane minSize={180} maxSize={600}>
             <div className="h-full dark:bg-neutral-800 light:bg-white border-r dark:border-neutral-700 light:border-gray-200 flex flex-col transition-colors duration-300">
               <div className="flex border-b dark:border-neutral-700/50 light:border-gray-200/50 dark:bg-neutral-800/30 light:bg-white/30 backdrop-blur-sm">
                 <button
@@ -373,7 +373,7 @@ export default function Home() {
           </Allotment.Pane>
 
           {/* Code + Preview */}
-          <Allotment.Pane minSize={300}>
+          <Allotment.Pane minSize={280}>
             <Allotment defaultSizes={[panelSizes.centerVertical, 100 - panelSizes.centerVertical]} onChange={handleCenterResize}>
               {/* Code Editor */}
               <Allotment.Pane minSize={200}>
@@ -388,17 +388,17 @@ export default function Home() {
           </Allotment.Pane>
 
           {/* Chat / Logs */}
-          <Allotment.Pane minSize={250} maxSize={700}>
+          <Allotment.Pane minSize={180} maxSize={700}>
             <AIChat />
           </Allotment.Pane>
 
           {/* Plan / Bugs */}
-          <Allotment.Pane minSize={250} maxSize={800}>
+          <Allotment.Pane minSize={180} maxSize={800}>
             <DevelopmentPlan />
           </Allotment.Pane>
 
           {/* Statistics */}
-          <Allotment.Pane minSize={240} maxSize={700}>
+          <Allotment.Pane minSize={180} maxSize={700}>
             <ProjectStats />
           </Allotment.Pane>
         </Allotment>
