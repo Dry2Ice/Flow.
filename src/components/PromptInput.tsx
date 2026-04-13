@@ -360,7 +360,7 @@ export function PromptInput() {
               role="radio"
               aria-checked={activePreset?.id === preset.id}
               aria-label={`${preset.name}: ${preset.description}`}
-              className={`relative inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all duration-200 group animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 light:focus-visible:ring-offset-gray-100 ${
+              className={`relative inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-200 group animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 light:focus-visible:ring-offset-gray-100 ${
                 activePreset?.id === preset.id
                   ? 'dark:border-blue-400/90 dark:bg-blue-500/15 dark:text-white light:border-blue-500 light:bg-blue-50 light:text-blue-900 dark:focus-visible:ring-blue-400 light:focus-visible:ring-blue-500'
                   : 'dark:border-neutral-600/60 dark:bg-neutral-800/40 dark:text-neutral-200 light:border-gray-300/80 light:bg-gray-100/70 light:text-gray-700 dark:hover:border-neutral-500 dark:hover:bg-neutral-700/60 light:hover:border-gray-400 light:hover:bg-gray-200/80 dark:focus-visible:ring-neutral-300 light:focus-visible:ring-gray-500'
@@ -372,18 +372,13 @@ export function PromptInput() {
                   preset.id === 'analyze' ? 'bg-gradient-to-r from-blue-400 to-cyan-400 shadow-blue-400/50 shadow-lg' :
                   'bg-gradient-to-r from-green-400 to-emerald-400 shadow-green-400/50 shadow-lg'
                 } ${activePreset?.id === preset.id ? 'animate-pulse' : ''}`} />
-              <div className="min-w-0">
-                <span className={`block truncate text-xs font-semibold leading-tight transition-colors ${
-                  activePreset?.id === preset.id ? 'dark:text-white light:text-blue-900' : 'dark:text-neutral-200 dark:group-hover:text-white light:text-gray-700 light:group-hover:text-blue-900'
-                }`}>
-                  {preset.name}
-                </span>
-                <span className={`block truncate text-[11px] leading-tight transition-colors ${
-                activePreset?.id === preset.id ? 'dark:text-blue-200 light:text-blue-700' : 'dark:text-neutral-400 dark:group-hover:text-neutral-300 light:text-gray-500 light:group-hover:text-gray-700'
+              <span className={`truncate text-xs font-semibold leading-none transition-colors ${
+                activePreset?.id === preset.id
+                  ? 'dark:text-white light:text-blue-900'
+                  : 'dark:text-neutral-200 dark:group-hover:text-white light:text-gray-700 light:group-hover:text-blue-900'
               }`}>
-                {preset.description}
-                </span>
-              </div>
+                {preset.name}
+              </span>
               {activePreset?.id === preset.id && (
                 <span className="ml-auto inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/20 text-[10px] font-bold text-blue-300">
                   ✓
