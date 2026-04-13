@@ -323,51 +323,60 @@ export function PromptInput() {
         </div>
       )}
 
-      {/* Preset Selection Cards */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
+      {/* Preset Segmented Control */}
+      <div className="mb-5">
+        <div className="flex flex-wrap items-center gap-2.5 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
             <label className="text-sm font-semibold text-neutral-200">AI Mode:</label>
           </div>
           {ultraModeActive && (
-            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full border border-yellow-500/30 font-medium animate-pulse">
+            <span className="px-2.5 py-1 bg-yellow-500/20 text-yellow-400 text-[11px] rounded-full border border-yellow-500/30 font-medium animate-pulse">
               🔒 Locked during Ultra Mode
             </span>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div
+          role="radiogroup"
+          aria-label="AI mode presets"
+          className="flex flex-wrap items-center gap-2 rounded-xl border dark:border-neutral-700/60 light:border-gray-300/70 dark:bg-neutral-900/45 light:bg-white/70 p-2"
+        >
           {promptPresets.map((preset, index) => (
             <button
               key={preset.id}
               onClick={() => !ultraModeActive && setActivePreset(preset)}
               disabled={ultraModeActive}
-              className={`p-4 rounded-xl border-2 transition-all duration-300 text-left hover-lift group animate-fade-in ${
+              role="radio"
+              aria-checked={activePreset?.id === preset.id}
+              aria-label={`${preset.name}: ${preset.description}`}
+              className={`relative inline-flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all duration-200 group animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 light:focus-visible:ring-offset-gray-100 ${
                 activePreset?.id === preset.id
-                  ? 'dark:border-blue-400 dark:bg-gradient-to-br dark:from-blue-500/20 dark:to-purple-500/10 light:border-blue-500 light:bg-blue-50 shadow-xl shadow-blue-500/30 scale-105'
-                  : 'dark:border-neutral-600/50 dark:bg-neutral-800/50 light:border-gray-300/50 light:bg-gray-100/50 dark:hover:border-neutral-500 dark:hover:bg-neutral-700/70 light:hover:border-gray-400 light:hover:bg-gray-200/70 hover:shadow-lg'
+                  ? 'dark:border-blue-400/90 dark:bg-blue-500/15 dark:text-white light:border-blue-500 light:bg-blue-50 light:text-blue-900 dark:focus-visible:ring-blue-400 light:focus-visible:ring-blue-500'
+                  : 'dark:border-neutral-600/60 dark:bg-neutral-800/40 dark:text-neutral-200 light:border-gray-300/80 light:bg-gray-100/70 light:text-gray-700 dark:hover:border-neutral-500 dark:hover:bg-neutral-700/60 light:hover:border-gray-400 light:hover:bg-gray-200/80 dark:focus-visible:ring-neutral-300 light:focus-visible:ring-gray-500'
               } ${ultraModeActive ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
               style={{animationDelay: `${index * 0.1}s`}}
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className={`w-4 h-4 rounded-full transition-all duration-300 ${
+              <div className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${
                   preset.id === 'debug' ? 'bg-gradient-to-r from-red-400 to-pink-400 shadow-red-400/50 shadow-lg' :
                   preset.id === 'analyze' ? 'bg-gradient-to-r from-blue-400 to-cyan-400 shadow-blue-400/50 shadow-lg' :
                   'bg-gradient-to-r from-green-400 to-emerald-400 shadow-green-400/50 shadow-lg'
                 } ${activePreset?.id === preset.id ? 'animate-pulse' : ''}`} />
-                <span className={`text-sm font-semibold transition-colors ${
+              <div className="min-w-0">
+                <span className={`block truncate text-xs font-semibold leading-tight transition-colors ${
                   activePreset?.id === preset.id ? 'dark:text-white light:text-blue-900' : 'dark:text-neutral-200 dark:group-hover:text-white light:text-gray-700 light:group-hover:text-blue-900'
                 }`}>
                   {preset.name}
                 </span>
-              </div>
-              <p className={`text-xs leading-relaxed transition-colors ${
+                <span className={`block truncate text-[11px] leading-tight transition-colors ${
                 activePreset?.id === preset.id ? 'dark:text-blue-200 light:text-blue-700' : 'dark:text-neutral-400 dark:group-hover:text-neutral-300 light:text-gray-500 light:group-hover:text-gray-700'
               }`}>
                 {preset.description}
-              </p>
+                </span>
+              </div>
               {activePreset?.id === preset.id && (
-                <div className="absolute top-2 right-2 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                <span className="ml-auto inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/20 text-[10px] font-bold text-blue-300">
+                  ✓
+                </span>
               )}
             </button>
           ))}
@@ -401,13 +410,13 @@ export function PromptInput() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-3 animate-fade-in">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2.5 animate-fade-in">
         <div className="flex-1 relative">
           <textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder="Describe what you want to build or modify with AI assistance..."
-            className={`w-full p-4 dark:bg-neutral-800/50 light:bg-white/50 border-2 rounded-xl resize-none transition-all duration-300 focus:outline-none focus:ring-2 backdrop-blur-sm ${
+            className={`w-full p-3 text-sm dark:bg-neutral-800/50 light:bg-white/50 border-2 rounded-xl resize-none transition-all duration-300 focus:outline-none focus:ring-2 backdrop-blur-sm ${
               ultraModeActive
                 ? 'dark:border-neutral-600 light:border-gray-300 cursor-not-allowed opacity-50'
                 : 'dark:border-neutral-600/50 dark:focus:border-blue-400 dark:focus:bg-neutral-800 light:border-gray-300/50 light:focus:border-blue-500 light:focus:bg-white dark:hover:border-neutral-500 dark:hover:bg-neutral-800/70 light:hover:border-gray-400 light:hover:bg-white/70'
@@ -424,14 +433,15 @@ export function PromptInput() {
         <button
           type="submit"
           disabled={ultraModeActive || !prompt.trim()}
-          className={`px-6 py-4 rounded-xl flex items-center gap-2 transition-all duration-300 hover-lift hover-glow font-semibold ${
+          aria-label="Send prompt to AI assistant"
+          className={`group h-11 px-3.5 rounded-xl flex items-center gap-1.5 transition-all duration-200 hover-lift font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 light:focus-visible:ring-offset-gray-100 ${
             ultraModeActive || !prompt.trim()
               ? 'dark:bg-neutral-700 light:bg-gray-300 cursor-not-allowed opacity-50'
-              : 'dark:bg-gradient-to-r dark:from-blue-600 dark:to-purple-600 dark:hover:from-blue-700 dark:hover:to-purple-700 light:bg-gradient-to-r light:from-blue-500 light:to-purple-500 light:hover:from-blue-600 light:hover:to-purple-600 shadow-lg hover:shadow-blue-500/30'
+              : 'dark:bg-gradient-to-r dark:from-blue-600 dark:to-purple-600 dark:hover:from-blue-700 dark:hover:to-purple-700 light:bg-gradient-to-r light:from-blue-500 light:to-purple-500 light:hover:from-blue-600 light:hover:to-purple-600 shadow-md hover:shadow-blue-500/30 dark:focus-visible:ring-blue-400 light:focus-visible:ring-blue-500'
           }`}
         >
-          <Send className={`w-5 h-5 transition-transform duration-200 ${!ultraModeActive && prompt.trim() ? 'hover:scale-110' : ''}`} />
-          <span className="hidden sm:inline dark:text-white light:text-white">Send to AI</span>
+          <Send className={`w-4 h-4 transition-transform duration-200 ${!ultraModeActive && prompt.trim() ? 'group-hover:scale-110' : ''}`} />
+          <span className="hidden md:inline dark:text-white light:text-white">Send</span>
         </button>
       </form>
 

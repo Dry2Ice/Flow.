@@ -65,7 +65,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Ultra Mode preset selection locked during execution to prevent interference
 - [x] Modern Flow branding with gradient header and enhanced visual hierarchy
 - [x] Comprehensive Analytics Dashboard with real-time metrics and project insights
-- [x] Card-based AI preset selection with visual indicators and modern styling
+- [x] Compact segmented AI preset control (chip-style) with responsive wrapping, keyboard focus states, and dual-theme contrast tuning
 - [x] Dark/Light mode toggle with smooth transitions and persistent preferences
 - [x] Enhanced demo project with modern landing page showcasing Flow features
 - [x] Improved onboarding experience with detailed task breakdown and feature highlights
@@ -179,3 +179,4 @@ export async function GET() {
 | 2026-04-13 | Relaxed token constraints end-to-end: removed `min`/`max` HTML limits for Context/Max tokens, replaced fallback parsing with safe integer parsing in Settings modal, loosened API validation for these fields to integer-only checks, and updated NIM request builder to forward exact user-provided integer values (except invalid inputs). |
 | 2026-04-13 | Added trusted-root allowlist mode for project path resolution: `POST /api/projects/create`, `POST /api/projects/load`, and `POST /api/project/files` now support explicit `trustedRoot` + `confirmTrustedRoot` registration to allow absolute paths without disabling workspace boundary protections. |
 | 2026-04-13 | Refactored `POST /api/project/files` indexing into explicit policies (default/full) with configurable extension/depth/file-size limits, added full-scan performance warning mode via request flag, and introduced skipped-files report grouped by reason (`size`/`type`/`limit`) for context completeness visibility. |
+| 2026-04-13 | Redesigned `PromptInput` preset selector into compact segmented chips, reduced prompt submit button footprint, and tuned hover/focus behavior for accessibility plus narrow-screen resilience in both themes. |
