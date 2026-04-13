@@ -189,5 +189,6 @@ export async function GET() {
 | 2026-04-13 | Updated `DevelopmentPlan` plan execution flow: if a plan has related tasks, run `handleExecuteTask` sequentially (await each), show live `current / total` progress near the execute button, add start/end execution logs in Russian, and roll up final plan status from task statuses (`completed` / `in_progress`). |
 | 2026-04-13 | Header AI status is now derived from `nim-settings` presence (`apiKey` + `baseUrl`), listens to `settings-saved` window events for live updates, and `SettingsModal` now dispatches `settings-saved` after successful configuration save. |
 | 2026-04-13 | Added runtime error interception for HTML preview iframe in `CodePreview` via `onLoad` + `contentWindow.error` listener, logging session-scoped errors to store logs. |
+| 2026-04-13 | Unified workspace center split defaults by setting `panelSizes.centerVertical` initial state to `60`, matching `SettingsModal` reset layout defaults so Code+Preview vertical proportions reset consistently. |
 
 | 2026-04-13 | Added `@variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` to switch Tailwind v4 dark mode from media-query-based behavior to `.dark` class-based behavior used by `ThemeToggle`; verified `src/app/layout.tsx` `<html>` has no hardcoded `dark`/`light` class. |
