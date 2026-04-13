@@ -245,11 +245,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
   const handleResetLayout = () => {
     const defaultSizes = {
-      filesPanel: 18,
-      codePanel: 34,
-      chatPanel: 18,
+      filesPanel: 17,
+      codePanel: 36,
+      chatPanel: 19,
       planPanel: 16,
-      statsPanel: 14,
+      statsPanel: 12,
       centerVertical: 60,
     };
     useAppStore.setState({ panelSizes: defaultSizes });

@@ -327,11 +327,11 @@ export const useAppStore = create<AppState>()(
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
     panelSizes: {
-      filesPanel: 18, // percentage - Files/Projects panel
-      codePanel: 34, // percentage - Code+Preview panel
-      chatPanel: 18, // percentage - Chat/Logs panel
+      filesPanel: 17, // percentage - Files/Projects panel
+      codePanel: 36, // percentage - Code+Preview panel
+      chatPanel: 19, // percentage - Chat/Logs panel
       planPanel: 16, // percentage - Plan/Bugs panel
-      statsPanel: 14, // percentage - Statistics panel
+      statsPanel: 12, // percentage - Statistics panel
       centerVertical: 60, // percentage of code panel for code editor
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
