@@ -256,6 +256,16 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setTimeout(() => setMessage(''), 2000);
   };
 
+  const handleContextTokensChange = (value: string) => {
+    const parsedValue = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsedValue)) {
+      setContextTokens(0);
+      return;
+    }
+
+    setContextTokens(Math.max(0, parsedValue));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -542,11 +552,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                        type="number"
                        min="0"
                        value={contextTokens}
-                       onChange={(e) => setContextTokens(parseInt(e.target.value) || 0)}
+                       onChange={(e) => handleContextTokensChange(e.target.value)}
                        className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                        placeholder="0 for unlimited"
                      />
-                     <div className="text-xs text-neutral-400 mt-1">Maximum context tokens (0 = unlimited)</div>
+                     <div className="text-xs text-neutral-400 mt-1">Allowed values: 0 (unlimited) or any integer ≥ 1</div>
                    </div>
 
                    <div>
