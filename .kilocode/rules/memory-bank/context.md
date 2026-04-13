@@ -88,6 +88,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Centralized control buttons in header center (Statistics toggle, Theme toggle, Settings)
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
+- [x] Prompt preset editing now updates Zustand store state directly and persists `promptPresets`/`activePreset` to localStorage via selector subscriptions
 
 ## Current Structure
 
@@ -170,3 +171,4 @@ export async function GET() {
 | 2026-04-12 | Hardened AI request orchestration with dependency-aware dispatch and fixed request status lifecycle |
 | 2026-04-12 | Refactored `analyzeProjectStructure` in `src/lib/nvidia-nim.ts`: removed duplicate structure summary block, moved all per-file logic into `forEach`, replaced out-of-scope `content` usage with `hasExpress`, and introduced strict analysis types (`ProjectStructureAnalysis`, `ProjectFileForAnalysis`). |
 | 2026-04-12 | Improved AI workflow efficiency: enabled parallel prompt submissions, added per-session active request counters, attached project context snapshots to each AI request, and introduced adaptive context summarization timeline/focus areas. |
+| 2026-04-13 | Updated Settings modal preset saving to call `updatePromptPreset` action; added `useAppStore.subscribe` selectors to persist prompt presets and active preset id in localStorage so edited prompts survive reload and are reflected immediately in PromptInput flows. |
