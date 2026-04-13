@@ -67,6 +67,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Comprehensive Analytics Dashboard with real-time metrics and project insights
 - [x] Compact segmented AI preset control (chip-style) with responsive wrapping, keyboard focus states, and dual-theme contrast tuning
 - [x] Dark/Light mode toggle with smooth transitions and persistent preferences
+- [x] Tailwind v4 dark variant now bound to `.dark` class in `globals.css` so ThemeToggle class-based switching applies `dark:` utilities correctly
 - [x] Enhanced demo project with modern landing page showcasing Flow features
 - [x] Improved onboarding experience with detailed task breakdown and feature highlights
 - [x] Advanced Flow color palette with brand-specific gradients and CSS variables
@@ -185,3 +186,5 @@ export async function GET() {
 | 2026-04-13 | Redesigned `PromptInput` preset selector into compact segmented chips, reduced prompt submit button footprint, and tuned hover/focus behavior for accessibility plus narrow-screen resilience in both themes. |
 | 2026-04-13 | Fixed `PromptInput` Ultra Mode preset race condition by adding optional `presetId` to `runRequest`, forwarding it into request preset resolution, and deferring `setActivePreset` until the full Ultra Mode loop completes. |
 | 2026-04-13 | Updated `DevelopmentPlan` plan execution flow: if a plan has related tasks, run `handleExecuteTask` sequentially (await each), show live `current / total` progress near the execute button, add start/end execution logs in Russian, and roll up final plan status from task statuses (`completed` / `in_progress`). |
+
+| 2026-04-13 | Added `@variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` to switch Tailwind v4 dark mode from media-query-based behavior to `.dark` class-based behavior used by `ThemeToggle`; verified `src/app/layout.tsx` `<html>` has no hardcoded `dark`/`light` class. |
