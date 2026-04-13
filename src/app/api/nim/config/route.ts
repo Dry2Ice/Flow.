@@ -50,15 +50,15 @@ export async function POST(request: NextRequest) {
     };
 
     if (body.temperature !== undefined) {
-      config.temperature = validateNumberInRange(body.temperature, 'temperature', { min: 0, max: 2 });
+      config.temperature = validateNumberInRange(body.temperature, 'temperature', {});
     }
 
     if (body.topP !== undefined) {
-      config.topP = validateNumberInRange(body.topP, 'topP', { min: 0, max: 1 });
+      config.topP = validateNumberInRange(body.topP, 'topP', {});
     }
 
     if (body.topK !== undefined) {
-      config.topK = validateNumberInRange(body.topK, 'topK', { min: 1, integer: true });
+      config.topK = validateNumberInRange(body.topK, 'topK', { integer: true });
     }
 
     if (body.contextTokens !== undefined) {
@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.presencePenalty !== undefined) {
-      config.presencePenalty = validateNumberInRange(body.presencePenalty, 'presencePenalty', { min: -2, max: 2 });
+      config.presencePenalty = validateNumberInRange(body.presencePenalty, 'presencePenalty', {});
     }
 
     if (body.frequencyPenalty !== undefined) {
-      config.frequencyPenalty = validateNumberInRange(body.frequencyPenalty, 'frequencyPenalty', { min: -2, max: 2 });
+      config.frequencyPenalty = validateNumberInRange(body.frequencyPenalty, 'frequencyPenalty', {});
     }
 
     if (body.stopSequences !== undefined) {
