@@ -3,16 +3,19 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  Bot,
   Bug,
   CheckCircle,
   CheckSquare,
   Circle,
   Clock,
   Edit3,
+  PlusCircle,
   Play,
   Search,
   Square,
   Trash2,
+  User,
   XCircle,
 } from 'lucide-react';
 import { executeAIRequest } from '@/lib/ai-executor';
@@ -25,8 +28,11 @@ export function DevelopmentPlan() {
     plans,
     tasks,
     bugs,
+    logs,
+    aiRequests,
     updatePlan,
     updateTask,
+    addBug,
     updateBug,
     deleteBug,
     addLog,
@@ -39,6 +45,9 @@ export function DevelopmentPlan() {
   const [planExecutionProgress, setPlanExecutionProgress] = useState({ current: 0, total: 0 });
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [descriptionDraft, setDescriptionDraft] = useState('');
+  const [manualErrorTitle, setManualErrorTitle] = useState('');
+  const [manualErrorDescription, setManualErrorDescription] = useState('');
+  const [manualErrorSeverity, setManualErrorSeverity] = useState<BugReport['severity']>('medium');
 
   const activePlan = useMemo(() => {
     if (plans.length === 0) return null;
@@ -262,6 +271,103 @@ export function DevelopmentPlan() {
     });
   };
 
+  const getTrackingSource = (source: BugReport['source']) => {
+    if (source === 'user_reported') return 'User';
+    return 'AI';
+  };
+
+  const createAutoBugFromSignal = (title: string, description: string, source: BugReport['source']) => {
+    const duplicate = bugs.some(
+      (bug) => bug.title.toLowerCase() === title.toLowerCase() || bug.description.toLowerCase() === description.toLowerCase()
+    );
+
+    if (duplicate) return false;
+
+    const now = new Date();
+    addBug({
+      id: crypto.randomUUID(),
+      title,
+      description,
+      status: 'open',
+      severity: source === 'program_error' ? 'high' : 'medium',
+      source,
+      relatedFiles: [],
+      relatedTasks: [],
+      createdAt: now,
+      updatedAt: now,
+    });
+    return true;
+  };
+
+  const handleAutoAddErrors = () => {
+    let added = 0;
+
+    logs
+      .filter((log) => log.type === 'error')
+      .forEach((log) => {
+        const source: BugReport['source'] = log.source === 'user_action' ? 'user_reported' : 'program_error';
+        const wasAdded = createAutoBugFromSignal(
+          `Error log: ${log.message.slice(0, 60)}`,
+          `${log.message}${log.details ? `\nDetails: ${log.details}` : ''}`,
+          source
+        );
+        if (wasAdded) added += 1;
+      });
+
+    aiRequests
+      .filter((request) => request.status === 'failed' && request.error)
+      .forEach((request) => {
+        const wasAdded = createAutoBugFromSignal(
+          `AI action failed (${request.type})`,
+          request.error ?? 'Unknown AI failure',
+          'ai_detected'
+        );
+        if (wasAdded) added += 1;
+      });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId || undefined,
+      timestamp: new Date(),
+      type: added > 0 ? 'success' : 'info',
+      source: 'user_action',
+      message: added > 0 ? `Auto-added ${added} error(s) from logs and AI actions.` : 'No new errors found to auto-add.',
+    });
+  };
+
+  const handleManualAdd = () => {
+    const title = manualErrorTitle.trim();
+    const description = manualErrorDescription.trim();
+    if (!title || !description) return;
+
+    const now = new Date();
+    addBug({
+      id: crypto.randomUUID(),
+      title,
+      description,
+      status: 'open',
+      severity: manualErrorSeverity,
+      source: 'user_reported',
+      relatedFiles: [],
+      relatedTasks: [],
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId || undefined,
+      timestamp: now,
+      type: 'info',
+      source: 'user_action',
+      message: `User added error: ${title}`,
+    });
+
+    setManualErrorTitle('');
+    setManualErrorDescription('');
+    setManualErrorSeverity('medium');
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-neutral-700/80">
@@ -440,6 +546,52 @@ export function DevelopmentPlan() {
           </div>
         ) : (
           <div className="space-y-3">
+            <section className="rounded-xl border border-neutral-700 bg-neutral-900/40 p-3">
+              <header className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-neutral-100">Error intake</h3>
+                <button
+                  onClick={handleAutoAddErrors}
+                  className="rounded-md border border-blue-500/40 bg-blue-500/10 px-2.5 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-500/20"
+                >
+                  Auto-add from logs + AI actions
+                </button>
+              </header>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  value={manualErrorTitle}
+                  onChange={(event) => setManualErrorTitle(event.target.value)}
+                  placeholder="Manual error title"
+                  className="rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                />
+                <select
+                  value={manualErrorSeverity}
+                  onChange={(event) => setManualErrorSeverity(event.target.value as BugReport['severity'])}
+                  className="rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                >
+                  <option value="low">Low severity</option>
+                  <option value="medium">Medium severity</option>
+                  <option value="high">High severity</option>
+                  <option value="critical">Critical severity</option>
+                </select>
+              </div>
+
+              <textarea
+                value={manualErrorDescription}
+                onChange={(event) => setManualErrorDescription(event.target.value)}
+                placeholder="Describe the issue for tracking..."
+                className="mt-2 min-h-20 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+              />
+
+              <button
+                onClick={handleManualAdd}
+                className="mt-2 inline-flex items-center gap-2 rounded-md border border-violet-500/50 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-300 hover:bg-violet-500/20"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add error manually
+              </button>
+            </section>
+
             {bugs.length === 0 ? (
               <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400">
                 No errors reported.
@@ -453,15 +605,39 @@ export function DevelopmentPlan() {
                       <h4 className="text-sm font-semibold text-neutral-100">{bug.title}</h4>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleCheckBug(bug)} className="rounded p-1 text-neutral-300 hover:bg-blue-500/10">
+                      <button
+                        onClick={() => handleCheckBug(bug)}
+                        className="rounded p-1 text-neutral-300 hover:bg-blue-500/10"
+                        title="Check bug (analysis preset)"
+                      >
                         <Search className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleFixBug(bug)} className="rounded p-1 text-neutral-300 hover:bg-emerald-500/10">
+                      <button
+                        onClick={() => handleFixBug(bug)}
+                        className="rounded p-1 text-neutral-300 hover:bg-emerald-500/10"
+                        title="Fix bug (bug fixing preset)"
+                      >
                         <Play className="h-4 w-4" />
                       </button>
                       <button onClick={() => deleteBug(bug.id)} className="rounded p-1 text-neutral-300 hover:bg-red-500/10">
                         <Trash2 className="h-4 w-4" />
                       </button>
+                    </div>
+                  </div>
+                  <div className="mb-2 grid grid-cols-3 gap-2 text-[11px] text-neutral-300">
+                    <div>
+                      <span className="text-neutral-400">Description</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-400">Status</span>
+                      <p className="font-semibold uppercase tracking-wide">{bug.status}</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-400">Source</span>
+                      <p className="inline-flex items-center gap-1 font-semibold">
+                        {getTrackingSource(bug.source) === 'AI' ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                        {getTrackingSource(bug.source)}
+                      </p>
                     </div>
                   </div>
                   <p className="text-xs text-neutral-200/90">{bug.description}</p>
