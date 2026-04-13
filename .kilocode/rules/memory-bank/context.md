@@ -97,6 +97,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Sequential plan execution in DevelopmentPlan: plan-level run now executes related tasks one by one with progress indicator, start/finish logs, and status rollup based on task outcomes
 - [x] HTML preview runtime errors are now captured via iframe `onLoad` listener and logged into session logs (`program_run`) using store `addLog`
 - [x] Light theme activation fixed by defining Tailwind `@variant light` in globals and toggling `.light` class alongside `.dark` in ThemeToggle to ensure `light:` utilities apply correctly
+- [x] Removed unused legacy `SettingsButton` event-dispatch helper from `src/app/page.tsx` to keep modal-opening flow consistent with direct state control
 
 ## Current Structure
 
