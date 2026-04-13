@@ -189,6 +189,16 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
               source: 'file_operation',
             });
           }
+        } else if (currentProject?.isDemo) {
+          addLog({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId,
+            jobId,
+            timestamp: new Date(),
+            type: 'info',
+            message: `Demo mode: ${change.filePath} updated in editor (not saved to disk). Open a real project to persist changes.`,
+            source: 'file_operation',
+          });
         }
       }
     }
