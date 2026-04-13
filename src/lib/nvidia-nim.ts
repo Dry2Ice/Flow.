@@ -392,7 +392,7 @@ ${numberedLines}
         temperature: isFiniteNumber(this.config.temperature) && this.config.temperature >= 0
           ? this.config.temperature
           : 0.7,
-        max_tokens: isFiniteNumber(this.config.maxTokens) && Number.isInteger(this.config.maxTokens) && this.config.maxTokens > 0
+        max_tokens: isFiniteNumber(this.config.maxTokens) && Number.isInteger(this.config.maxTokens)
           ? this.config.maxTokens
           : 4000
       };
@@ -404,10 +404,9 @@ ${numberedLines}
       if (isFiniteNumber(this.config.topK) && Number.isInteger(this.config.topK) && this.config.topK > 0) {
         requestBody.top_k = this.config.topK;
       }
-      if (isFiniteNumber(this.config.contextTokens) && Number.isInteger(this.config.contextTokens) && this.config.contextTokens > 0) {
+      if (isFiniteNumber(this.config.contextTokens) && Number.isInteger(this.config.contextTokens)) {
         requestBody.context_tokens = this.config.contextTokens;
       }
-      // `0` means unlimited by Flow settings contract, so we intentionally omit `context_tokens`.
       if (isFiniteNumber(this.config.presencePenalty) && this.config.presencePenalty >= -2 && this.config.presencePenalty <= 2) {
         requestBody.presence_penalty = this.config.presencePenalty;
       }

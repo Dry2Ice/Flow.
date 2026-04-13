@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.contextTokens !== undefined) {
-      config.contextTokens = validateNumberInRange(body.contextTokens, 'contextTokens', { min: 0, integer: true });
+      config.contextTokens = validateNumberInRange(body.contextTokens, 'contextTokens', { integer: true });
     }
 
     if (body.maxTokens !== undefined) {
-      config.maxTokens = validateNumberInRange(body.maxTokens, 'maxTokens', { min: 1, integer: true });
+      config.maxTokens = validateNumberInRange(body.maxTokens, 'maxTokens', { integer: true });
     }
 
     if (body.presencePenalty !== undefined) {
