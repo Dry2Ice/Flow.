@@ -882,3 +882,19 @@ export const useAppStore = create<AppState>()(
     },
   }))
 );
+
+if (isClient) {
+  useAppStore.subscribe(
+    (state) => state.promptPresets,
+    (promptPresets) => {
+      savePromptPresets(promptPresets);
+    }
+  );
+
+  useAppStore.subscribe(
+    (state) => state.activePreset?.id ?? null,
+    (activePresetId) => {
+      saveActivePresetId(activePresetId);
+    }
+  );
+}

@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { X, Settings, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
-import { PromptPreset } from '@/types';
 
 interface SettingsModalProps {
   isOpen?: boolean;
@@ -158,7 +157,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
   const [generalPromptText, setGeneralPromptText] = useState('');
-  const { activePreset, promptPresets, setActivePreset, setProjectPath, generalPrompt, setGeneralPrompt } = useAppStore();
+  const {
+    activePreset,
+    promptPresets,
+    setActivePreset,
+    updatePromptPreset,
+    setProjectPath,
+    generalPrompt,
+    setGeneralPrompt,
+  } = useAppStore();
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -205,13 +212,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
   const handleSavePreset = () => {
     if (editingPreset) {
-      // In a real app, you'd save this to a backend or persistent storage
-      // For now, we'll just update the local state
-      const updatedPresets = promptPresets.map(p =>
-        p.id === editingPreset ? { ...p, systemPrompt: editedPrompt } : p
-      );
-      // Note: This won't persist across sessions without backend storage
-      console.log('Updated preset:', editingPreset, editedPrompt);
+      updatePromptPreset(editingPreset, { systemPrompt: editedPrompt });
       setEditingPreset(null);
       setEditedPrompt('');
       setMessage('Preset updated successfully!');
