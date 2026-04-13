@@ -195,7 +195,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100">
-      <header className="border-b border-neutral-800/90 bg-neutral-950/85 px-4 py-3 backdrop-blur-xl">
+      <header className="app-header border-b border-neutral-800/90 bg-neutral-950/85 backdrop-blur-xl">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
           <div className="h-5" />
           <div className="flex items-center gap-2 rounded-2xl border border-neutral-800/90 bg-neutral-900/70 px-2 py-1 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.85)]">
@@ -213,7 +213,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="h-[calc(100vh-74px)] overflow-hidden p-2">
+      <section className="app-shell h-[calc(100vh-74px)] overflow-hidden">
         <Allotment
           key={layoutKey}
           vertical
