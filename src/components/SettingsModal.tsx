@@ -316,6 +316,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           generalPrompt
         };
         localStorage.setItem('nim-settings', JSON.stringify(settingsToSave));
+        window.dispatchEvent(new CustomEvent('settings-saved'));
         setMessage('AI configured successfully!');
         setTimeout(() => {
           handleClose();
