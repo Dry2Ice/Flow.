@@ -113,6 +113,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] NIM config validation/request plumbing relaxed to avoid artificial parameter range caps while preserving numeric/integer type safety
 - [x] Development Plan panel upgraded with focused Plan/Errors tabs, plan-level controls ("Check all tasks" + "Execute plan"), sequential full-plan execution feedback, task continuation actions, editable task descriptions, and checkbox-only subtasks that auto-roll task status
 - [x] Error Tracking UI expanded with auto-ingest from logs/failed AI actions, manual user error intake form, explicit Description/Status/Source display, and direct AI actions for "Check bug" (analysis preset) + "Fix bug" (debug preset)
+- [x] Ultra Mode chat control upgraded with explicit labeled button, per-step checklist progress states, and session-scoped stage logs (start/completion per phase) displayed inline during execution
 
 ## Current Structure
 
@@ -221,3 +222,4 @@ export async function GET() {
 | 2026-04-13 | Refined chat usability: replaced the large prompt control surface with a compact composer, moved preset selection directly into the input area, added a dedicated compact Ultra button beside Send, and expanded AIChat logs tab into explicit AI Actions / File Changes / Errors sections. |
 | 2026-04-13 | Reworked `DevelopmentPlan` UI into an interactive plan workspace: added Plan/Errors tab wording, active-plan picker, task-level Execute/Continue + Check controls, editable descriptions, checkbox-only subtasks with status recomputation, and dedicated plan actions for "Check all tasks" and "Execute plan" with progress feedback. |
 | 2026-04-13 | Enhanced `DevelopmentPlan` errors tab into a full Error Tracking UI: added manual error creation (user source), auto-add pipeline from runtime logs + failed AI requests (AI/system source), Source/Status/Description metadata rows, and explicit action labels for analysis/fix AI presets. |
+| 2026-04-13 | Enhanced Ultra Mode interaction in `PromptInput`: added explicit text button, richer 3-stage progress checklist, and `[Ultra]` lifecycle logs (workflow + per-step start/completion) rendered as live stage logs in chat composer while presets remain locked during execution. |
