@@ -25,7 +25,6 @@ function SettingsButton() {
 import { ProjectManager } from '@/components/ProjectManager';
 import { CodePreview } from '@/components/CodePreview';
 import { AIChat } from '@/components/AIChat';
-import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { ProjectStats } from '@/components/ProjectStats';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAppStore } from '@/lib/store';
@@ -35,9 +34,8 @@ import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
 export default function Home() {
-  const { sidebarOpen, diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'files' | 'projects' | 'analytics'>('files');
-  const [leftPanelMode, setLeftPanelMode] = useState<'files' | 'stats'>('files');
+  const { diffViewerOpen, currentProject, projects, setCurrentProject, panelSizes, setPanelSizes } = useAppStore();
+  const [activeTab, setActiveTab] = useState<'files' | 'projects'>('files');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Create demo project on first load
@@ -178,15 +176,6 @@ export default function Home() {
     }
   }, [setPanelSizes]);
 
-  const handlePanelResize = (sizes: number[]) => {
-    setPanelSizes({
-      sidebar: sizes[0] || panelSizes.sidebar,
-      centerVertical: panelSizes.centerVertical, // Keep for center split
-      rightPanel: sizes[2] || panelSizes.rightPanel, // Right panel size
-      rightVertical: panelSizes.rightVertical, // Keep for right split
-    });
-  };
-
   const handleCenterResize = (sizes: number[]) => {
     // sizes[0] is code editor percentage, sizes[1] is preview percentage
     setPanelSizes({
@@ -194,10 +183,22 @@ export default function Home() {
     });
   };
 
-  const handleRightResize = (sizes: number[]) => {
-    // sizes[0] is development plan percentage, sizes[1] is chat percentage
+  const focusStatisticsPanel = () => {
+    if (panelSizes.statsPanel >= 18) {
+      return;
+    }
+
+    const targetStats = 22;
+    const available = 100 - targetStats;
+    const currentNonStats = panelSizes.filesPanel + panelSizes.codePanel + panelSizes.chatPanel + panelSizes.planPanel;
+    const scale = currentNonStats > 0 ? available / currentNonStats : 0.25;
+
     setPanelSizes({
-      rightVertical: sizes[0] || panelSizes.rightVertical,
+      filesPanel: Number((panelSizes.filesPanel * scale).toFixed(2)),
+      codePanel: Number((panelSizes.codePanel * scale).toFixed(2)),
+      chatPanel: Number((panelSizes.chatPanel * scale).toFixed(2)),
+      planPanel: Number((panelSizes.planPanel * scale).toFixed(2)),
+      statsPanel: targetStats,
     });
   };
 
@@ -231,15 +232,11 @@ export default function Home() {
           {/* Center - Control buttons */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setLeftPanelMode(leftPanelMode === 'files' ? 'stats' : 'files')}
+              onClick={focusStatisticsPanel}
               className="px-3 py-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
-              title={leftPanelMode === 'files' ? 'Show Project Statistics' : 'Show Files & Projects'}
+              title="Open Project Statistics panel"
             >
-              <BarChart3 className={`w-5 h-5 transition-colors ${
-                leftPanelMode === 'files'
-                  ? 'dark:text-neutral-300 light:text-gray-600'
-                  : 'dark:text-blue-400 light:text-blue-600'
-              }`} />
+              <BarChart3 className="w-5 h-5 transition-colors dark:text-neutral-300 light:text-gray-600" />
             </button>
             <ThemeToggle />
             <button
@@ -280,72 +277,64 @@ export default function Home() {
       <div className="flex-1 overflow-hidden">
         <Allotment
           defaultSizes={[
-            panelSizes.sidebar, // Left panel (files/stats) - 20%
-            100 - panelSizes.sidebar - panelSizes.rightPanel, // Center area (code + preview) - 50%
-            panelSizes.rightPanel // Right panel (plans + chat) - 30%
+            panelSizes.filesPanel,
+            panelSizes.codePanel,
+            panelSizes.chatPanel,
+            panelSizes.planPanel,
+            panelSizes.statsPanel,
           ]}
           onChange={(sizes: number[]) => {
             setPanelSizes({
-              sidebar: sizes[0] || panelSizes.sidebar,
-              centerVertical: panelSizes.centerVertical, // Keep for internal center split
-              rightPanel: sizes[2] || panelSizes.rightPanel, // Right panel size
-              rightVertical: panelSizes.rightVertical, // Keep for internal right split
+              filesPanel: sizes[0] || panelSizes.filesPanel,
+              codePanel: sizes[1] || panelSizes.codePanel,
+              chatPanel: sizes[2] || panelSizes.chatPanel,
+              planPanel: sizes[3] || panelSizes.planPanel,
+              statsPanel: sizes[4] || panelSizes.statsPanel,
             });
           }}
         >
-          {/* Left Panel - Files/Projects or Statistics */}
+          {/* Files / Projects */}
           <Allotment.Pane minSize={200} maxSize={600}>
             <div className="h-full dark:bg-neutral-800 light:bg-white border-r dark:border-neutral-700 light:border-gray-200 flex flex-col transition-colors duration-300">
-              {/* Left Panel Content */}
-              <div className="flex-1 overflow-hidden">
-                {leftPanelMode === 'files' ? (
-                  <>
-                    {/* Tab Navigation */}
-                    <div className="flex border-b dark:border-neutral-700/50 light:border-gray-200/50 dark:bg-neutral-800/30 light:bg-white/30 backdrop-blur-sm">
-                      <button
-                        onClick={() => setActiveTab('files')}
-                        className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
-                          activeTab === 'files'
-                            ? 'dark:text-blue-400 light:text-blue-600 border-b-2 border-blue-400 dark:bg-blue-500/10 light:bg-blue-50'
-                            : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
-                        }`}
-                      >
-                        <FileText className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'files' ? 'scale-110' : 'group-hover:scale-105'}`} />
-                        Files
-                        {activeTab === 'files' && (
-                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('projects')}
-                        className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
-                          activeTab === 'projects'
-                            ? 'dark:text-purple-400 light:text-purple-600 border-b-2 border-purple-400 dark:bg-purple-500/10 light:bg-purple-50'
-                            : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
-                        }`}
-                      >
-                        <FolderOpen className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'projects' ? 'scale-110' : 'group-hover:scale-105'}`} />
-                        Projects
-                        {activeTab === 'projects' && (
-                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
-                        )}
-                      </button>
-                    </div>
+              <div className="flex border-b dark:border-neutral-700/50 light:border-gray-200/50 dark:bg-neutral-800/30 light:bg-white/30 backdrop-blur-sm">
+                <button
+                  onClick={() => setActiveTab('files')}
+                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
+                    activeTab === 'files'
+                      ? 'dark:text-blue-400 light:text-blue-600 border-b-2 border-blue-400 dark:bg-blue-500/10 light:bg-blue-50'
+                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
+                  }`}
+                >
+                  <FileText className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'files' ? 'scale-110' : 'group-hover:scale-105'}`} />
+                  Files
+                  {activeTab === 'files' && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className={`flex-1 px-4 py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 relative group ${
+                    activeTab === 'projects'
+                      ? 'dark:text-purple-400 light:text-purple-600 border-b-2 border-purple-400 dark:bg-purple-500/10 light:bg-purple-50'
+                      : 'dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-700/30 light:text-gray-500 light:hover:text-gray-700 light:hover:bg-gray-100/30'
+                  }`}
+                >
+                  <FolderOpen className={`w-4 h-4 transition-transform duration-200 ${activeTab === 'projects' ? 'scale-110' : 'group-hover:scale-105'}`} />
+                  Projects
+                  {activeTab === 'projects' && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                  )}
+                </button>
+              </div>
 
-                    {/* Tab Content */}
-                    <div className="flex-1 overflow-hidden">
-                      {activeTab === 'files' && <FileBrowser />}
-                      {activeTab === 'projects' && <ProjectManager />}
-                    </div>
-                  </>
-                ) : (
-                  <ProjectStats />
-                )}
+              <div className="flex-1 overflow-hidden">
+                {activeTab === 'files' && <FileBrowser />}
+                {activeTab === 'projects' && <ProjectManager />}
               </div>
             </div>
           </Allotment.Pane>
 
-          {/* Center Area - Code & Preview (Horizontal split) */}
+          {/* Code + Preview */}
           <Allotment.Pane minSize={300}>
             <Allotment defaultSizes={[panelSizes.centerVertical, 100 - panelSizes.centerVertical]} onChange={handleCenterResize}>
               {/* Code Editor */}
@@ -360,19 +349,19 @@ export default function Home() {
             </Allotment>
           </Allotment.Pane>
 
-          {/* Right Panel - Plans & Chat (Vertical split) */}
-          <Allotment.Pane minSize={250} maxSize={800}>
-            <Allotment vertical defaultSizes={[panelSizes.rightVertical, 100 - panelSizes.rightVertical]} onChange={handleRightResize}>
-              {/* Development Plan */}
-              <Allotment.Pane minSize={150}>
-                <DevelopmentPlan />
-              </Allotment.Pane>
+          {/* Chat / Logs */}
+          <Allotment.Pane minSize={250} maxSize={700}>
+            <AIChat />
+          </Allotment.Pane>
 
-              {/* AI Chat */}
-              <Allotment.Pane minSize={150}>
-                <AIChat />
-              </Allotment.Pane>
-            </Allotment>
+          {/* Plan / Bugs */}
+          <Allotment.Pane minSize={250} maxSize={800}>
+            <DevelopmentPlan />
+          </Allotment.Pane>
+
+          {/* Statistics */}
+          <Allotment.Pane minSize={240} maxSize={700}>
+            <ProjectStats />
           </Allotment.Pane>
         </Allotment>
       </div>

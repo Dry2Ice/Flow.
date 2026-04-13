@@ -34,7 +34,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Rich file metadata and structural code analysis
 - [x] Professional Monaco Editor with advanced features
 - [x] Context-aware file prioritization and analysis
-- [x] Customizable resizable workspace layout with five distinct zones (Files/Stats, Code+Preview, Plans, Chat, Analytics)
+- [x] Customizable resizable workspace layout with five distinct zones (Files/Projects, Code+Preview, Chat/Logs, Plan/Bugs, Statistics)
 - [x] Interactive planning system with hierarchical task management
 - [x] Auto-execution capabilities for plans and tasks with preset switching
 - [x] Multi-status task tracking (pending, in-progress, partially-completed, completed)
@@ -84,8 +84,8 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Smooth theme transitions with proper contrast ratios and accessibility
 - [x] Enhanced theme toggle with tooltip and visual feedback
 - [x] Comprehensive Project Statistics dashboard with file analysis, language distribution, code metrics, AI usage tracking, and project health indicators
-- [x] Five-zone workspace layout: Files/Statistics (left), Code+Preview (center), Plans (right-top), Chat (right-bottom), Analytics (integrated)
-- [x] Centralized control buttons in header center (Statistics toggle, Theme toggle, Settings)
+- [x] Five independent workspace zones: Files/Projects, Code+Preview, Chat/Logs, Plan/Bugs, and dedicated Statistics panel
+- [x] Centralized control buttons in header center (Statistics focus, Theme toggle, Settings)
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
 - [x] Prompt preset editing now updates Zustand store state directly and persists `promptPresets`/`activePreset` to localStorage via selector subscriptions
@@ -177,3 +177,4 @@ export async function GET() {
 | 2026-04-13 | Updated NIM configuration flow to accept `contextTokens = 0` as unlimited: backend validation now allows zero, request builder explicitly omits `context_tokens` when value is zero, and Settings modal helper text/input handling now matches the backend contract. |
 | 2026-04-13 | Relaxed token constraints end-to-end: removed `min`/`max` HTML limits for Context/Max tokens, replaced fallback parsing with safe integer parsing in Settings modal, loosened API validation for these fields to integer-only checks, and updated NIM request builder to forward exact user-provided integer values (except invalid inputs). |
 | 2026-04-13 | Added trusted-root allowlist mode for project path resolution: `POST /api/projects/create`, `POST /api/projects/load`, and `POST /api/project/files` now support explicit `trustedRoot` + `confirmTrustedRoot` registration to allow absolute paths without disabling workspace boundary protections. |
+| 2026-04-13 | Rebuilt `Allotment` workspace into five independent horizontal panels (Files/Projects, Code+Preview, Chat/Logs, Plan/Bugs, Statistics), added persisted `statsPanel` sizing with updated defaults/reset behavior, and changed top-bar statistics button to focus/open the dedicated statistics panel instead of swapping left content. |
