@@ -332,7 +332,7 @@ export const useAppStore = create<AppState>()(
       chatPanel: 18, // percentage - Chat/Logs panel
       planPanel: 16, // percentage - Plan/Bugs panel
       statsPanel: 14, // percentage - Statistics panel
-      centerVertical: 50, // percentage of code panel for code editor
+      centerVertical: 60, // percentage of code panel for code editor
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
