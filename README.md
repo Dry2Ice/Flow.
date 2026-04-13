@@ -168,3 +168,10 @@ bun run build       # Build for production
 bun run typecheck   # Run TypeScript checks
 bun run lint        # Run ESLint
 ```
+
+### One-click quick start (Windows)
+
+Use `quick-start.bat` from the project root to run Flow in one click. The script:
+- opens in the project directory automatically
+- uses Bun when available (`bun install && bun run dev`)
+- falls back to npm (`npm install && npm run dev`) when Bun is not installed
