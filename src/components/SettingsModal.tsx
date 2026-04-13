@@ -256,14 +256,28 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setTimeout(() => setMessage(''), 2000);
   };
 
-  const handleContextTokensChange = (value: string) => {
-    const parsedValue = Number.parseInt(value, 10);
-    if (!Number.isFinite(parsedValue)) {
-      setContextTokens(0);
+  const handleIntegerFieldChange = (
+    value: string,
+    onValidValue: (nextValue: number) => void,
+  ) => {
+    if (value.trim() === '') {
       return;
     }
 
-    setContextTokens(Math.max(0, parsedValue));
+    const parsedValue = Number(value);
+    if (!Number.isFinite(parsedValue) || !Number.isInteger(parsedValue)) {
+      return;
+    }
+
+    onValidValue(parsedValue);
+  };
+
+  const handleContextTokensChange = (value: string) => {
+    handleIntegerFieldChange(value, setContextTokens);
+  };
+
+  const handleMaxTokensChange = (value: string) => {
+    handleIntegerFieldChange(value, setMaxTokens);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -550,7 +564,6 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                      </label>
                      <input
                        type="number"
-                       min="0"
                        value={contextTokens}
                        onChange={(e) => handleContextTokensChange(e.target.value)}
                        className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -565,9 +578,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                      </label>
                      <input
                        type="number"
-                       min="1"
                        value={maxTokens}
-                       onChange={(e) => setMaxTokens(parseInt(e.target.value) || 100)}
+                       onChange={(e) => handleMaxTokensChange(e.target.value)}
                        className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                        placeholder="4000"
                      />
