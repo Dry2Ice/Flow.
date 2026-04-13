@@ -104,8 +104,8 @@ const getInitialLayout = (): WorkspaceLayout => {
 
 function PanelHeader({ title, icon, actions }: { title: string; icon: ReactNode; actions?: ReactNode }) {
   return (
-    <header className="flex items-center justify-between border-b border-neutral-700 bg-neutral-900/80 px-3 py-2">
-      <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">
+    <header className="flow-panel-header flex items-center justify-between px-3 py-2">
+      <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-300">
         {icon}
         {title}
       </h2>
@@ -119,6 +119,7 @@ function PanelButton({ onClick, title, children }: { onClick: () => void; title:
     <button
       onClick={onClick}
       title={title}
+      aria-label={title}
       className="rounded-md border border-neutral-700 bg-neutral-800/80 p-1.5 text-neutral-300 transition hover:border-neutral-600 hover:text-white"
       type="button"
     >
@@ -194,10 +195,13 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100">
+    <main className="min-h-screen text-neutral-100">
       <header className="app-header border-b border-neutral-800/90 bg-neutral-950/85 backdrop-blur-xl">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
-          <div className="h-5" />
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Workspace</p>
+            <h1 className="text-sm font-semibold text-neutral-100">Flow IDE</h1>
+          </div>
           <div className="flex items-center gap-2 rounded-2xl border border-neutral-800/90 bg-neutral-900/70 px-2 py-1 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.85)]">
             <TopControlButton onClick={() => setSettingsModalOpen(true)} label="Open settings" isActive={settingsModalOpen}>
               <Settings className="h-4 w-4" />
@@ -208,7 +212,7 @@ export default function Home() {
             </TopControlButton>
           </div>
           <div className="justify-self-end text-[11px] uppercase tracking-[0.16em] text-neutral-500">
-            Flow Workspace
+            Developer Studio
           </div>
         </div>
       </header>
@@ -220,13 +224,13 @@ export default function Home() {
           defaultSizes={effectiveVertical}
           onChange={(sizes: number[]) => setLayout((prev) => ({ ...prev, vertical: [sizes[0], sizes[1]] }))}
         >
-          <Allotment.Pane minSize={300}>
+          <Allotment.Pane minSize={220}>
             <Allotment
               defaultSizes={effectiveTop}
               onChange={(sizes: number[]) => setLayout((prev) => ({ ...prev, top: [sizes[0], sizes[1], sizes[2]] }))}
             >
-              <Allotment.Pane minSize={120}>
-                <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900/60 overflow-hidden">
+              <Allotment.Pane minSize={88}>
+                <div className="flow-panel h-full">
                   <PanelHeader
                     title="Files & Projects"
                     icon={<FolderOpen className="h-3.5 w-3.5" />}
@@ -238,9 +242,11 @@ export default function Home() {
                   />
                   {!layout.collapsed.left ? (
                     <>
-                      <div className="flex border-b border-neutral-800 text-xs">
-                        <button onClick={() => setSideTab('files')} className={`flex-1 p-2 ${sideTab === 'files' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>Files</button>
-                        <button onClick={() => setSideTab('projects')} className={`flex-1 p-2 ${sideTab === 'projects' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>Projects</button>
+                      <div className="border-b border-neutral-800/70 px-2 py-2">
+                        <div className="flex gap-2">
+                          <button data-active={sideTab === 'files'} onClick={() => setSideTab('files')} className="flow-tab flex-1">Files</button>
+                          <button data-active={sideTab === 'projects'} onClick={() => setSideTab('projects')} className="flow-tab flex-1">Projects</button>
+                        </div>
                       </div>
                       <div className="h-[calc(100%-72px)]">{sideTab === 'files' ? <FileBrowser /> : <ProjectManager />}</div>
                     </>
@@ -250,8 +256,8 @@ export default function Home() {
                 </div>
               </Allotment.Pane>
 
-              <Allotment.Pane minSize={280}>
-                <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900/60 overflow-hidden">
+              <Allotment.Pane minSize={220}>
+                <div className="flow-panel h-full">
                   <PanelHeader title="Code Editor & Preview" icon={<Code2 className="h-3.5 w-3.5" />} />
                   <div className="h-[calc(100%-41px)]">
                     <Allotment
@@ -259,15 +265,15 @@ export default function Home() {
                       defaultSizes={layout.center}
                       onChange={(sizes: number[]) => setLayout((prev) => ({ ...prev, center: [sizes[0], sizes[1]] }))}
                     >
-                      <Allotment.Pane minSize={180}><CodeEditor /></Allotment.Pane>
-                      <Allotment.Pane minSize={140}><CodePreview /></Allotment.Pane>
+                      <Allotment.Pane minSize={140}><CodeEditor /></Allotment.Pane>
+                      <Allotment.Pane minSize={100}><CodePreview /></Allotment.Pane>
                     </Allotment>
                   </div>
                 </div>
               </Allotment.Pane>
 
-              <Allotment.Pane minSize={200}>
-                <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900/60 overflow-hidden">
+              <Allotment.Pane minSize={140}>
+                <div className="flow-panel h-full">
                   <PanelHeader
                     title="AI Chat / Logs"
                     icon={<Bot className="h-3.5 w-3.5" />}
@@ -279,9 +285,11 @@ export default function Home() {
                   />
                   {!layout.collapsed.right ? (
                     <>
-                      <div className="flex border-b border-neutral-800 text-xs">
-                        <button onClick={() => setRightTab('chat')} className={`flex-1 p-2 ${rightTab === 'chat' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>AI Chat</button>
-                        <button onClick={() => setRightTab('logs')} className={`flex-1 p-2 ${rightTab === 'logs' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>Logs</button>
+                      <div className="border-b border-neutral-800/70 px-2 py-2">
+                        <div className="flex gap-2">
+                          <button data-active={rightTab === 'chat'} onClick={() => setRightTab('chat')} className="flow-tab flex-1">AI Chat</button>
+                          <button data-active={rightTab === 'logs'} onClick={() => setRightTab('logs')} className="flow-tab flex-1">Logs</button>
+                        </div>
                       </div>
                       <div className="h-[calc(100%-118px)]">{rightTab === 'chat' ? <AIChat /> : <SystemLogsPanel />}</div>
                       <div className="border-t border-neutral-800"><PromptInput /></div>
@@ -294,8 +302,8 @@ export default function Home() {
             </Allotment>
           </Allotment.Pane>
 
-          <Allotment.Pane minSize={120}>
-            <div className="h-full rounded-lg border border-neutral-800 bg-neutral-900/60 overflow-hidden">
+          <Allotment.Pane minSize={90}>
+            <div className="flow-panel h-full">
               <PanelHeader
                 title="Development Plan / Errors"
                 icon={<TriangleAlert className="h-3.5 w-3.5" />}
@@ -307,9 +315,11 @@ export default function Home() {
               />
               {!layout.collapsed.bottom ? (
                 <>
-                  <div className="flex border-b border-neutral-800 text-xs">
-                    <button onClick={() => setBottomTab('plan')} className={`flex-1 p-2 ${bottomTab === 'plan' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>Development Plan</button>
-                    <button onClick={() => setBottomTab('errors')} className={`flex-1 p-2 ${bottomTab === 'errors' ? 'bg-neutral-800 text-white' : 'text-neutral-400'}`}>Errors</button>
+                  <div className="border-b border-neutral-800/70 px-2 py-2">
+                    <div className="flex gap-2">
+                      <button data-active={bottomTab === 'plan'} onClick={() => setBottomTab('plan')} className="flow-tab flex-1">Development Plan</button>
+                      <button data-active={bottomTab === 'errors'} onClick={() => setBottomTab('errors')} className="flow-tab flex-1">Errors</button>
+                    </div>
                   </div>
                   <div className="h-[calc(100%-72px)] overflow-hidden">{bottomTab === 'plan' ? <DevelopmentPlan /> : <ErrorsPanel />}</div>
                 </>
