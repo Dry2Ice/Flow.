@@ -111,6 +111,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Prompt presets editor constrained to 3 editable presets with persistent storage and active preset selection continuity
 - [x] Global system prompt messaging clarified and preserved as an always-appended instruction layer on every request
 - [x] NIM config validation/request plumbing relaxed to avoid artificial parameter range caps while preserving numeric/integer type safety
+- [x] Development Plan panel upgraded with focused Plan/Errors tabs, plan-level controls ("Check all tasks" + "Execute plan"), sequential full-plan execution feedback, task continuation actions, editable task descriptions, and checkbox-only subtasks that auto-roll task status
 
 ## Current Structure
 
@@ -217,3 +218,4 @@ export async function GET() {
 | 2026-04-13 | Refactored main UI into a professional IDE workspace with four resizable/collapsible panels, nested center editor/preview split, right/bottom tab systems, resettable persisted layout state, and new diagnostics components for logs/errors. |
 | 2026-04-13 | Redesigned the top header into a minimal centered nav with only Settings/Theme/Statistics controls, added compact interactive icon buttons with tooltips and active states, and wired Statistics to a right slide-over `AnalyticsDashboard` panel. |
 | 2026-04-13 | Refined chat usability: replaced the large prompt control surface with a compact composer, moved preset selection directly into the input area, added a dedicated compact Ultra button beside Send, and expanded AIChat logs tab into explicit AI Actions / File Changes / Errors sections. |
+| 2026-04-13 | Reworked `DevelopmentPlan` UI into an interactive plan workspace: added Plan/Errors tab wording, active-plan picker, task-level Execute/Continue + Check controls, editable descriptions, checkbox-only subtasks with status recomputation, and dedicated plan actions for "Check all tasks" and "Execute plan" with progress feedback. |

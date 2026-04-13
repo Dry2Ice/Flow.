@@ -1,85 +1,74 @@
-// src/components/DevelopmentPlan.tsx
-
 "use client";
 
-import { useState } from 'react';
-import { CheckCircle, Circle, Clock, AlertTriangle, Plus, Play, Search, Edit, Trash2, CheckSquare, Square, Bug, XCircle } from 'lucide-react';
-import { useAppStore } from '@/lib/store';
-import { BugReport, DevelopmentTask, TaskItem } from '@/types';
-import type { DevelopmentPlan } from '@/types';
+import { useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  Bug,
+  CheckCircle,
+  CheckSquare,
+  Circle,
+  Clock,
+  Edit3,
+  Play,
+  Search,
+  Square,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { executeAIRequest } from '@/lib/ai-executor';
+import { useAppStore } from '@/lib/store';
+import { BugReport, DevelopmentTask } from '@/types';
+import type { DevelopmentPlan, TaskItem } from '@/types';
 
 export function DevelopmentPlan() {
   const {
     plans,
-    currentPlan,
     tasks,
-    currentTask,
     bugs,
-    addPlan,
     updatePlan,
-    setCurrentPlan,
-    deletePlan,
-    addTask,
     updateTask,
-    setCurrentTask,
     updateBug,
     deleteBug,
     addLog,
     activeSessionId,
   } = useAppStore();
 
-  const [newPlanTitle, setNewPlanTitle] = useState('');
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [showPlanForm, setShowPlanForm] = useState(false);
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<string | null>(null);
-  const [editingTask, setEditingTask] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'plans' | 'bugs'>('plans');
+  const [activeTab, setActiveTab] = useState<'plan' | 'errors'>('plan');
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [executingPlanId, setExecutingPlanId] = useState<string | null>(null);
   const [planExecutionProgress, setPlanExecutionProgress] = useState({ current: 0, total: 0 });
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+
+  const activePlan = useMemo(() => {
+    if (plans.length === 0) return null;
+    if (!activePlanId) return plans[0];
+    return plans.find((plan) => plan.id === activePlanId) ?? plans[0];
+  }, [plans, activePlanId]);
+
+  const planTasks = activePlan?.tasks ?? [];
 
   const getStatusIcon = (status: DevelopmentTask['status'] | DevelopmentPlan['status']) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-emerald-400" aria-hidden="true" />;
       case 'partially_completed':
-        return <CheckCircle className="w-4 h-4 text-yellow-500" />;
+        return <Clock className="h-4 w-4 text-amber-400" aria-hidden="true" />;
       case 'in_progress':
-        return <Clock className="w-4 h-4 text-blue-500" />;
+        return <Clock className="h-4 w-4 text-sky-400" aria-hidden="true" />;
       case 'cancelled':
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
+        return <AlertTriangle className="h-4 w-4 text-rose-400" aria-hidden="true" />;
       default:
-        return <Circle className="w-4 h-4 text-neutral-400" />;
+        return <Circle className="h-4 w-4 text-neutral-500" aria-hidden="true" />;
     }
   };
 
   const getStatusText = (status: DevelopmentTask['status'] | DevelopmentPlan['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'Completed';
-      case 'partially_completed':
-        return 'Partially Completed';
-      case 'in_progress':
-        return 'In Progress';
-      case 'cancelled':
-        return 'Cancelled';
-      default:
-        return 'Pending';
-    }
-  };
-
-  const getPriorityColor = (priority: DevelopmentTask['priority']) => {
-    switch (priority) {
-      case 'high':
-        return 'text-red-400';
-      case 'medium':
-        return 'text-yellow-400';
-      case 'low':
-        return 'text-green-400';
-      default:
-        return 'text-neutral-400';
-    }
+    if (status === 'completed') return 'Completed';
+    if (status === 'partially_completed') return 'Partially completed';
+    if (status === 'in_progress') return 'Not completed';
+    if (status === 'cancelled') return 'Not completed';
+    return 'Not completed';
   };
 
   const inferWorkStatus = (
@@ -87,242 +76,54 @@ export function DevelopmentPlan() {
     fallback: DevelopmentTask['status'] | DevelopmentPlan['status']
   ): DevelopmentTask['status'] | DevelopmentPlan['status'] => {
     if (!explanation) return fallback;
-
     const text = explanation.toLowerCase();
-    if (text.includes('partially') || text.includes('partial')) return 'partially_completed';
+    if (text.includes('partial')) return 'partially_completed';
     if (text.includes('completed') || text.includes('done') || text.includes('finished')) return 'completed';
     if (text.includes('in progress') || text.includes('progress')) return 'in_progress';
     if (text.includes('pending') || text.includes('not started')) return 'pending';
-
     return fallback;
   };
 
-  const handleAddPlan = () => {
-    if (!newPlanTitle.trim()) return;
+  const patchTaskInPlans = (taskId: string, patch: Partial<DevelopmentTask>) => {
+    plans.forEach((plan) => {
+      if (!plan.tasks.some((task) => task.id === taskId)) return;
+      updatePlan(plan.id, {
+        tasks: plan.tasks.map((task) => (task.id === taskId ? { ...task, ...patch, updatedAt: new Date() } : task)),
+      });
+    });
+  };
 
-    const plan: DevelopmentPlan = {
-      id: crypto.randomUUID(),
-      title: newPlanTitle,
-      description: '',
-      status: 'pending',
-      tasks: [],
-      createdAt: new Date(),
+  const updateTaskEverywhere = (taskId: string, patch: Partial<DevelopmentTask>) => {
+    updateTask(taskId, patch);
+    patchTaskInPlans(taskId, patch);
+  };
+
+  const recomputeStatusFromSubtasks = (items: TaskItem[]): DevelopmentTask['status'] => {
+    if (items.length === 0) return 'pending';
+    const completed = items.filter((item) => item.completed).length;
+    if (completed === items.length) return 'completed';
+    if (completed > 0) return 'partially_completed';
+    return 'pending';
+  };
+
+  const handleToggleSubtask = (task: DevelopmentTask, subtaskId: string) => {
+    const items = task.items.map((item) => (item.id === subtaskId ? { ...item, completed: !item.completed } : item));
+    updateTaskEverywhere(task.id, {
+      items,
+      status: recomputeStatusFromSubtasks(items),
       updatedAt: new Date(),
-    };
-
-    addPlan(plan);
-    setNewPlanTitle('');
-    setShowPlanForm(false);
-  };
-
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim()) return;
-
-    const task: DevelopmentTask = {
-      id: crypto.randomUUID(),
-      title: newTaskTitle,
-      description: '',
-      status: 'pending',
-      priority: 'medium',
-      items: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    addTask(task);
-    setNewTaskTitle('');
-    setShowTaskForm(false);
-  };
-
-  const handleCheckPlan = async (plan: DevelopmentPlan) => {
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Checking plan "${plan.title}"`,
-      source: 'user_action',
-      relatedPlan: plan.id,
     });
-
-    const result = await executeAIRequest({
-      requestType: 'analysis',
-      presetId: 'analyze',
-      prompt: `Check plan status and return current progress.
-Plan title: ${plan.title}
-Plan description: ${plan.description || 'No description'}
-Current status: ${plan.status}
-Tasks count: ${plan.tasks.length}`,
-    });
-
-    const nextStatus = inferWorkStatus(result.responseText, plan.status);
-    updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
-
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      jobId: result.jobId,
-      timestamp: new Date(),
-      type: result.ok ? 'success' : 'error',
-      message: result.ok
-        ? `Plan "${plan.title}" checked. Status: ${nextStatus}.`
-        : `Failed to check plan "${plan.title}": ${result.error || 'Unknown error'}`,
-      source: 'ai_execution',
-      relatedPlan: plan.id,
-    });
-  };
-
-  const handleExecutePlan = async (plan: DevelopmentPlan) => {
-    const planTaskEntries = Array.isArray(plan.tasks) ? plan.tasks : [];
-    const planTaskIds = planTaskEntries
-      .map((task) => (typeof task === 'string' ? task : task?.id))
-      .filter((taskId): taskId is string => Boolean(taskId));
-
-    const relatedTasks = planTaskIds.length > 0
-      ? tasks.filter((task) => planTaskIds.includes(task.id))
-      : tasks.filter((task) => (task as DevelopmentTask & { planId?: string }).planId === plan.id);
-
-    updatePlan(plan.id, { status: 'in_progress' });
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Executing plan "${plan.title}"`,
-      source: 'user_action',
-      relatedPlan: plan.id,
-    });
-
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Запуск последовательного выполнения плана: ${relatedTasks.length} задач`,
-      source: 'user_action',
-      relatedPlan: plan.id,
-    });
-
-    if (relatedTasks.length === 0) {
-      const result = await executeAIRequest({
-        requestType: 'implementation',
-        presetId: 'develop',
-        prompt: `Execute this development plan.
-Plan title: ${plan.title}
-Plan description: ${plan.description || 'No description'}
-Current status: ${plan.status}
-Tasks: ${planTaskEntries
-  .map((task) => (typeof task === 'string' ? task : task?.title || task?.id))
-  .join(', ') || 'No tasks yet'}`,
-      });
-
-      const nextStatus = inferWorkStatus(result.responseText, 'in_progress');
-      updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
-
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        jobId: result.jobId,
-        timestamp: new Date(),
-        type: result.ok ? 'success' : 'error',
-        message: result.ok
-          ? `Plan "${plan.title}" execution updated status to ${nextStatus}.`
-          : `Failed to execute plan "${plan.title}": ${result.error || 'Unknown error'}`,
-        source: 'ai_execution',
-        relatedPlan: plan.id,
-      });
-
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        timestamp: new Date(),
-        type: result.ok ? 'success' : 'error',
-        message: result.ok ? 'План выполнен' : 'Выполнение плана завершено с ошибками',
-        source: 'user_action',
-        relatedPlan: plan.id,
-      });
-
-      return;
-    }
-
-    setExecutingPlanId(plan.id);
-    setPlanExecutionProgress({ current: 0, total: relatedTasks.length });
-
-    let hadErrors = false;
-
-    try {
-      let completedCount = 0;
-      for (const task of relatedTasks) {
-        if (task.status === 'completed') {
-          completedCount += 1;
-          setPlanExecutionProgress({ current: completedCount, total: relatedTasks.length });
-          continue;
-        }
-
-        try {
-          await handleExecuteTask(task);
-        } catch (error) {
-          hadErrors = true;
-        } finally {
-          completedCount += 1;
-          setPlanExecutionProgress({ current: completedCount, total: relatedTasks.length });
-        }
-      }
-    } finally {
-      const latestTasks = useAppStore.getState().tasks;
-      const latestRelatedTasks = relatedTasks
-        .map((task) => latestTasks.find((storeTask) => storeTask.id === task.id))
-        .filter((task): task is DevelopmentTask => Boolean(task));
-
-      const allCompleted = latestRelatedTasks.length > 0 && latestRelatedTasks.every((task) => task.status === 'completed');
-      const hasInProgress = latestRelatedTasks.some(
-        (task) => task.status === 'in_progress' || task.status === 'partially_completed'
-      );
-
-      if (allCompleted) {
-        updatePlan(plan.id, { status: 'completed', lastChecked: new Date() });
-      } else if (hasInProgress) {
-        updatePlan(plan.id, { status: 'in_progress', lastChecked: new Date() });
-      }
-
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        timestamp: new Date(),
-        type: hadErrors ? 'error' : 'success',
-        message: hadErrors ? 'Выполнение плана завершено с ошибками' : 'План выполнен',
-        source: 'user_action',
-        relatedPlan: plan.id,
-      });
-
-      setExecutingPlanId(null);
-      setPlanExecutionProgress({ current: 0, total: 0 });
-    }
   };
 
   const handleCheckTask = async (task: DevelopmentTask) => {
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Checking task "${task.title}"`,
-      source: 'user_action',
-      relatedTask: task.id,
-    });
-
     const result = await executeAIRequest({
       requestType: 'analysis',
       presetId: 'analyze',
-      prompt: `Check task status and return current progress.
-Task title: ${task.title}
-Task description: ${task.description || 'No description'}
-Current status: ${task.status}
-Checklist items: ${task.items.length}`,
+      prompt: `Check task status and return current progress.\nTask title: ${task.title}\nTask description: ${task.description || 'No description'}\nCurrent status: ${task.status}\nSubtasks count: ${task.items.length}`,
     });
 
     const nextStatus = inferWorkStatus(result.responseText, task.status);
-    updateTask(task.id, { status: nextStatus, lastChecked: new Date() });
+    updateTaskEverywhere(task.id, { status: nextStatus, lastChecked: new Date() });
 
     addLog({
       id: crypto.randomUUID(),
@@ -331,37 +132,25 @@ Checklist items: ${task.items.length}`,
       timestamp: new Date(),
       type: result.ok ? 'success' : 'error',
       message: result.ok
-        ? `Task "${task.title}" checked. Status: ${nextStatus}.`
-        : `Failed to check task "${task.title}": ${result.error || 'Unknown error'}`,
+        ? `Task \"${task.title}\" checked. Status: ${nextStatus}.`
+        : `Failed to check task \"${task.title}\": ${result.error || 'Unknown error'}`,
       source: 'ai_execution',
       relatedTask: task.id,
     });
   };
 
   const handleExecuteTask = async (task: DevelopmentTask) => {
-    updateTask(task.id, { status: 'in_progress' });
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Executing task "${task.title}"`,
-      source: 'user_action',
-      relatedTask: task.id,
-    });
+    const nextStartStatus: DevelopmentTask['status'] = task.status === 'pending' ? 'in_progress' : task.status;
+    updateTaskEverywhere(task.id, { status: nextStartStatus });
 
     const result = await executeAIRequest({
       requestType: 'implementation',
       presetId: 'develop',
-      prompt: `Execute task.
-Task title: ${task.title}
-Task description: ${task.description || 'No description'}
-Current status: ${task.status}
-Checklist: ${task.items.map((item) => `${item.completed ? '[x]' : '[ ]'} ${item.title}`).join('; ') || 'No items'}`,
+      prompt: `Execute task.\nTask title: ${task.title}\nTask description: ${task.description || 'No description'}\nCurrent status: ${task.status}\nSubtasks: ${task.items.map((item) => `${item.completed ? '[x]' : '[ ]'} ${item.title}`).join('; ') || 'No subtasks'}`,
     });
 
     const nextStatus = inferWorkStatus(result.responseText, 'in_progress');
-    updateTask(task.id, { status: nextStatus, lastChecked: new Date() });
+    updateTaskEverywhere(task.id, { status: nextStatus, lastChecked: new Date() });
 
     addLog({
       id: crypto.randomUUID(),
@@ -370,100 +159,67 @@ Checklist: ${task.items.map((item) => `${item.completed ? '[x]' : '[ ]'} ${item.
       timestamp: new Date(),
       type: result.ok ? 'success' : 'error',
       message: result.ok
-        ? `Task "${task.title}" execution updated status to ${nextStatus}.`
-        : `Failed to execute task "${task.title}": ${result.error || 'Unknown error'}`,
+        ? `Task \"${task.title}\" execution updated status to ${nextStatus}.`
+        : `Failed to execute task \"${task.title}\": ${result.error || 'Unknown error'}`,
       source: 'ai_execution',
       relatedTask: task.id,
     });
   };
 
-  const handleToggleItem = (taskId: string, itemId: string, completed: boolean) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+  const handleCheckAllTasks = async (plan: DevelopmentPlan) => {
+    for (const task of plan.tasks) {
+      await handleCheckTask(task);
+    }
 
-    const updatedItems = task.items.map(item =>
-      item.id === itemId ? { ...item, completed } : item
-    );
+    const refreshed = useAppStore.getState().plans.find((item) => item.id === plan.id);
+    const latestTasks = refreshed?.tasks ?? [];
+    const done = latestTasks.filter((task) => task.status === 'completed').length;
+    const nextStatus: DevelopmentPlan['status'] = done === latestTasks.length && latestTasks.length > 0
+      ? 'completed'
+      : done > 0
+        ? 'partially_completed'
+        : 'pending';
 
-    updateTask(taskId, { items: updatedItems });
+    updatePlan(plan.id, { status: nextStatus, lastChecked: new Date() });
   };
 
-  const handleCheckBug = async (bug: BugReport) => {
-    updateBug(bug.id, { status: 'investigating' });
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Checking bug "${bug.title}"`,
-      source: 'user_action',
-    });
+  const handleExecutePlan = async (plan: DevelopmentPlan) => {
+    if (plan.tasks.length === 0) return;
 
-    const result = await executeAIRequest({
-      requestType: 'analysis',
-      presetId: 'analyze',
-      prompt: `Analyze bug status.
-Bug title: ${bug.title}
-Description: ${bug.description}
-Current status: ${bug.status}
-Severity: ${bug.severity}`,
-    });
+    setExecutingPlanId(plan.id);
+    setPlanExecutionProgress({ current: 0, total: plan.tasks.length });
+    updatePlan(plan.id, { status: 'in_progress' });
 
-    updateBug(bug.id, {
-      status: result.ok ? 'investigating' : bug.status,
+    let progress = 0;
+    for (const task of plan.tasks) {
+      await handleExecuteTask(task);
+      progress += 1;
+      setPlanExecutionProgress({ current: progress, total: plan.tasks.length });
+    }
+
+    const refreshed = useAppStore.getState().plans.find((item) => item.id === plan.id);
+    const latestTasks = refreshed?.tasks ?? [];
+    const allDone = latestTasks.length > 0 && latestTasks.every((task) => task.status === 'completed');
+    const someDone = latestTasks.some((task) => task.status === 'completed' || task.status === 'partially_completed');
+
+    updatePlan(plan.id, {
+      status: allDone ? 'completed' : someDone ? 'partially_completed' : 'pending',
       lastChecked: new Date(),
     });
 
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      jobId: result.jobId,
-      timestamp: new Date(),
-      type: result.ok ? 'success' : 'error',
-      message: result.ok
-        ? `Bug "${bug.title}" checked.`
-        : `Failed to check bug "${bug.title}": ${result.error || 'Unknown error'}`,
-      source: 'ai_execution',
-    });
+    setExecutingPlanId(null);
+    setPlanExecutionProgress({ current: 0, total: 0 });
   };
 
-  const handleFixBug = async (bug: BugReport) => {
-    updateBug(bug.id, { status: 'fixing' });
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'info',
-      message: `Fixing bug "${bug.title}"`,
-      source: 'user_action',
-    });
+  const startEditDescription = (task: DevelopmentTask) => {
+    setEditingTaskId(task.id);
+    setDescriptionDraft(task.description || '');
+  };
 
-    const result = await executeAIRequest({
-      requestType: 'debugging',
-      presetId: 'debug',
-      prompt: `Fix bug and report result.
-Bug title: ${bug.title}
-Description: ${bug.description}
-Severity: ${bug.severity}
-Related files: ${bug.relatedFiles.join(', ') || 'N/A'}`,
-    });
-
-    updateBug(bug.id, {
-      status: result.ok ? 'resolved' : 'fixing',
-      lastChecked: new Date(),
-    });
-
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      jobId: result.jobId,
-      timestamp: new Date(),
-      type: result.ok ? 'success' : 'error',
-      message: result.ok
-        ? `Bug "${bug.title}" fix completed.`
-        : `Failed to fix bug "${bug.title}": ${result.error || 'Unknown error'}`,
-      source: 'ai_execution',
-    });
+  const saveDescription = (taskId: string) => {
+    updateTaskEverywhere(taskId, { description: descriptionDraft, updatedAt: new Date() });
+    setEditingTaskId(null);
+    setDescriptionDraft('');
   };
 
   const getBugSeverityColor = (severity: string) => {
@@ -481,413 +237,235 @@ Related files: ${bug.relatedFiles.join(', ') || 'N/A'}`,
     }
   };
 
-  const getBugStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'text-red-400';
-      case 'investigating':
-        return 'text-yellow-400';
-      case 'fixing':
-        return 'text-blue-400';
-      case 'resolved':
-        return 'text-green-400';
-      case 'closed':
-        return 'text-neutral-400';
-      default:
-        return 'text-neutral-400';
-    }
+  const handleCheckBug = async (bug: BugReport) => {
+    updateBug(bug.id, { status: 'investigating' });
+    const result = await executeAIRequest({
+      requestType: 'analysis',
+      presetId: 'analyze',
+      prompt: `Analyze error status.\nError: ${bug.title}\nDescription: ${bug.description}\nCurrent status: ${bug.status}\nSeverity: ${bug.severity}`,
+    });
+
+    updateBug(bug.id, { status: result.ok ? 'investigating' : bug.status, lastChecked: new Date() });
+  };
+
+  const handleFixBug = async (bug: BugReport) => {
+    updateBug(bug.id, { status: 'fixing' });
+    const result = await executeAIRequest({
+      requestType: 'debugging',
+      presetId: 'debug',
+      prompt: `Fix this error.\nTitle: ${bug.title}\nDescription: ${bug.description}\nSeverity: ${bug.severity}\nRelated files: ${bug.relatedFiles.join(', ') || 'N/A'}`,
+    });
+
+    updateBug(bug.id, {
+      status: result.ok ? 'resolved' : 'fixing',
+      lastChecked: new Date(),
+    });
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b border-neutral-700">
-        <div className="flex border-b border-neutral-700">
+    <div className="flex h-full flex-col">
+      <div className="border-b border-neutral-700/80">
+        <div className="grid grid-cols-2 border-b border-neutral-700/80">
           <button
-            onClick={() => setActiveTab('plans')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === 'plans'
-                ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
-                : 'text-neutral-400 hover:text-neutral-300'
+            onClick={() => setActiveTab('plan')}
+            className={`px-4 py-3 text-sm font-semibold transition ${
+              activeTab === 'plan' ? 'bg-blue-500/10 text-blue-400' : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            <CheckSquare className="w-4 h-4" />
-            Plans
+            Plan
           </button>
           <button
-            onClick={() => setActiveTab('bugs')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === 'bugs'
-                ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/10'
-                : 'text-neutral-400 hover:text-neutral-300'
+            onClick={() => setActiveTab('errors')}
+            className={`px-4 py-3 text-sm font-semibold transition ${
+              activeTab === 'errors' ? 'bg-red-500/10 text-red-400' : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            <Bug className="w-4 h-4" />
-            Bugs ({bugs.length})
+            Errors ({bugs.length})
           </button>
-        </div>
-
-        <div className="p-4">
-          <h3 className="text-lg font-semibold text-neutral-200">
-            {activeTab === 'plans' ? 'Development Plans' : 'Bug Reports'}
-          </h3>
         </div>
       </div>
 
-      {/* Content based on active tab */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'plans' ? (
-          /* Plans Content */
-          <div className="p-4 space-y-4">
-            {/* Add new plan */}
-            <div className="space-y-2">
-              {!showPlanForm ? (
-                <button
-                  onClick={() => setShowPlanForm(true)}
-                  className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Plan
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newPlanTitle}
-                    onChange={(e) => setNewPlanTitle(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddPlan()}
-                    placeholder="Plan title..."
-                    className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    onClick={handleAddPlan}
-                    className="px-3 py-2 bg-green-600 hover:bg-green-700 rounded transition-colors"
+      <div className="flex-1 overflow-y-auto p-4">
+        {activeTab === 'plan' ? (
+          <div className="space-y-4">
+            {plans.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400">
+                No development plans yet.
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.18em] text-neutral-500">Active plan</label>
+                  <select
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100"
+                    value={activePlan?.id ?? ''}
+                    onChange={(event) => setActivePlanId(event.target.value)}
                   >
-                    Add
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPlanForm(false);
-                      setNewPlanTitle('');
-                    }}
-                    className="px-3 py-2 bg-neutral-600 hover:bg-neutral-700 rounded transition-colors"
-                  >
-                    Cancel
-                  </button>
+                    {plans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
-            </div>
 
-            {/* Plans */}
-            {plans.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-neutral-300 mb-2">Plans</h4>
-                <div className="space-y-3">
-                  {plans.map(plan => (
-                    <div
-                      key={plan.id}
-                      className={`p-4 border rounded-lg transition-colors ${
-                        currentPlan?.id === plan.id
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-neutral-600 hover:border-neutral-500'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(plan.status)}
-                          <h5 className="font-medium text-neutral-200">{plan.title}</h5>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleCheckPlan(plan)}
-                            className="p-1 text-neutral-400 hover:text-blue-400 transition-colors"
-                            title="Check plan status"
-                          >
-                            <Search className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleExecutePlan(plan)}
-                            disabled={executingPlanId === plan.id}
-                            className="p-1 text-neutral-400 hover:text-green-400 transition-colors"
-                            title="Execute plan"
-                          >
-                            <Play className="w-4 h-4" />
-                          </button>
-                          {executingPlanId === plan.id && planExecutionProgress.total > 0 && (
-                            <span className="text-xs text-neutral-400 ml-1">
-                              {planExecutionProgress.current} / {planExecutionProgress.total} задач
-                            </span>
-                          )}
-                          <button
-                            onClick={() => deletePlan(plan.id)}
-                            className="p-1 text-neutral-400 hover:text-red-400 transition-colors"
-                            title="Delete plan"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                {activePlan && (
+                  <section className="space-y-3 rounded-xl border border-neutral-700 bg-neutral-900/60 p-4">
+                    <header className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-semibold text-neutral-100">{activePlan.title}</h3>
+                        <p className="text-xs text-neutral-400">Status: {getStatusText(activePlan.status)}</p>
                       </div>
+                      {executingPlanId === activePlan.id && planExecutionProgress.total > 0 && (
+                        <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-300">
+                          {planExecutionProgress.current}/{planExecutionProgress.total}
+                        </span>
+                      )}
+                    </header>
 
-                      <div className="text-xs text-neutral-400 mb-2">
-                        {plan.tasks.length} tasks • Status: {getStatusText(plan.status)}
-                      </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleCheckAllTasks(activePlan)}
+                        className="rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20"
+                      >
+                        Check all tasks
+                      </button>
+                      <button
+                        onClick={() => handleExecutePlan(activePlan)}
+                        disabled={executingPlanId === activePlan.id}
+                        className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                      >
+                        Execute plan
+                      </button>
+                    </div>
 
-                      {/* Tasks in plan */}
-                      {plan.tasks.length > 0 && (
-                        <div className="space-y-2 mt-3 pt-3 border-t border-neutral-600">
-                          {plan.tasks.map(task => (
-                            <div key={task.id} className="p-2 bg-neutral-800 rounded border border-neutral-700">
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-2 flex-1">
-                                  {getStatusIcon(task.status)}
-                                  <span className="text-sm text-neutral-300">{task.title}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
+                    <div className="space-y-3">
+                      {planTasks.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-neutral-700 p-3 text-xs text-neutral-500">
+                          This plan has no tasks.
+                        </div>
+                      ) : (
+                        planTasks.map((task) => (
+                          <article key={task.id} className="rounded-lg border border-neutral-700 bg-neutral-900 p-3">
+                            <div className="mb-2 flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(task.status)}
+                                <h4 className="text-sm font-medium text-neutral-100">{task.title}</h4>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleCheckTask(task)}
+                                  className="rounded p-1 text-neutral-400 hover:bg-blue-500/10 hover:text-blue-300"
+                                  title="Check task status"
+                                >
+                                  <Search className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleExecuteTask(task)}
+                                  className="rounded p-1 text-neutral-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                                  title={task.status === 'partially_completed' || task.status === 'in_progress' ? 'Continue task' : 'Execute task'}
+                                >
+                                  <Play className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => startEditDescription(task)}
+                                  className="rounded p-1 text-neutral-400 hover:bg-violet-500/10 hover:text-violet-300"
+                                  title="Edit task description"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <p className="mb-2 text-xs text-neutral-400">{getStatusText(task.status)}</p>
+
+                            {editingTaskId === task.id ? (
+                              <div className="mb-3 space-y-2">
+                                <textarea
+                                  value={descriptionDraft}
+                                  onChange={(event) => setDescriptionDraft(event.target.value)}
+                                  className="min-h-20 w-full rounded-md border border-neutral-700 bg-neutral-950 px-2 py-2 text-xs text-neutral-100"
+                                  placeholder="Describe this task"
+                                />
+                                <div className="flex gap-2">
                                   <button
-                                    onClick={() => handleCheckTask(task)}
-                                    className="p-1 text-neutral-500 hover:text-blue-400 transition-colors"
-                                    title="Check task"
+                                    onClick={() => saveDescription(task.id)}
+                                    className="rounded bg-emerald-600 px-2 py-1 text-xs font-medium text-white"
                                   >
-                                    <Search className="w-3 h-3" />
+                                    Save
                                   </button>
                                   <button
-                                    onClick={() => handleExecuteTask(task)}
-                                    className="p-1 text-neutral-500 hover:text-green-400 transition-colors"
-                                    title="Execute task"
+                                    onClick={() => setEditingTaskId(null)}
+                                    className="rounded bg-neutral-700 px-2 py-1 text-xs font-medium text-neutral-200"
                                   >
-                                    <Play className="w-3 h-3" />
+                                    Cancel
                                   </button>
                                 </div>
                               </div>
+                            ) : (
+                              <p className="mb-3 text-xs text-neutral-500">{task.description || 'No description yet.'}</p>
+                            )}
 
-                              {/* Task items */}
-                              {task.items.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {task.items.map(item => (
-                                    <div key={item.id} className="flex items-center gap-2 text-xs">
-                                      <button
-                                        onClick={() => handleToggleItem(task.id, item.id, !item.completed)}
-                                        className="text-neutral-500 hover:text-neutral-300"
-                                      >
-                                        {item.completed ? (
-                                          <CheckSquare className="w-3 h-3" />
-                                        ) : (
-                                          <Square className="w-3 h-3" />
-                                        )}
-                                      </button>
-                                      <span className={`flex-1 ${item.completed ? 'line-through text-neutral-500' : 'text-neutral-400'}`}>
-                                        {item.title}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
+                            <div className="space-y-1">
+                              {task.items.length === 0 ? (
+                                <p className="text-xs text-neutral-600">No subtasks.</p>
+                              ) : (
+                                task.items.map((item) => (
+                                  <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleSubtask(task, item.id)}
+                                      className="text-neutral-500 hover:text-neutral-300"
+                                      title="Toggle subtask"
+                                    >
+                                      {item.completed ? (
+                                        <CheckSquare className="h-3.5 w-3.5" />
+                                      ) : (
+                                        <Square className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                    <span className={item.completed ? 'text-neutral-500 line-through' : ''}>{item.title}</span>
+                                  </label>
+                                ))
                               )}
                             </div>
-                          ))}
-                        </div>
+                          </article>
+                        ))
                       )}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Add new task (outside plans) */}
-            <div className="space-y-2">
-              {!showTaskForm ? (
-                <button
-                  onClick={() => setShowTaskForm(true)}
-                  className="w-full px-3 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Task
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
-                    placeholder="Task title..."
-                    className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    onClick={handleAddTask}
-                    className="px-3 py-2 bg-green-600 hover:bg-green-700 rounded transition-colors"
-                  >
-                    Add
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowTaskForm(false);
-                      setNewTaskTitle('');
-                    }}
-                    className="px-3 py-2 bg-neutral-600 hover:bg-neutral-700 rounded transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Standalone Tasks (not in plans) */}
-            {tasks.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-neutral-300 mb-2">Standalone Tasks</h4>
-                <div className="space-y-2">
-                  {tasks.map(task => (
-                    <div
-                      key={task.id}
-                      className={`p-3 bg-neutral-800 rounded-lg border cursor-pointer transition-colors ${
-                        currentTask?.id === task.id ? 'border-blue-500 bg-neutral-700' : 'border-neutral-700 hover:bg-neutral-700'
-                      }`}
-                      onClick={() => setCurrentTask(task)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1">
-                          {getStatusIcon(task.status)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-neutral-300 break-words">{task.title}</p>
-                            <p className="text-xs text-neutral-500">
-                              Status: {getStatusText(task.status)} • Priority: {task.priority}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleCheckTask(task)}
-                            className="p-1 text-neutral-500 hover:text-blue-400 transition-colors"
-                            title="Check task"
-                          >
-                            <Search className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleExecuteTask(task)}
-                            className="p-1 text-neutral-500 hover:text-green-400 transition-colors"
-                            title="Execute task"
-                          >
-                            <Play className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Task items */}
-                      {task.items.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          {task.items.map(item => (
-                            <div key={item.id} className="flex items-center gap-2 text-xs">
-                              <button
-                                onClick={() => handleToggleItem(task.id, item.id, !item.completed)}
-                                className="text-neutral-500 hover:text-neutral-300"
-                              >
-                                {item.completed ? (
-                                  <CheckSquare className="w-3 h-3" />
-                                ) : (
-                                  <Square className="w-3 h-3" />
-                                )}
-                              </button>
-                              <span className={`flex-1 ${item.completed ? 'line-through text-neutral-500' : 'text-neutral-400'}`}>
-                                {item.title}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {plans.length === 0 && tasks.length === 0 && (
-              <div className="text-center text-neutral-500 py-8">
-                <div className="text-4xl mb-4">📋</div>
-                <p>No plans or tasks yet</p>
-                <p className="text-sm">Create your first development plan or task above</p>
-              </div>
+                  </section>
+                )}
+              </>
             )}
           </div>
         ) : (
-          /* Bugs Content */
-          <div className="p-4 space-y-4">
+          <div className="space-y-3">
             {bugs.length === 0 ? (
-              <div className="text-center text-neutral-500 py-8">
-                <Bug className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">No bugs reported yet</p>
-                <p className="text-xs mt-2">Bugs will appear here when detected by AI or reported manually</p>
+              <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400">
+                No errors reported.
               </div>
             ) : (
-              bugs.map(bug => (
-                <div key={bug.id} className={`p-4 border rounded-lg ${getBugSeverityColor(bug.severity)}`}>
-                  <div className="flex items-start justify-between mb-3">
+              bugs.map((bug) => (
+                <article key={bug.id} className={`rounded-lg border p-3 ${getBugSeverityColor(bug.severity)}`}>
+                  <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <XCircle className="w-5 h-5" />
-                      <h5 className="font-medium text-neutral-200">{bug.title}</h5>
+                      <XCircle className="h-4 w-4" />
+                      <h4 className="text-sm font-semibold text-neutral-100">{bug.title}</h4>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCheckBug(bug)}
-                        className="p-1 text-neutral-400 hover:text-blue-400 transition-colors"
-                        title="Check bug status"
-                      >
-                        <Search className="w-4 h-4" />
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => handleCheckBug(bug)} className="rounded p-1 text-neutral-300 hover:bg-blue-500/10">
+                        <Search className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleFixBug(bug)}
-                        className="p-1 text-neutral-400 hover:text-green-400 transition-colors"
-                        title="Fix bug"
-                      >
-                        <Play className="w-4 h-4" />
+                      <button onClick={() => handleFixBug(bug)} className="rounded p-1 text-neutral-300 hover:bg-emerald-500/10">
+                        <Play className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => deleteBug(bug.id)}
-                        className="p-1 text-neutral-400 hover:text-red-400 transition-colors"
-                        title="Delete bug report"
-                      >
-                        <Trash2 className="w-4 h-4" />
+                      <button onClick={() => deleteBug(bug.id)} className="rounded p-1 text-neutral-300 hover:bg-red-500/10">
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-
-                  <p className="text-sm text-neutral-300 mb-3">{bug.description}</p>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <span className={`font-medium ${getBugStatusColor(bug.status)}`}>
-                        {bug.status.replace('_', ' ').toUpperCase()}
-                      </span>
-                      <span className="text-neutral-400">
-                        {bug.severity.toUpperCase()} priority
-                      </span>
-                      <span className="text-neutral-400">
-                        {bug.source.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <span className="text-neutral-500">
-                      {bug.createdAt.toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {bug.relatedFiles.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-neutral-600">
-                      <div className="text-xs text-neutral-400 mb-1">Related Files:</div>
-                      <div className="flex flex-wrap gap-1">
-                        {bug.relatedFiles.map((file, index) => (
-                          <span key={index} className="text-xs bg-neutral-700 px-2 py-1 rounded">
-                            {file}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {bug.resolution && (
-                    <div className="mt-3 pt-3 border-t border-neutral-600">
-                      <div className="text-xs text-neutral-400 mb-1">Resolution:</div>
-                      <p className="text-sm text-neutral-300">{bug.resolution}</p>
-                    </div>
-                  )}
-                </div>
+                  <p className="text-xs text-neutral-200/90">{bug.description}</p>
+                </article>
               ))
             )}
           </div>
