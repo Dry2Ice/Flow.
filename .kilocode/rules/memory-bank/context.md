@@ -92,6 +92,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Nvidia NIM token settings now preserve user-provided integer values for `contextTokens` and `maxTokens` across UI parsing, API validation, and outbound request payloads
 - [x] Trusted-root allowlist for project APIs: absolute project paths now require explicit trusted root confirmation while preserving traversal/out-of-bound protections
 - [x] Configurable project indexing policies in `POST /api/project/files` (extensions, depth/file/size limits) with optional full-scan mode and skipped-files completeness reporting
+- [x] Ultra Mode request execution now passes per-step `presetId` directly into request dispatch to avoid active preset race conditions; UI preset switch updates once after workflow completion
 
 ## Current Structure
 
@@ -181,3 +182,4 @@ export async function GET() {
 | 2026-04-13 | Rebuilt `Allotment` workspace into five independent horizontal panels (Files/Projects, Code+Preview, Chat/Logs, Plan/Bugs, Statistics), added persisted `statsPanel` sizing with updated defaults/reset behavior, and changed top-bar statistics button to focus/open the dedicated statistics panel instead of swapping left content. |
 | 2026-04-13 | Refactored `POST /api/project/files` indexing into explicit policies (default/full) with configurable extension/depth/file-size limits, added full-scan performance warning mode via request flag, and introduced skipped-files report grouped by reason (`size`/`type`/`limit`) for context completeness visibility. |
 | 2026-04-13 | Redesigned `PromptInput` preset selector into compact segmented chips, reduced prompt submit button footprint, and tuned hover/focus behavior for accessibility plus narrow-screen resilience in both themes. |
+| 2026-04-13 | Fixed `PromptInput` Ultra Mode preset race condition by adding optional `presetId` to `runRequest`, forwarding it into request preset resolution, and deferring `setActivePreset` until the full Ultra Mode loop completes. |
