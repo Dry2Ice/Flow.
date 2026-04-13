@@ -6,22 +6,6 @@ import { PromptInput } from '@/components/PromptInput';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { DiffViewer } from '@/components/DiffViewer';
 import { SettingsModal } from '@/components/SettingsModal';
-// Settings button component
-function SettingsButton() {
-  return (
-    <button
-      onClick={() => {
-        // SettingsModal manages its own state, just trigger it
-        const event = new CustomEvent('open-settings-modal');
-        window.dispatchEvent(event);
-      }}
-      className="p-2 dark:bg-neutral-800/80 light:bg-white/80 dark:border-neutral-700/50 light:border-gray-200/50 border rounded-lg hover-lift backdrop-blur-sm transition-all duration-200"
-      title="AI Settings"
-    >
-      <Settings className="w-5 h-5 dark:text-neutral-300 light:text-gray-600" />
-    </button>
-  );
-}
 import { ProjectManager } from '@/components/ProjectManager';
 import { CodePreview } from '@/components/CodePreview';
 import { AIChat } from '@/components/AIChat';
