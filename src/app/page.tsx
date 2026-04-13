@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { Allotment } from 'allotment';
-import { Bot, ChevronDown, ChevronLeft, ChevronRight, Code2, FolderOpen, LayoutDashboard, RefreshCcw, TriangleAlert } from 'lucide-react';
+import { BarChart3, Bot, ChevronDown, ChevronLeft, ChevronRight, Code2, FolderOpen, Settings, TriangleAlert, X } from 'lucide-react';
 import 'allotment/dist/style.css';
 
 import { CodeEditor } from '@/components/CodeEditor';
@@ -16,6 +16,7 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PromptInput } from '@/components/PromptInput';
 import { ErrorsPanel, SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { useAppStore } from '@/lib/store';
 
 type SideTab = 'files' | 'projects';
@@ -126,6 +127,37 @@ function PanelButton({ onClick, title, children }: { onClick: () => void; title:
   );
 }
 
+function TopControlButton({
+  onClick,
+  label,
+  isActive = false,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  isActive?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border text-neutral-300 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-white active:translate-y-0 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/60 ${
+        isActive
+          ? 'border-blue-500/70 bg-blue-500/15 shadow-[0_0_0_1px_rgba(59,130,246,0.3),0_10px_24px_-14px_rgba(59,130,246,0.8)]'
+          : 'border-neutral-700/70 bg-neutral-900/70 hover:border-neutral-500/70 hover:bg-neutral-800/85'
+      }`}
+    >
+      {children}
+      <span className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-[11px] font-medium text-neutral-100 opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export default function Home() {
   const { diffViewerOpen, projects, currentProject, setCurrentProject } = useAppStore();
   const [layout, setLayout] = useState<WorkspaceLayout>(getInitialLayout);
@@ -134,6 +166,7 @@ export default function Home() {
   const [rightTab, setRightTab] = useState<RightTab>('chat');
   const [bottomTab, setBottomTab] = useState<BottomTab>('plan');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
 
   useEffect(() => {
@@ -160,27 +193,22 @@ export default function Home() {
     setLayoutKey((key) => key + 1);
   };
 
-  const resetLayout = () => {
-    setLayout(DEFAULT_LAYOUT);
-    setLayoutKey((key) => key + 1);
-  };
-
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100">
-      <header className="border-b border-neutral-800 bg-neutral-950/90 px-4 py-3 backdrop-blur">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold tracking-wide">Flow IDE Workspace</h1>
-            <p className="text-xs text-neutral-400">Professional 4-panel layout with persistent, VS Code-style resizing.</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <header className="border-b border-neutral-800/90 bg-neutral-950/85 px-4 py-3 backdrop-blur-xl">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center">
+          <div className="h-5" />
+          <div className="flex items-center gap-2 rounded-2xl border border-neutral-800/90 bg-neutral-900/70 px-2 py-1 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.85)]">
+            <TopControlButton onClick={() => setSettingsModalOpen(true)} label="Open settings" isActive={settingsModalOpen}>
+              <Settings className="h-4 w-4" />
+            </TopControlButton>
             <ThemeToggle />
-            <PanelButton onClick={resetLayout} title="Reset layout">
-              <RefreshCcw className="h-4 w-4" />
-            </PanelButton>
-            <PanelButton onClick={() => setSettingsModalOpen(true)} title="Open settings">
-              <LayoutDashboard className="h-4 w-4" />
-            </PanelButton>
+            <TopControlButton onClick={() => setAnalyticsOpen((prev) => !prev)} label="Toggle statistics" isActive={analyticsOpen}>
+              <BarChart3 className="h-4 w-4" />
+            </TopControlButton>
+          </div>
+          <div className="justify-self-end text-[11px] uppercase tracking-[0.16em] text-neutral-500">
+            Flow Workspace
           </div>
         </div>
       </header>
@@ -294,6 +322,22 @@ export default function Home() {
       </section>
 
       {diffViewerOpen && <DiffViewer />}
+      <aside
+        className={`fixed inset-y-0 right-0 z-40 w-full max-w-[420px] border-l border-neutral-800 bg-neutral-950/96 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out ${
+          analyticsOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        aria-hidden={!analyticsOpen}
+      >
+        <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">Statistics</h2>
+          <PanelButton onClick={() => setAnalyticsOpen(false)} title="Close statistics panel">
+            <X className="h-4 w-4" />
+          </PanelButton>
+        </div>
+        <div className="h-[calc(100%-41px)] overflow-y-auto">
+          <AnalyticsDashboard />
+        </div>
+      </aside>
       <SettingsModal isOpen={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
     </main>
   );
