@@ -101,6 +101,9 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] AI responses now support structured FILE blocks that are parsed/applied to in-memory editor state and persisted to disk for non-demo projects
 - [x] Demo-project AI edits now emit an informational log entry clarifying that changes are applied in-editor only and intentionally not written to disk
 - [x] Project Statistics token metrics now separate estimated current context size from cumulative session token spend, with optional context-limit progress display from settings
+- [x] Rebuilt workspace into an IDE-style 4-panel layout (left explorer, center editor+preview split, right chat/logs tabs, bottom plan/errors tabs) with drag resize, per-panel collapse rails, and one-click layout reset
+- [x] Added dedicated diagnostics widgets for session logs and tracked errors in `WorkspaceDiagnostics`
+- [x] Persisted workspace layout topology/state in localStorage under `flow.ide-layout.v2` for immediate restoration on load
 
 ## Current Structure
 
@@ -202,3 +205,5 @@ export async function GET() {
 
 | 2026-04-13 | Fixed AI file-application pipeline: NIM system prompt now mandates `<<<FILE>>>` blocks, parser extracts file edits into `changes`, and executor applies updates to open files plus writes non-demo project changes to disk via `/api/project/file/write`. |
 | 2026-04-13 | Added demo-mode AI file-change logging in executor so users see that edits are applied in-memory and intentionally skipped for disk persistence when working in the demo project. |
+
+| 2026-04-13 | Refactored main UI into a professional IDE workspace with four resizable/collapsible panels, nested center editor/preview split, right/bottom tab systems, resettable persisted layout state, and new diagnostics components for logs/errors. |
