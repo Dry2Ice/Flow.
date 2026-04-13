@@ -14,17 +14,26 @@ export function AIChat() {
     setActiveSession,
     createSession,
     logs,
-    addBug
   } = useAppStore();
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'chat' | 'logs'>('chat');
-  const [newBugTitle, setNewBugTitle] = useState('');
-  const [newBugDescription, setNewBugDescription] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeSession = sessions[activeSessionId] ?? { messages: [], isGenerating: false };
   const messages = activeSession.messages;
   const isGenerating = activeSession.isGenerating;
   const sessionLogs = logs.filter((log) => !log.sessionId || log.sessionId === activeSessionId);
+  const aiActionLogs = sessionLogs.filter((log) => log.source === 'ai_execution' || log.source === 'user_action');
+  const errorLogs = sessionLogs.filter((log) => log.type === 'error');
+  const fileChangeItems = messages
+    .filter((message) => message.role === 'assistant' && message.changes && message.changes.length > 0)
+    .flatMap((message) =>
+      message.changes!.map((change, index) => ({
+        id: `${message.id}-${index}`,
+        timestamp: message.timestamp,
+        filePath: change.filePath,
+        description: change.description || 'File updated by AI',
+      }))
+    );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,27 +54,6 @@ export function AIChat() {
       default:
         return <Info className="w-4 h-4 text-blue-400" />;
     }
-  };
-
-  const handleAddBug = () => {
-    if (!newBugTitle.trim() || !newBugDescription.trim()) return;
-
-    const bug = {
-      id: crypto.randomUUID(),
-      title: newBugTitle,
-      description: newBugDescription,
-      status: 'open' as const,
-      severity: 'medium' as const,
-      source: 'user_reported' as const,
-      relatedFiles: [],
-      relatedTasks: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    addBug(bug);
-    setNewBugTitle('');
-    setNewBugDescription('');
   };
 
   const copyToClipboard = async (text: string, messageId: string) => {
@@ -245,77 +233,78 @@ export function AIChat() {
           </div>
         ) : (
           /* Logs */
-          <div className="space-y-2">
-            {/* Add Bug Form */}
-            <div className="border border-neutral-600 rounded-lg p-2">
-              <h4 className="text-xs font-medium text-neutral-200 mb-2">Report New Bug</h4>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={newBugTitle}
-                  onChange={(e) => setNewBugTitle(e.target.value)}
-                  placeholder="Bug title..."
-                  className="w-full px-2 py-1 bg-neutral-700 border border-neutral-600 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-                <textarea
-                  value={newBugDescription}
-                  onChange={(e) => setNewBugDescription(e.target.value)}
-                  placeholder="Bug description..."
-                  rows={2}
-                  className="w-full px-2 py-1 bg-neutral-700 border border-neutral-600 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                />
-                <button
-                  onClick={handleAddBug}
-                  disabled={!newBugTitle.trim() || !newBugDescription.trim()}
-                  className="px-2 py-1 bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 rounded text-xs transition-colors"
-                  title="Report Bug"
-                >
-                  Report
-                </button>
+          <div className="space-y-4">
+            {sessionLogs.length === 0 && fileChangeItems.length === 0 ? (
+              <div className="text-center text-neutral-500 py-8">
+                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">No logs yet</p>
+                <p className="text-xs mt-2">Logs will appear here during AI operations</p>
               </div>
-            </div>
-
-            {/* Logs List */}
-            <div className="space-y-2">
-              {sessionLogs.length === 0 ? (
-                <div className="text-center text-neutral-500 py-8">
-                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm">No logs yet</p>
-                  <p className="text-xs mt-2">Logs will appear here during AI operations</p>
-                </div>
-              ) : (
-                sessionLogs.slice().reverse().map((log) => (
-                  <div key={log.id} className="p-3 bg-neutral-700 rounded border border-neutral-600">
-                    <div className="flex items-start gap-3">
-                      {getLogIcon(log.type)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`text-xs font-medium ${
-                            log.type === 'error' ? 'text-red-400' :
-                            log.type === 'warning' ? 'text-yellow-400' :
-                            log.type === 'success' ? 'text-green-400' : 'text-blue-400'
-                          }`}>
-                            {log.type.toUpperCase()}
-                          </span>
-                          <span className="text-xs text-neutral-500">
-                            {log.timestamp.toLocaleTimeString()}
-                          </span>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <h4 className="text-xs uppercase tracking-wide text-neutral-400">AI Actions</h4>
+                  {aiActionLogs.length === 0 ? (
+                    <p className="text-xs text-neutral-500">No AI actions captured in this session.</p>
+                  ) : (
+                    aiActionLogs.slice().reverse().map((log) => (
+                      <div key={log.id} className="p-3 bg-neutral-700 rounded border border-neutral-600">
+                        <div className="flex items-start gap-3">
+                          {getLogIcon(log.type)}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-blue-300">{log.source || 'ai_execution'}</span>
+                              <span className="text-xs text-neutral-500">{log.timestamp.toLocaleTimeString()}</span>
+                            </div>
+                            <p className="text-sm text-neutral-200">{log.message}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-neutral-200 mb-1">{log.message}</p>
-                        {log.details && (
-                          <p className="text-xs text-neutral-400">{log.details}</p>
-                        )}
-                        {log.source && (
-                          <span className="text-xs bg-neutral-600 px-2 py-0.5 rounded mt-1 inline-block">
-                            {log.source}
-                          </span>
-                        )}
                       </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs uppercase tracking-wide text-neutral-400">File Changes</h4>
+                  {fileChangeItems.length === 0 ? (
+                    <p className="text-xs text-neutral-500">No AI file changes in this session.</p>
+                  ) : (
+                    fileChangeItems.slice().reverse().map((change) => (
+                      <div key={change.id} className="p-3 bg-neutral-700 rounded border border-neutral-600">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-green-400">{change.filePath}</span>
+                          <span className="text-xs text-neutral-500">{change.timestamp.toLocaleTimeString()}</span>
+                        </div>
+                        <p className="text-xs text-neutral-300">{change.description}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs uppercase tracking-wide text-neutral-400">Errors</h4>
+                  {errorLogs.length === 0 ? (
+                    <p className="text-xs text-neutral-500">No errors in this session.</p>
+                  ) : (
+                    errorLogs.slice().reverse().map((log) => (
+                      <div key={log.id} className="p-3 bg-red-950/30 rounded border border-red-700/60">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-red-300">ERROR</span>
+                              <span className="text-xs text-neutral-500">{log.timestamp.toLocaleTimeString()}</span>
+                            </div>
+                            <p className="text-sm text-neutral-200">{log.message}</p>
+                            {log.details && <p className="text-xs text-neutral-400 mt-1">{log.details}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
