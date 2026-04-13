@@ -95,6 +95,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Configurable project indexing policies in `POST /api/project/files` (extensions, depth/file/size limits) with optional full-scan mode and skipped-files completeness reporting
 - [x] Ultra Mode request execution now passes per-step `presetId` directly into request dispatch to avoid active preset race conditions; UI preset switch updates once after workflow completion
 - [x] Sequential plan execution in DevelopmentPlan: plan-level run now executes related tasks one by one with progress indicator, start/finish logs, and status rollup based on task outcomes
+- [x] HTML preview runtime errors are now captured via iframe `onLoad` listener and logged into session logs (`program_run`) using store `addLog`
 
 ## Current Structure
 
@@ -187,5 +188,6 @@ export async function GET() {
 | 2026-04-13 | Fixed `PromptInput` Ultra Mode preset race condition by adding optional `presetId` to `runRequest`, forwarding it into request preset resolution, and deferring `setActivePreset` until the full Ultra Mode loop completes. |
 | 2026-04-13 | Updated `DevelopmentPlan` plan execution flow: if a plan has related tasks, run `handleExecuteTask` sequentially (await each), show live `current / total` progress near the execute button, add start/end execution logs in Russian, and roll up final plan status from task statuses (`completed` / `in_progress`). |
 | 2026-04-13 | Header AI status is now derived from `nim-settings` presence (`apiKey` + `baseUrl`), listens to `settings-saved` window events for live updates, and `SettingsModal` now dispatches `settings-saved` after successful configuration save. |
+| 2026-04-13 | Added runtime error interception for HTML preview iframe in `CodePreview` via `onLoad` + `contentWindow.error` listener, logging session-scoped errors to store logs. |
 
 | 2026-04-13 | Added `@variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` to switch Tailwind v4 dark mode from media-query-based behavior to `.dark` class-based behavior used by `ThemeToggle`; verified `src/app/layout.tsx` `<html>` has no hardcoded `dark`/`light` class. |
