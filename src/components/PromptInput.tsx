@@ -48,7 +48,7 @@ export function PromptInput() {
     [aiRequests, activeSessionId]
   );
 
-  const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string }) => {
+  const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
     const jobId = crypto.randomUUID();
     const requestId = crypto.randomUUID();
 
@@ -115,9 +115,13 @@ export function PromptInput() {
         ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
         : undefined;
 
+      const requestPreset = requestInput.presetId
+        ? promptPresets.find((preset) => preset.id === requestInput.presetId) ?? activePreset
+        : activePreset;
+
       const request: PromptRequest = {
         prompt: requestInput.prompt,
-        preset: activePreset || undefined,
+        preset: requestPreset || undefined,
         generalPrompt,
         context: {
           currentFile: activeFile || undefined,
@@ -148,7 +152,7 @@ export function PromptInput() {
         jobId,
         timestamp: new Date(),
         type: 'success',
-        message: `AI generated response using ${activePreset?.name || 'Default'} preset`,
+        message: `AI generated response using ${requestPreset?.name || 'Default'} preset`,
         source: 'ai_execution',
       });
 
@@ -255,11 +259,18 @@ export function PromptInput() {
       const step = ultraSteps[i];
       updateUltraModeStep(i + 1, step.name);
 
-      const preset = promptPresets.find((item) => item.id === step.presetId);
-      if (preset) setActivePreset(preset);
-
-      await runRequest({ prompt: `[${step.name}] ${step.prompt}`, requestType: 'analysis' });
+      await runRequest({
+        prompt: `[${step.name}] ${step.prompt}`,
+        requestType: 'analysis',
+        presetId: step.presetId,
+      });
       await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
+
+    const lastStepPresetId = ultraSteps[ultraSteps.length - 1]?.presetId;
+    if (lastStepPresetId) {
+      const lastPreset = promptPresets.find((item) => item.id === lastStepPresetId);
+      if (lastPreset) setActivePreset(lastPreset);
     }
 
     endUltraMode();
