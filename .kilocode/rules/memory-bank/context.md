@@ -98,6 +98,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] HTML preview runtime errors are now captured via iframe `onLoad` listener and logged into session logs (`program_run`) using store `addLog`
 - [x] Light theme activation fixed by defining Tailwind `@variant light` in globals and toggling `.light` class alongside `.dark` in ThemeToggle to ensure `light:` utilities apply correctly
 - [x] Removed unused legacy `SettingsButton` event-dispatch helper from `src/app/page.tsx` to keep modal-opening flow consistent with direct state control
+- [x] AI responses now support structured FILE blocks that are parsed/applied to in-memory editor state and persisted to disk for non-demo projects
 
 ## Current Structure
 
@@ -195,3 +196,5 @@ export async function GET() {
 | 2026-04-13 | Added `@variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` to switch Tailwind v4 dark mode from media-query-based behavior to `.dark` class-based behavior used by `ThemeToggle`; verified `src/app/layout.tsx` `<html>` has no hardcoded `dark`/`light` class. |
 | 2026-04-13 | Reduced five primary workspace pane minimum widths to 180/280 thresholds and rebalanced default horizontal layout percentages (`17/36/19/16/12`) across store initialization and Settings reset to prevent minSize overflow and horizontal scrollbar pressure at default viewport widths. |
 | 2026-04-13 | Replaced starter metadata in `src/app/layout.tsx` with Flow-specific title/description and gated header "Ultra Mode Ready"/"Real-time Sync" status chips behind configured API + non-demo project checks in `src/app/page.tsx`. |
+
+| 2026-04-13 | Fixed AI file-application pipeline: NIM system prompt now mandates `<<<FILE>>>` blocks, parser extracts file edits into `changes`, and executor applies updates to open files plus writes non-demo project changes to disk via `/api/project/file/write`. |
