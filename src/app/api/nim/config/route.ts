@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.contextTokens !== undefined) {
-      config.contextTokens = validateNumberInRange(body.contextTokens, 'contextTokens', { min: 1, integer: true });
+      config.contextTokens = validateNumberInRange(body.contextTokens, 'contextTokens', { min: 0, integer: true });
     }
 
     if (body.maxTokens !== undefined) {

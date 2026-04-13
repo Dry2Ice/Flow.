@@ -89,6 +89,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
 - [x] Prompt preset editing now updates Zustand store state directly and persists `promptPresets`/`activePreset` to localStorage via selector subscriptions
+- [x] Nvidia NIM context token handling now supports `0` as unlimited in API validation, UI hints, and outbound request payload behavior (omit `context_tokens` when unlimited)
 
 ## Current Structure
 
@@ -172,3 +173,4 @@ export async function GET() {
 | 2026-04-12 | Refactored `analyzeProjectStructure` in `src/lib/nvidia-nim.ts`: removed duplicate structure summary block, moved all per-file logic into `forEach`, replaced out-of-scope `content` usage with `hasExpress`, and introduced strict analysis types (`ProjectStructureAnalysis`, `ProjectFileForAnalysis`). |
 | 2026-04-12 | Improved AI workflow efficiency: enabled parallel prompt submissions, added per-session active request counters, attached project context snapshots to each AI request, and introduced adaptive context summarization timeline/focus areas. |
 | 2026-04-13 | Updated Settings modal preset saving to call `updatePromptPreset` action; added `useAppStore.subscribe` selectors to persist prompt presets and active preset id in localStorage so edited prompts survive reload and are reflected immediately in PromptInput flows. |
+| 2026-04-13 | Updated NIM configuration flow to accept `contextTokens = 0` as unlimited: backend validation now allows zero, request builder explicitly omits `context_tokens` when value is zero, and Settings modal helper text/input handling now matches the backend contract. |
