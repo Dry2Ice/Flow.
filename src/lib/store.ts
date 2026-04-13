@@ -143,6 +143,44 @@ const saveActivePresetId = (presetId: string | null) => {
 const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
 const initialActivePreset = initialPromptPresets.find((preset) => preset.id === initialActivePresetId) ?? null;
+const WINDOWS_DRIVE_PATH_PATTERN = /^[a-zA-Z]:[\\/]/;
+
+const isAbsoluteProjectPath = (projectPath: string): boolean => {
+  if (!projectPath.trim()) return false;
+
+  return projectPath.startsWith('/') || WINDOWS_DRIVE_PATH_PATTERN.test(projectPath);
+};
+
+const createProjectPayload = (name: string, projectPath: string) => {
+  const trimmedPath = projectPath.trim();
+  const absolutePath = isAbsoluteProjectPath(trimmedPath);
+
+  return {
+    name,
+    path: trimmedPath,
+    ...(absolutePath
+      ? {
+          trustedRoot: trimmedPath,
+          confirmTrustedRoot: true,
+        }
+      : {}),
+  };
+};
+
+const createLoadProjectPayload = (projectPath: string) => {
+  const trimmedPath = projectPath.trim();
+  const absolutePath = isAbsoluteProjectPath(trimmedPath);
+
+  return {
+    path: trimmedPath,
+    ...(absolutePath
+      ? {
+          trustedRoot: trimmedPath,
+          confirmTrustedRoot: true,
+        }
+      : {}),
+  };
+};
 
 interface AppState {
   // Current project
@@ -765,10 +803,11 @@ export const useAppStore = create<AppState>()(
     setProjectPath: (path: string) => set({ projectPath: path }),
     createProject: async (name: string, path: string) => {
       try {
+        const normalizedPath = path.trim();
         const response = await fetch('/api/projects/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, path }),
+          body: JSON.stringify(createProjectPayload(name, normalizedPath)),
         });
         const data = await response.json();
 
@@ -776,7 +815,7 @@ export const useAppStore = create<AppState>()(
           const project: Project = {
             id: crypto.randomUUID(),
             name,
-            path,
+            path: normalizedPath,
             files: [],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -796,18 +835,19 @@ export const useAppStore = create<AppState>()(
     },
     loadProject: async (path: string) => {
       try {
+        const normalizedPath = path.trim();
         const response = await fetch('/api/projects/load', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path }),
+          body: JSON.stringify(createLoadProjectPayload(normalizedPath)),
         });
         const data = await response.json();
 
         if (data.success) {
           const project: Project = {
             id: crypto.randomUUID(),
-            name: path.split('/').pop() || 'Project',
-            path,
+            name: normalizedPath.split(/[\\/]/).pop() || 'Project',
+            path: normalizedPath,
             files: data.files || [],
             createdAt: new Date(),
             updatedAt: new Date(),

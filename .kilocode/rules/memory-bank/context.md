@@ -117,6 +117,8 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Error Tracking UI expanded with auto-ingest from logs/failed AI actions, manual user error intake form, explicit Description/Status/Source display, and direct AI actions for "Check bug" (analysis preset) + "Fix bug" (debug preset)
 - [x] Ultra Mode chat control upgraded with explicit labeled button, per-step checklist progress states, and session-scoped stage logs (start/completion per phase) displayed inline during execution
 - [x] Full workspace UI/UX refinement pass: unified glass-panel styling, consistent segmented tab controls, cleaner header hierarchy, improved button/input consistency across explorer/editor/chat/preview panels, and tighter responsive constraints for smaller viewports
+- [x] Fixed trusted-root startup friction: project load/create requests now auto-confirm the selected absolute path as trusted to prevent immediate "Access denied" failures during initial launch
+- [x] Added Windows one-click launcher `quick-start.bat` with Bun-first startup flow and automatic npm fallback
 
 ## Current Structure
 
@@ -228,3 +230,5 @@ export async function GET() {
 | 2026-04-13 | Reworked `DevelopmentPlan` UI into an interactive plan workspace: added Plan/Errors tab wording, active-plan picker, task-level Execute/Continue + Check controls, editable descriptions, checkbox-only subtasks with status recomputation, and dedicated plan actions for "Check all tasks" and "Execute plan" with progress feedback. |
 | 2026-04-13 | Enhanced `DevelopmentPlan` errors tab into a full Error Tracking UI: added manual error creation (user source), auto-add pipeline from runtime logs + failed AI requests (AI/system source), Source/Status/Description metadata rows, and explicit action labels for analysis/fix AI presets. |
 | 2026-04-13 | Enhanced Ultra Mode interaction in `PromptInput`: added explicit text button, richer 3-stage progress checklist, and `[Ultra]` lifecycle logs (workflow + per-step start/completion) rendered as live stage logs in chat composer while presets remain locked during execution. |
+| 2026-04-13 | Updated project create/load client payloads to auto-send `trustedRoot` + `confirmTrustedRoot` for absolute paths, removing common startup "Access denied" errors for manually entered local directories. |
+| 2026-04-13 | Added `quick-start.bat` in repo root for click-to-run startup (`bun install && bun run dev` with npm fallback). |
