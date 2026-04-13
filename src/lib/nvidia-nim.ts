@@ -333,7 +333,20 @@ class NvidiaNimService {
         Provide the code and an explanation. If making changes to existing code, provide the old and new content.
         If this involves multiple steps, suggest development tasks.
 
-        Context: ${JSON.stringify(request.context || {})}`;
+        Context: ${JSON.stringify(request.context || {})}
+
+When you need to create or modify files, you MUST output each changed file using this exact format — no exceptions:
+
+<<<FILE: relative/path/to/file.ext>>>
+<complete new file content here>
+<<<END_FILE>>>
+
+Rules:
+- Always output the COMPLETE file content, never partial diffs or snippets.
+- Use the file's path relative to the project root (e.g. src/app/page.tsx).
+- You may output multiple FILE blocks in a single response.
+- After all FILE blocks, write your explanation in plain prose.
+- If no file changes are needed, skip the FILE blocks entirely.`;
 
       const generalPrompt = request.generalPrompt || '';
 
@@ -448,22 +461,33 @@ ${numberedLines}
   }
 
   private parseResponse(content: string): GenerateCodeResponse {
-    // Simple parsing - in practice, you'd want better structured output
-    const codeMatch = content.match(/```[\w]*\n([\s\S]*?)\n```/);
-    const code = codeMatch ? codeMatch[1] : content;
-
-    const explanation = content.replace(/```[\w]*\n[\s\S]*?\n```/g, '').trim();
-
-    // Generate mock changes and tasks for demo
+    const fileBlockRegex = /<<<FILE:\s*(.+?)>>>\n([\s\S]*?)<<<END_FILE>>>/g;
     const changes: CodeChange[] = [];
-    const tasks: DevelopmentTask[] = [];
+    let match: RegExpExecArray | null;
 
-    return {
-      code,
-      explanation,
-      changes,
-      tasks
-    };
+    while ((match = fileBlockRegex.exec(content)) !== null) {
+      const filePath = match[1].trim();
+      const newContent = match[2];
+      changes.push({
+        id: crypto.randomUUID(),
+        filePath,
+        oldContent: '',
+        newContent,
+        timestamp: new Date(),
+        description: `AI updated ${filePath}`,
+      });
+    }
+
+    // Strip file blocks from explanation text
+    const explanation = content
+      .replace(/<<<FILE:[\s\S]*?<<<END_FILE>>>/g, '')
+      .trim();
+
+    // Fallback: first fenced code block as bare code string
+    const codeMatch = explanation.match(/```[\w]*\n([\s\S]*?)\n```/);
+    const code = codeMatch ? codeMatch[1] : explanation;
+
+    return { code, explanation, changes, tasks: [] };
   }
 }
 

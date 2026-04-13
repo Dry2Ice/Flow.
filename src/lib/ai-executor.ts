@@ -144,6 +144,55 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       source: 'ai_execution',
     });
 
+    // Apply file changes produced by AI
+    if (response.changes && response.changes.length > 0) {
+      const { updateFileContent, openFile, currentProject } = useAppStore.getState();
+
+      for (const change of response.changes) {
+        // Always update in-memory store so the editor reflects the change immediately
+        const alreadyOpen = useAppStore.getState().openFiles.find(f => f.path === change.filePath);
+        if (alreadyOpen) {
+          updateFileContent(change.filePath, change.newContent);
+        } else {
+          openFile(change.filePath, change.newContent);
+        }
+
+        // Write to disk only for real (non-demo) projects
+        if (currentProject && !currentProject.isDemo && projectPath) {
+          try {
+            await fetch('/api/project/file/write', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectPath,
+                filePath: change.filePath,
+                content: change.newContent,
+              }),
+            });
+            addLog({
+              id: crypto.randomUUID(),
+              sessionId: activeSessionId,
+              jobId,
+              timestamp: new Date(),
+              type: 'success',
+              message: `AI wrote changes to ${change.filePath}`,
+              source: 'file_operation',
+            });
+          } catch (err) {
+            addLog({
+              id: crypto.randomUUID(),
+              sessionId: activeSessionId,
+              jobId,
+              timestamp: new Date(),
+              type: 'error',
+              message: `Failed to write ${change.filePath} to disk: ${err instanceof Error ? err.message : 'unknown error'}`,
+              source: 'file_operation',
+            });
+          }
+        }
+      }
+    }
+
     addMessage(activeSessionId, {
       id: crypto.randomUUID(),
       sessionId: activeSessionId,
