@@ -104,6 +104,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Rebuilt workspace into an IDE-style 4-panel layout (left explorer, center editor+preview split, right chat/logs tabs, bottom plan/errors tabs) with drag resize, per-panel collapse rails, and one-click layout reset
 - [x] Added dedicated diagnostics widgets for session logs and tracked errors in `WorkspaceDiagnostics`
 - [x] Persisted workspace layout topology/state in localStorage under `flow.ide-layout.v2` for immediate restoration on load
+- [x] Top navigation redesigned to a minimal centered control cluster (Settings, Theme toggle, Statistics) with compact icon buttons, tooltips, motion states, and slide-over analytics panel toggle
 
 ## Current Structure
 
@@ -207,3 +208,4 @@ export async function GET() {
 | 2026-04-13 | Added demo-mode AI file-change logging in executor so users see that edits are applied in-memory and intentionally skipped for disk persistence when working in the demo project. |
 
 | 2026-04-13 | Refactored main UI into a professional IDE workspace with four resizable/collapsible panels, nested center editor/preview split, right/bottom tab systems, resettable persisted layout state, and new diagnostics components for logs/errors. |
+| 2026-04-13 | Redesigned the top header into a minimal centered nav with only Settings/Theme/Statistics controls, added compact interactive icon buttons with tooltips and active states, and wired Statistics to a right slide-over `AnalyticsDashboard` panel. |
