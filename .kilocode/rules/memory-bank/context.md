@@ -91,6 +91,7 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] Prompt preset editing now updates Zustand store state directly and persists `promptPresets`/`activePreset` to localStorage via selector subscriptions
 - [x] Nvidia NIM token settings now preserve user-provided integer values for `contextTokens` and `maxTokens` across UI parsing, API validation, and outbound request payloads
 - [x] Trusted-root allowlist for project APIs: absolute project paths now require explicit trusted root confirmation while preserving traversal/out-of-bound protections
+- [x] Configurable project indexing policies in `POST /api/project/files` (extensions, depth/file/size limits) with optional full-scan mode and skipped-files completeness reporting
 
 ## Current Structure
 
@@ -177,3 +178,4 @@ export async function GET() {
 | 2026-04-13 | Updated NIM configuration flow to accept `contextTokens = 0` as unlimited: backend validation now allows zero, request builder explicitly omits `context_tokens` when value is zero, and Settings modal helper text/input handling now matches the backend contract. |
 | 2026-04-13 | Relaxed token constraints end-to-end: removed `min`/`max` HTML limits for Context/Max tokens, replaced fallback parsing with safe integer parsing in Settings modal, loosened API validation for these fields to integer-only checks, and updated NIM request builder to forward exact user-provided integer values (except invalid inputs). |
 | 2026-04-13 | Added trusted-root allowlist mode for project path resolution: `POST /api/projects/create`, `POST /api/projects/load`, and `POST /api/project/files` now support explicit `trustedRoot` + `confirmTrustedRoot` registration to allow absolute paths without disabling workspace boundary protections. |
+| 2026-04-13 | Refactored `POST /api/project/files` indexing into explicit policies (default/full) with configurable extension/depth/file-size limits, added full-scan performance warning mode via request flag, and introduced skipped-files report grouped by reason (`size`/`type`/`limit`) for context completeness visibility. |
