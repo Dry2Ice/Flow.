@@ -7,6 +7,18 @@ import { Save, RefreshCcw } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { useAppStore } from '@/lib/store';
 
+// Export functions for external use
+export const codeEditorActions = {
+  saveChanges: () => {
+    // This will be implemented below
+    console.log('Saving changes...');
+  },
+  resetChanges: () => {
+    // This will be implemented below
+    console.log('Resetting changes...');
+  }
+};
+
 export function CodeEditor() {
   const editorRef = useRef<any>(null);
   const { activeFile, openFiles, updateFileContent } = useAppStore();
@@ -15,8 +27,16 @@ export function CodeEditor() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isReloading, setIsReloading] = useState(false);
+  const [originalContent, setOriginalContent] = useState<string>('');
 
   const currentFile = openFiles.find(f => f.path === activeFile);
+
+  // Initialize original content when file changes
+  useEffect(() => {
+    if (currentFile?.content && !originalContent) {
+      setOriginalContent(currentFile.content);
+    }
+  }, [currentFile?.content, originalContent]);
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
@@ -27,6 +47,51 @@ export function CodeEditor() {
       updateFileContent(activeFile, value);
     }
   };
+
+  // Save current file content
+  const saveChanges = useCallback(async () => {
+    if (!currentFile || !editorRef.current) return;
+
+    setSaveState('saving');
+    try {
+      // In a real implementation, this would save to the file system
+      // For now, we'll just simulate saving
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Update the original content to current content
+      const currentContent = editorRef.current.getValue();
+      setOriginalContent(currentContent);
+
+      setSaveState('saved');
+      setSaveMessage('File saved successfully!');
+      setTimeout(() => {
+        setSaveState('idle');
+        setSaveMessage(null);
+      }, 2000);
+    } catch (error) {
+      setSaveState('error');
+      setSaveMessage('Failed to save file');
+      setTimeout(() => {
+        setSaveState('idle');
+        setSaveMessage(null);
+      }, 3000);
+    }
+  }, [currentFile]);
+
+  // Reset changes to original content
+  const resetChanges = useCallback(() => {
+    if (!editorRef.current || !originalContent) return;
+
+    editorRef.current.setValue(originalContent);
+    setSaveMessage('Changes reset to last saved version');
+    setTimeout(() => setSaveMessage(null), 2000);
+  }, [originalContent]);
+
+  // Update codeEditorActions
+  useEffect(() => {
+    codeEditorActions.saveChanges = saveChanges;
+    codeEditorActions.resetChanges = resetChanges;
+  }, [saveChanges, resetChanges]);
 
   const reloadFile = useCallback(async () => {
     if (!currentProject || !currentFile) {

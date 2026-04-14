@@ -22,6 +22,7 @@ import { useAppStore } from '@/lib/store';
 type SideTab = 'files' | 'projects';
 type RightTab = 'chat' | 'logs';
 type BottomTab = 'plan' | 'errors';
+type CenterMode = 'edit' | 'preview';
 
 type WorkspaceLayout = {
   top: [number, number, number];
@@ -169,6 +170,7 @@ export default function Home() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
+  const [centerMode, setCenterMode] = useState<CenterMode>('edit');
 
 
   useEffect(() => {
@@ -349,16 +351,73 @@ export default function Home() {
 
               <Allotment.Pane minSize={220}>
                 <div className="flow-panel h-full">
-                  <PanelHeader title="Code Editor & Preview" icon={<Code2 className="h-3.5 w-3.5" />} />
+                  <PanelHeader
+                    title="Code Editor & Preview"
+                    icon={<Code2 className="h-3.5 w-3.5" />}
+                    actions={
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCenterMode('edit')}
+                          className={`flow-tab text-xs px-3 py-1 ${centerMode === 'edit' ? 'bg-blue-600/20 border-blue-400' : ''}`}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => setCenterMode('preview')}
+                          className={`flow-tab text-xs px-3 py-1 ${centerMode === 'preview' ? 'bg-green-600/20 border-green-400' : ''}`}
+                        >
+                          👁️ Preview
+                        </button>
+                        {centerMode === 'edit' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                // Import and use the save function
+                                import('@/components/CodeEditor').then(({ codeEditorActions }) => {
+                                  codeEditorActions.saveChanges();
+                                });
+                              }}
+                              className="flow-tab text-xs px-3 py-1 bg-green-600/20 border-green-400 hover:bg-green-500/30"
+                            >
+                              💾 Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Import and use the reset function
+                                if (confirm('Reset all unsaved changes? This will revert to the last saved version.')) {
+                                  import('@/components/CodeEditor').then(({ codeEditorActions }) => {
+                                    codeEditorActions.resetChanges();
+                                  });
+                                }
+                              }}
+                              className="flow-tab text-xs px-3 py-1 bg-red-600/20 border-red-400 hover:bg-red-500/30"
+                            >
+                              🔄 Reset
+                            </button>
+                          </>
+                        )}
+                        {centerMode === 'preview' && (
+                          <button
+                            onClick={() => {
+                              // Refresh the preview iframe
+                              const iframe = document.querySelector('iframe');
+                              if (iframe) {
+                                iframe.src = iframe.src;
+                              } else {
+                                // Fallback: reload the page
+                                window.location.reload();
+                              }
+                            }}
+                            className="flow-tab text-xs px-3 py-1 bg-blue-600/20 border-blue-400 hover:bg-blue-500/30"
+                          >
+                            🔄 Refresh Preview
+                          </button>
+                        )}
+                      </div>
+                    }
+                  />
                   <div className="h-[calc(100%-41px)]">
-                    <Allotment
-                      vertical
-                      defaultSizes={layout.center}
-                      onChange={(sizes: number[]) => setLayout((prev) => ({ ...prev, center: [sizes[0], sizes[1]] }))}
-                    >
-                      <Allotment.Pane minSize={140}><CodeEditor /></Allotment.Pane>
-                      <Allotment.Pane minSize={100}><CodePreview /></Allotment.Pane>
-                    </Allotment>
+                    {centerMode === 'edit' ? <CodeEditor /> : <CodePreview />}
                   </div>
                 </div>
               </Allotment.Pane>
