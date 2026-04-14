@@ -86,7 +86,21 @@ export function AnalyticsDashboard() {
     const resolvedBugs = bugs.filter(b => b.status === 'resolved').length;
     const totalRequests = aiRequests.length;
     const successfulRequests = aiRequests.filter(r => r.status === 'completed').length;
-    const totalTokens = aiRequests.reduce((sum, r) => sum + (r.actualTokens || 0), 0);
+    const totalTokensSpent = aiRequests.reduce((sum, r) => sum + (r.actualTokens || 0), 0);
+
+    const lastRequest = [...aiRequests]
+      .reverse()
+      .find((r) => r.status === 'completed' || r.status === 'running');
+    const currentContextTokens = lastRequest?.estimatedTokens ?? 0;
+
+    const contextLimit = (() => {
+      try {
+        const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
+        return typeof s.contextTokens === 'number' && s.contextTokens > 0 ? s.contextTokens : null;
+      } catch {
+        return null;
+      }
+    })();
 
     return {
       totalFiles,
@@ -99,8 +113,10 @@ export function AnalyticsDashboard() {
       totalRequests,
       successfulRequests,
       requestSuccessRate: totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0,
-      totalTokens,
-      averageTokensPerRequest: totalRequests > 0 ? totalTokens / totalRequests : 0,
+      totalTokensSpent,
+      currentContextTokens,
+      contextLimit,
+      averageTokensPerRequest: totalRequests > 0 ? Math.round(totalTokensSpent / totalRequests) : 0,
     };
   }, [currentProject, tasks, bugs, aiRequests]);
 
@@ -158,38 +174,40 @@ export function AnalyticsDashboard() {
         />
       </div>
 
-      {/* AI Usage Stats */}
-      <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-6 hover-lift glass animate-fade-in shadow-sm dark:shadow-none">
-        <h3 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-4 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-blue-400" />
-          AI Usage Analytics
-        </h3>
-        <div className="grid grid-cols-2 gap-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold dark:text-white light:text-gray-900 mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              {stats.totalTokens.toLocaleString()}
-            </div>
-            <div className="text-xs dark:text-neutral-500 light:text-gray-500 uppercase tracking-wide">Total Tokens</div>
-            <div className="mt-2 w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-1">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-1 rounded-full animate-pulse" style={{width: '100%'}}></div>
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold dark:text-white light:text-gray-900 mb-2 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-              {stats.averageTokensPerRequest.toFixed(0)}
-            </div>
-            <div className="text-xs dark:text-neutral-500 light:text-gray-500 uppercase tracking-wide">Avg per Request</div>
-            <div className="mt-2 w-full dark:bg-neutral-700 light:bg-gray-200 rounded-full h-1">
-              <div className="bg-gradient-to-r from-green-500 to-blue-500 h-1 rounded-full animate-pulse" style={{width: '70%'}}></div>
-            </div>
-          </div>
+      {/* Token Usage Stats */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard
+            title="Context Tokens (est.)"
+            value={stats.currentContextTokens.toLocaleString()}
+            subtitle="size of last request"
+            icon={Zap}
+            color="border-blue-500/20"
+          />
+          <StatCard
+            title="Session Tokens"
+            value={stats.totalTokensSpent.toLocaleString()}
+            subtitle="total spent this session"
+            icon={Activity}
+            color="border-purple-500/20"
+          />
         </div>
-        <div className="mt-4 pt-4 dark:border-t dark:border-neutral-700 light:border-t light:border-gray-200">
-          <div className="flex items-center justify-center gap-2 text-xs dark:text-neutral-400 light:text-gray-500">
-            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-            <span>Auto-updating every 30 seconds</span>
+
+        {stats.contextLimit !== null && (
+          <div className="dark:bg-neutral-800 light:bg-white border dark:border-neutral-700 light:border-gray-200 rounded-xl p-4 hover-lift">
+            <h4 className="text-sm font-medium dark:text-neutral-300 light:text-gray-700 mb-3">Context Usage</h4>
+            <div className="h-2 w-full rounded-full dark:bg-neutral-700 light:bg-gray-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                style={{ width: `${Math.min((stats.currentContextTokens / stats.contextLimit) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs dark:text-neutral-500 light:text-gray-500">
+              {stats.currentContextTokens.toLocaleString()} / {stats.contextLimit.toLocaleString()} tokens
+              ({((stats.currentContextTokens / stats.contextLimit) * 100).toFixed(0)}%)
+            </p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Recent Activity */}
