@@ -175,6 +175,24 @@ export default function Home() {
   }, [layout]);
 
   useEffect(() => {
+    const handleStorageReset = (event: StorageEvent) => {
+      if (event.key !== LAYOUT_STORAGE_KEY) return;
+      try {
+        const parsed = JSON.parse(event.newValue ?? '');
+        if (isLayout(parsed)) {
+          setLayout(parsed);
+          setLayoutKey((k) => k + 1);
+        }
+      } catch {
+        // ignore malformed values
+      }
+    };
+
+    window.addEventListener('storage', handleStorageReset);
+    return () => window.removeEventListener('storage', handleStorageReset);
+  }, []);
+
+  useEffect(() => {
     if (!currentProject && projects.length > 0) {
       setCurrentProject(projects[0]);
     }
