@@ -211,7 +211,49 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!currentProject && projects.length > 0) {
+    if (projects.length === 0) {
+      const { openFile, addMessage } = useAppStore.getState();
+      const demoProject = {
+        id: 'demo',
+        name: 'Demo Project',
+        path: '/demo',
+        files: [
+          { name: 'index.html', path: 'index.html', type: 'file' as const },
+          { name: 'styles.css', path: 'styles.css', type: 'file' as const },
+          { name: 'script.js', path: 'script.js', type: 'file' as const },
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDemo: true,
+      };
+      useAppStore.setState({ projects: [demoProject], currentProject: demoProject });
+
+      openFile('index.html', `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to <span class="brand">Flow</span></h1>
+    <p>AI-powered development platform. Open a real project or start chatting with the AI.</p>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>`);
+
+      addMessage('default-session', {
+        id: 'welcome',
+        sessionId: 'default-session',
+        role: 'assistant',
+        content: '👋 **Welcome to Flow!**\n\nI\'m your AI development assistant. To get started:\n\n1. **Configure your API** — click the Settings button in the header and enter your NVIDIA NIM API key\n2. **Open a project** — use the Projects tab to create a new project or load an existing directory\n3. **Ask me anything** — type a prompt below and I\'ll write, debug, or plan code for you',
+        timestamp: new Date(),
+      });
+
+    } else if (!currentProject && projects.length > 0) {
       setCurrentProject(projects[0]);
     }
   }, [projects, currentProject, setCurrentProject]);
