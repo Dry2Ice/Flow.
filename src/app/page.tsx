@@ -15,7 +15,7 @@ import { DiffViewer } from '@/components/DiffViewer';
 import { SettingsModal } from '@/components/SettingsModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PromptInput } from '@/components/PromptInput';
-import { ErrorsPanel, SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
+import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { useAppStore } from '@/lib/store';
 
@@ -495,7 +495,9 @@ export default function Home() {
                        </button>
                      </div>
                    </div>
-                   <div className="h-[calc(100%-88px)] overflow-hidden">{bottomTab === 'plan' ? <DevelopmentPlan /> : <ErrorsPanel />}</div>
+                    <div className="h-[calc(100%-88px)] overflow-hidden">
+                      <DevelopmentPlan initialTab={bottomTab === 'plan' ? 'plan' : 'errors'} />
+                    </div>
                  </>
                ) : (
                 <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>

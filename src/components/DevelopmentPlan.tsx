@@ -23,7 +23,11 @@ import { useAppStore } from '@/lib/store';
 import { BugReport, DevelopmentTask } from '@/types';
 import type { DevelopmentPlan, TaskItem } from '@/types';
 
-export function DevelopmentPlan() {
+interface DevelopmentPlanProps {
+  initialTab?: 'plan' | 'errors';
+}
+
+export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = {}) {
   const {
     plans,
     tasks,
@@ -39,7 +43,7 @@ export function DevelopmentPlan() {
     activeSessionId,
   } = useAppStore();
 
-  const [activeTab, setActiveTab] = useState<'plan' | 'errors'>('plan');
+  const [activeTab, setActiveTab] = useState<'plan' | 'errors'>(initialTab);
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const [executingPlanId, setExecutingPlanId] = useState<string | null>(null);
   const [planExecutionProgress, setPlanExecutionProgress] = useState({ current: 0, total: 0 });
