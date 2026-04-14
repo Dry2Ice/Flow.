@@ -4,6 +4,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, Plus } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAppStore } from '@/lib/store';
 import { LogEntry } from '@/types';
 
@@ -170,9 +172,54 @@ export function AIChat() {
                       </span>
                     </div>
 
-                    <div className="text-sm whitespace-pre-wrap">
-                      {message.content}
-                    </div>
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm prose-invert max-w-none text-sm">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code({ node, className, children, ...props }: any) {
+                              const isBlock = className?.includes('language-');
+                              return isBlock ? (
+                                <pre className="overflow-x-auto rounded-lg bg-neutral-900 border border-neutral-700 p-3 my-2">
+                                  <code className={`text-xs font-mono text-neutral-200 ${className ?? ''}`} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              ) : (
+                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-blue-300" {...props}>
+                                  {children}
+                                </code>
+                              );
+                            },
+                            p({ children }: any) {
+                              return <p className="mb-2 last:mb-0 text-neutral-200">{children}</p>;
+                            },
+                            ul({ children }: any) {
+                              return <ul className="mb-2 ml-4 list-disc space-y-1 text-neutral-200">{children}</ul>;
+                            },
+                            ol({ children }: any) {
+                              return <ol className="mb-2 ml-4 list-decimal space-y-1 text-neutral-200">{children}</ol>;
+                            },
+                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold text-neutral-100">{children}</h1>; },
+                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold text-neutral-100">{children}</h2>; },
+                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium text-neutral-200">{children}</h3>; },
+                            strong({ children }: any) { return <strong className="font-semibold text-neutral-100">{children}</strong>; },
+                            a({ href, children }: any) {
+                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">{children}</a>;
+                            },
+                            blockquote({ children }: any) {
+                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic text-neutral-400">{children}</blockquote>;
+                            },
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="text-sm whitespace-pre-wrap">
+                        {message.content}
+                      </div>
+                    )}
 
                     {message.changes && message.changes.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-neutral-600">
