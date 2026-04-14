@@ -183,9 +183,29 @@ export function FileBrowser() {
 
   return (
     <div className="p-3">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
-        {currentProject.name}
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
+          {currentProject.name}
+        </h3>
+        <button
+          onClick={async () => {
+            if (!currentProject || currentProject.isDemo) return;
+            const response = await fetch('/api/project/files', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ projectPath: currentProject.path }),
+            });
+            const data = await response.json();
+            if (data.files) {
+              useAppStore.getState().updateProject({ files: data.files });
+            }
+          }}
+          title="Refresh file tree"
+          className="rounded p-1 text-neutral-400 hover:text-neutral-200 transition"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </button>
+      </div>
       {!currentProject.isDemo && (
         <div className="mb-3 space-y-2 border-b border-neutral-700/70 pb-3">
           <div className="grid grid-cols-2 gap-2">

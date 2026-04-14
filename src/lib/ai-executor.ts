@@ -201,6 +201,23 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
           });
         }
       }
+
+      // Refresh the file tree in the store after AI writes files
+      if (currentProject && !currentProject.isDemo && projectPath) {
+        try {
+          const filesResponse = await fetch('/api/project/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectPath }),
+          });
+          const filesData = await filesResponse.json();
+          if (filesData.files) {
+            useAppStore.getState().updateProject({ files: filesData.files });
+          }
+        } catch {
+          // Non-critical — file tree refresh is best-effort
+        }
+      }
     }
 
     addMessage(activeSessionId, {
