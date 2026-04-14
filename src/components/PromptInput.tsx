@@ -250,44 +250,95 @@ export function PromptInput() {
     }
   };
 
-  const executeUltraMode = async () => {
+  const executeUltraMode = async (userPrompt: string) => {
+    const promptToUse = userPrompt.trim();
+    setPrompt(''); // Clear the input immediately
     startUltraMode(ultraSteps.length);
     addLog({
       id: crypto.randomUUID(),
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'info',
-      message: '[Ultra] Ultra Mode started',
+      message: `[Ultra] Ultra Mode started for: "${promptToUse}"`,
       source: 'user_action',
     });
 
-    for (let i = 0; i < ultraSteps.length; i++) {
-      const step = ultraSteps[i];
-      updateUltraModeStep(i + 1, step.name);
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        timestamp: new Date(),
-        type: 'info',
-        message: `[Ultra] Step ${i + 1}/${ultraSteps.length} started: ${step.name}`,
-        source: 'ai_execution',
-      });
+    // Step 1: Analyze user prompt + code and create plan
+    updateUltraModeStep(1, ultraSteps[0].name);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `[Ultra] Step 1/3 started: ${ultraSteps[0].name}`,
+      source: 'ai_execution',
+    });
 
-      await runRequest({
-        prompt: `[${step.name}] ${step.prompt}`,
-        requestType: 'analysis',
-        presetId: step.presetId,
-      });
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        timestamp: new Date(),
-        type: 'success',
-        message: `[Ultra] Step ${i + 1}/${ultraSteps.length} completed: ${step.name}`,
-        source: 'ai_execution',
-      });
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-    }
+    await runRequest({
+      prompt: `User Request: ${promptToUse}\n\n${ultraSteps[0].prompt}`,
+      requestType: 'analysis',
+      presetId: ultraSteps[0].presetId,
+    });
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'success',
+      message: `[Ultra] Step 1/3 completed: ${ultraSteps[0].name}`,
+      source: 'ai_execution',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    // Step 2: Execute the plan (Active Development)
+    updateUltraModeStep(2, ultraSteps[1].name);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `[Ultra] Step 2/3 started: ${ultraSteps[1].name}`,
+      source: 'ai_execution',
+    });
+
+    await runRequest({
+      prompt: `User Request: ${promptToUse}\n\nBased on the analysis and plan above, ${ultraSteps[1].prompt}`,
+      requestType: 'implementation',
+      presetId: ultraSteps[1].presetId,
+    });
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'success',
+      message: `[Ultra] Step 2/3 completed: ${ultraSteps[1].name}`,
+      source: 'ai_execution',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    // Step 3: Bug Detection & Fixing
+    updateUltraModeStep(3, ultraSteps[2].name);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `[Ultra] Step 3/3 started: ${ultraSteps[2].name}`,
+      source: 'ai_execution',
+    });
+
+    await runRequest({
+      prompt: `User Request: ${promptToUse}\n\nAfter implementing the changes above, ${ultraSteps[2].prompt}`,
+      requestType: 'debugging',
+      presetId: ultraSteps[2].presetId,
+    });
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'success',
+      message: `[Ultra] Step 3/3 completed: ${ultraSteps[2].name}`,
+      source: 'ai_execution',
+    });
 
     const lastStepPresetId = ultraSteps[ultraSteps.length - 1]?.presetId;
     if (lastStepPresetId) {
@@ -301,7 +352,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'success',
-      message: '[Ultra] Ultra Mode completed',
+      message: '[Ultra] Ultra Mode completed successfully',
       source: 'user_action',
     });
   };
@@ -407,8 +458,8 @@ export function PromptInput() {
 
         <button
           type="button"
-          onClick={executeUltraMode}
-          disabled={ultraModeActive || !projectPath}
+          onClick={() => executeUltraMode(prompt)}
+          disabled={ultraModeActive || !projectPath || !prompt.trim()}
           aria-label="Run Ultra Mode"
           className="flex h-9 items-center gap-1.5 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-xs font-medium text-purple-200 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
