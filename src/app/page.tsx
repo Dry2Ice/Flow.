@@ -91,6 +91,24 @@ const isLayout = (value: unknown): value is WorkspaceLayout => {
   return Array.isArray(candidate.top) && Array.isArray(candidate.vertical) && Array.isArray(candidate.center);
 };
 
+const migrateLayout = (layout: any): WorkspaceLayout => {
+  // Ensure all required fields exist with defaults
+  return {
+    top: layout.top || DEFAULT_LAYOUT.top,
+    vertical: layout.vertical || DEFAULT_LAYOUT.vertical,
+    center: layout.center || DEFAULT_LAYOUT.center,
+    collapsed: {
+      left: layout.collapsed?.left ?? DEFAULT_LAYOUT.collapsed.left,
+      right: layout.collapsed?.right ?? DEFAULT_LAYOUT.collapsed.right,
+      bottom: layout.collapsed?.bottom ?? DEFAULT_LAYOUT.collapsed.bottom,
+      stats: layout.collapsed?.stats ?? DEFAULT_LAYOUT.collapsed.stats,
+    },
+    order: {
+      leftRightSwapped: layout.order?.leftRightSwapped ?? DEFAULT_LAYOUT.order.leftRightSwapped,
+    },
+  };
+};
+
 const getInitialLayout = (): WorkspaceLayout => {
   if (typeof window === 'undefined') {
     return DEFAULT_LAYOUT;
@@ -103,7 +121,8 @@ const getInitialLayout = (): WorkspaceLayout => {
 
   try {
     const parsed = JSON.parse(raw);
-    return isLayout(parsed) ? parsed : DEFAULT_LAYOUT;
+    // Always migrate to ensure all fields are present
+    return migrateLayout(parsed);
   } catch (error) {
     console.error('Failed to parse workspace layout:', error);
     return DEFAULT_LAYOUT;
@@ -190,10 +209,9 @@ export default function Home() {
       if (event.key !== LAYOUT_STORAGE_KEY) return;
       try {
         const parsed = JSON.parse(event.newValue ?? '');
-        if (isLayout(parsed)) {
-          setLayout(parsed);
-          setLayoutKey((k) => k + 1);
-        }
+        const migratedLayout = migrateLayout(parsed);
+        setLayout(migratedLayout);
+        setLayoutKey((k) => k + 1);
       } catch {
         // ignore malformed values
       }
