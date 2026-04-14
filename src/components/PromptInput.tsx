@@ -9,6 +9,7 @@ import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { AIRequest, PromptRequest } from '@/types';
 import { executionManager } from '@/lib/execution-manager';
 import { aiService } from '@/lib/ai-service';
+import { codeExecutor } from '@/lib/code-executor';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
@@ -22,6 +23,12 @@ export function PromptInput() {
       name: 'Active Development',
       presetId: 'develop',
       prompt: 'Execute all tasks identified in the previous analysis perfectly. Implement every improvement, refactor all problematic code sections, enhance overall codebase quality, and make all necessary concrete code changes. Ensure all planned tasks are completed to the highest standard.',
+    },
+    {
+      name: 'Code Testing & Validation',
+      presetId: 'debug',
+      action: 'test',
+      prompt: 'Test the implemented code changes thoroughly. Run all available tests, check for runtime errors, validate functionality, and ensure the code works as expected. Identify any issues that need to be addressed before final bug fixing.',
     },
     {
       name: 'Bug Detection & Fixing',
@@ -253,7 +260,7 @@ export function PromptInput() {
   const executeUltraMode = async (userPrompt: string) => {
     const promptToUse = userPrompt.trim();
     setPrompt(''); // Clear the input immediately
-    startUltraMode(ultraSteps.length);
+    startUltraMode(4); // Now we have 4 steps
     addLog({
       id: crypto.randomUUID(),
       sessionId: activeSessionId,
@@ -315,14 +322,91 @@ export function PromptInput() {
     });
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    // Step 3: Bug Detection & Fixing
+    // Step 3: Code Testing & Validation
     updateUltraModeStep(3, ultraSteps[2].name);
     addLog({
       id: crypto.randomUUID(),
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'info',
-      message: `[Ultra] Step 3/3 started: ${ultraSteps[2].name}`,
+      message: `[Ultra] Step 3/4 started: ${ultraSteps[2].name}`,
+      source: 'ai_execution',
+    });
+
+    // Execute code testing
+    try {
+      const testResult = await codeExecutor.runTests(projectPath || process.cwd());
+
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: testResult.success ? 'success' : 'warning',
+        message: testResult.success
+          ? `[Ultra] Code testing completed successfully`
+          : `[Ultra] Code testing found issues`,
+        details: testResult.logs.join('\n'),
+        source: 'program_run',
+      });
+
+      // If tests failed, add them as bugs
+      if (!testResult.success || testResult.logs.some(log => log.includes('ERROR') || log.includes('FAIL'))) {
+        addBug({
+          id: crypto.randomUUID(),
+          title: 'Test Failures Detected',
+          description: `Code testing revealed issues:\n${testResult.logs.join('\n')}`,
+          status: 'open',
+          severity: 'high',
+          source: 'program_error',
+          relatedFiles: [],
+          relatedTasks: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    } catch (error) {
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: 'error',
+        message: `[Ultra] Code testing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        source: 'program_run',
+      });
+    }
+
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'success',
+      message: `[Ultra] Step 3/4 completed: ${ultraSteps[2].name}`,
+      source: 'ai_execution',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    // Step 4: Bug Detection & Fixing
+    updateUltraModeStep(4, ultraSteps[3].name);
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'info',
+      message: `[Ultra] Step 4/4 started: ${ultraSteps[3].name}`,
+      source: 'ai_execution',
+    });
+
+    await runRequest({
+      prompt: `User Request: ${promptToUse}\n\nAfter implementing and testing the changes above, ${ultraSteps[3].prompt}`,
+      requestType: 'debugging',
+      presetId: ultraSteps[3].presetId,
+    });
+    addLog({
+      id: crypto.randomUUID(),
+      sessionId: activeSessionId,
+      timestamp: new Date(),
+      type: 'success',
+      message: `[Ultra] Step 4/4 completed: ${ultraSteps[3].name}`,
       source: 'ai_execution',
     });
 
@@ -352,7 +436,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'success',
-      message: '[Ultra] Ultra Mode completed successfully',
+      message: '[Ultra] Ultra Mode completed successfully (4/4 steps)',
       source: 'user_action',
     });
   };

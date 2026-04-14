@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Eye, Code, RefreshCw } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { codeExecutor } from '@/lib/code-executor';
 
 export function CodePreview() {
   const { openFiles, activeFile, addLog, activeSessionId } = useAppStore();
@@ -88,11 +89,52 @@ export function CodePreview() {
 
     setIsLoading(true);
     try {
-      // In a real implementation, you might want to run the code in a sandbox
-      // For now, just show a message
-      setPreviewContent(`// Code execution simulation for ${currentFile.path}\n\n// This would execute the code in a safe environment\n\n// Result: Code executed successfully`);
+      const result = await codeExecutor.executeCode(
+        currentFile.content,
+        currentFile.path,
+        {
+          files: { [currentFile.path]: currentFile.content },
+          entryPoint: currentFile.path
+        }
+      );
+
+      // Add execution log
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: result.success ? 'success' : 'error',
+        message: result.success
+          ? `Code executed successfully: ${currentFile.path}`
+          : `Code execution failed: ${result.error || 'Unknown error'}`,
+        details: result.logs.join('\n'),
+        source: 'program_run',
+      });
+
+      if (result.success) {
+        // For HTML, update the preview content
+        if (currentFile.path.endsWith('.html')) {
+          setPreviewContent(result.output);
+        } else {
+          // For other code, show execution results
+          setPreviewContent(`// Execution Results for ${currentFile.path}\n\n${result.output}\n\n// Console Output:\n${result.logs.map(log => `// ${log}`).join('\n')}`);
+        }
+      } else {
+        setPreviewContent(`// Execution Error in ${currentFile.path}\n\nError: ${result.error}\n\n// Console Output:\n${result.logs.map(log => `// ${log}`).join('\n')}`);
+      }
     } catch (error) {
-      setPreviewContent(`Error running code: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown execution error';
+      setPreviewContent(`// Execution Error in ${currentFile?.path}\n\n${errorMessage}`);
+
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: 'error',
+        message: `Code execution failed: ${currentFile?.path}`,
+        details: errorMessage,
+        source: 'program_run',
+      });
     } finally {
       setIsLoading(false);
     }
