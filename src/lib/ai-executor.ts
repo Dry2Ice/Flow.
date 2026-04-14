@@ -111,21 +111,52 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
       : undefined;
 
-    const response = await nvidiaNimService.generateCode({
-      prompt: input.prompt,
-      preset: selectedPreset || undefined,
-      generalPrompt,
-      signal: input.signal,
-      context: {
-        currentFile: activeFile || undefined,
-        selectedCode: currentFile?.content,
-        projectFiles,
-        projectId: currentProject?.id,
-        projectContext,
-        sessionId: activeSessionId,
-        jobId,
-      },
+    // Add empty assistant message placeholder for streaming
+    const streamingMessageId = crypto.randomUUID();
+    addMessage(activeSessionId, {
+      id: streamingMessageId,
+      sessionId: activeSessionId,
+      jobId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
     });
+
+    let streamedContent = '';
+
+    const response = await nvidiaNimService.generateCodeStream(
+      {
+        prompt: input.prompt,
+        preset: selectedPreset || undefined,
+        generalPrompt,
+        signal: input.signal,
+        context: {
+          currentFile: activeFile || undefined,
+          selectedCode: currentFile?.content,
+          projectFiles,
+          projectId: currentProject?.id,
+          projectContext,
+          sessionId: activeSessionId,
+          jobId,
+        },
+      },
+      (chunk: string) => {
+        streamedContent += chunk;
+        // Update the streaming message in real-time
+        useAppStore.setState((state) => ({
+          sessions: {
+            ...state.sessions,
+            [activeSessionId]: {
+              ...state.sessions[activeSessionId],
+              messages: state.sessions[activeSessionId].messages.map((m) =>
+                m.id === streamingMessageId ? { ...m, content: streamedContent } : m
+              ),
+            },
+          },
+        }));
+      },
+      input.signal
+    );
 
     updateAIRequest(requestId, {
       status: 'completed',
@@ -220,15 +251,20 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       }
     }
 
-    addMessage(activeSessionId, {
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      jobId,
-      role: 'assistant',
-      content: response.explanation,
-      timestamp: new Date(),
-      changes: response.changes,
-    });
+    // Update the streaming message with final content and changes
+    useAppStore.setState((state) => ({
+      sessions: {
+        ...state.sessions,
+        [activeSessionId]: {
+          ...state.sessions[activeSessionId],
+          messages: state.sessions[activeSessionId].messages.map((m) =>
+            m.id === streamingMessageId
+              ? { ...m, content: response.explanation, changes: response.changes }
+              : m
+          ),
+        },
+      },
+    }));
 
     if (response.tasks) {
       response.tasks.forEach((task) => addTask(task));

@@ -328,114 +328,7 @@ class NvidiaNimService {
     }
 
     try {
-      const baseSystemPrompt = request.preset?.systemPrompt ||
-        `You are an expert software engineer. Generate code based on the user's request.
-        Provide the code and an explanation. If making changes to existing code, provide the old and new content.
-        If this involves multiple steps, suggest development tasks.
-
-        Context: ${JSON.stringify(request.context || {})}
-
-When you need to create or modify files, you MUST output each changed file using this exact format — no exceptions:
-
-<<<FILE: relative/path/to/file.ext>>>
-<complete new file content here>
-<<<END_FILE>>>
-
-Rules:
-- Always output the COMPLETE file content, never partial diffs or snippets.
-- Use the file's path relative to the project root (e.g. src/app/page.tsx).
-- You may output multiple FILE blocks in a single response.
-- After all FILE blocks, write your explanation in plain prose.
-- If no file changes are needed, skip the FILE blocks entirely.`;
-
-      const generalPrompt = request.generalPrompt || '';
-
-      // Build intelligent context summary
-      const contextSummary = buildIntelligentContextSummary(request.context);
-
-      const fullSystemPrompt = generalPrompt
-        ? `${baseSystemPrompt}\n\n${generalPrompt}\n\n${contextSummary}`
-        : `${baseSystemPrompt}\n\n${contextSummary}`;
-
-      const isFiniteNumber = (value: unknown): value is number =>
-        typeof value === 'number' && Number.isFinite(value);
-
-      const requestBody: any = {
-        model: this.config.model,
-        messages: [
-          {
-            role: 'system',
-            content: (() => {
-              const projectFiles = request.context?.projectFiles || [];
-              if (projectFiles.length === 0) {
-                return `${fullSystemPrompt}\n\nProject Context: No project files available`;
-              }
-
-              const formattedFiles = projectFiles.map(file => {
-                const lines = file.content.split('\n');
-                const numberedLines = lines.map((line, index) =>
-                  `${(index + 1).toString().padStart(4, ' ')}: ${line}`
-                ).join('\n');
-
-                const fileExtension = file.path.split('.').pop()?.toLowerCase() || '';
-                const language = getLanguageFromExtension(fileExtension);
-
-                // Analyze code structure for better context
-                const structure = analyzeCodeStructure(file.content, language);
-
-                return `📄 File: ${file.path}
-🔤 Language: ${language}
-📏 Lines: ${lines.length}
-📊 Size: ${file.content.length} characters
-🏗️  Structure: ${structure.summary}
-
-${structure.details ? `📋 Code Structure:\n${structure.details}\n\n` : ''}\`\`\`${language}
-${numberedLines}
-\`\`\``;
-              }).join('\n\n' + '='.repeat(80) + '\n\n');
-
-              return `${fullSystemPrompt}\n\nProject Context - Complete Codebase:\n${formattedFiles}`;
-            })()
-          },
-          {
-            role: 'user',
-            content: request.prompt
-          }
-        ],
-        temperature: isFiniteNumber(this.config.temperature)
-          ? this.config.temperature
-          : 0.7,
-        max_tokens: isFiniteNumber(this.config.maxTokens) && Number.isInteger(this.config.maxTokens)
-          ? this.config.maxTokens
-          : 4000
-      };
-
-      // Add optional parameters if they exist and are valid
-      if (isFiniteNumber(this.config.topP)) {
-        requestBody.top_p = this.config.topP;
-      }
-      if (isFiniteNumber(this.config.topK) && Number.isInteger(this.config.topK)) {
-        requestBody.top_k = this.config.topK;
-      }
-      if (isFiniteNumber(this.config.contextTokens) && Number.isInteger(this.config.contextTokens)) {
-        requestBody.context_tokens = this.config.contextTokens;
-      }
-      if (isFiniteNumber(this.config.presencePenalty)) {
-        requestBody.presence_penalty = this.config.presencePenalty;
-      }
-      if (isFiniteNumber(this.config.frequencyPenalty)) {
-        requestBody.frequency_penalty = this.config.frequencyPenalty;
-      }
-      if (Array.isArray(this.config.stopSequences)) {
-        const stopSequences = this.config.stopSequences
-          .filter((item): item is string => typeof item === 'string')
-          .map((item) => item.trim())
-          .filter((item) => item.length > 0);
-
-        if (stopSequences.length > 0) {
-          requestBody.stop = stopSequences;
-        }
-      }
+      const { requestBody } = this.buildRequestPayload(request);
 
       const response = await axios.post(
         `${this.config.baseUrl}/chat/completions`,
@@ -450,14 +343,185 @@ ${numberedLines}
       );
 
       const content = response.data.choices[0].message.content;
-
-      // Parse the response - this is a simplified parsing
-      // In a real implementation, you might want to use structured outputs
       return this.parseResponse(content);
     } catch (error) {
       console.error('Nvidia NIM API error:', error);
       throw new Error('Failed to generate code');
     }
+  }
+
+  async generateCodeStream(
+    request: GenerateCodeRequest,
+    onChunk: (text: string) => void,
+    signal?: AbortSignal
+  ): Promise<GenerateCodeResponse> {
+    if (!this.config) throw new Error('Nvidia NIM configuration not set');
+
+    const { requestBody } = this.buildRequestPayload(request);
+
+    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...requestBody, stream: true }),
+      signal,
+    });
+
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter((l) => l.startsWith('data: '));
+
+      for (const line of lines) {
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content ?? '';
+          if (typeof delta === 'string' && delta) {
+            fullContent += delta;
+            onChunk(delta);
+          }
+        } catch {
+          // Skip malformed SSE lines
+        }
+      }
+    }
+
+    return this.parseResponse(fullContent);
+  }
+
+  private buildRequestPayload(request: GenerateCodeRequest): { messages: any[]; requestBody: any } {
+    if (!this.config) {
+      throw new Error('Nvidia NIM configuration not set');
+    }
+    const config = this.config;
+
+    const baseSystemPrompt = request.preset?.systemPrompt ||
+      `You are an expert software engineer. Generate code based on the user's request.
+      Provide the code and an explanation. If making changes to existing code, provide the old and new content.
+      If this involves multiple steps, suggest development tasks.
+
+      Context: ${JSON.stringify(request.context || {})}
+
+When you need to create or modify files, you MUST output each changed file using this exact format — no exceptions:
+
+<<<FILE: relative/path/to/file.ext>>>
+<complete new file content here>
+<<<END_FILE>>>
+
+Rules:
+- Always output the COMPLETE file content, never partial diffs or snippets.
+- Use the file's path relative to the project root (e.g. src/app/page.tsx).
+- You may output multiple FILE blocks in a single response.
+- After all FILE blocks, write your explanation in plain prose.
+- If no file changes are needed, skip the FILE blocks entirely.`;
+
+    const generalPrompt = request.generalPrompt || '';
+
+    // Build intelligent context summary
+    const contextSummary = buildIntelligentContextSummary(request.context);
+
+    const fullSystemPrompt = generalPrompt
+      ? `${baseSystemPrompt}\n\n${generalPrompt}\n\n${contextSummary}`
+      : `${baseSystemPrompt}\n\n${contextSummary}`;
+
+    const isFiniteNumber = (value: unknown): value is number =>
+      typeof value === 'number' && Number.isFinite(value);
+
+    const messages = [
+      {
+        role: 'system',
+        content: (() => {
+          const projectFiles = request.context?.projectFiles || [];
+          if (projectFiles.length === 0) {
+            return `${fullSystemPrompt}\n\nProject Context: No project files available`;
+          }
+
+          const formattedFiles = projectFiles.map(file => {
+            const fileContent = file.content || '';
+            const lines = fileContent.split('\n');
+            const numberedLines = lines.map((line, index) =>
+              `${(index + 1).toString().padStart(4, ' ')}: ${line}`
+            ).join('\n');
+
+            const filePath = file.path || '';
+            const fileExtension = filePath.split('.').pop()?.toLowerCase() || '';
+            const language = getLanguageFromExtension(fileExtension);
+
+            // Analyze code structure for better context
+            const structure = analyzeCodeStructure(fileContent, language);
+
+            return `📄 File: ${filePath}
+🔤 Language: ${language}
+📏 Lines: ${lines.length}
+📊 Size: ${fileContent.length} characters
+🏗️  Structure: ${structure.summary}
+
+${structure.details ? `📋 Code Structure:\n${structure.details}\n\n` : ''}\`\`\`${language}
+${numberedLines}
+\`\`\``;
+          }).join('\n\n' + '='.repeat(80) + '\n\n');
+
+          return `${fullSystemPrompt}\n\nProject Context - Complete Codebase:\n${formattedFiles}`;
+        })()
+      },
+      {
+        role: 'user',
+        content: request.prompt
+      }
+    ];
+
+    const requestBody: any = {
+      model: config.model,
+      messages,
+      temperature: isFiniteNumber(config.temperature)
+        ? config.temperature
+        : 0.7,
+      max_tokens: isFiniteNumber(config.maxTokens) && Number.isInteger(config.maxTokens)
+        ? config.maxTokens
+        : 4000
+    };
+
+    // Add optional parameters if they exist and are valid
+    if (isFiniteNumber(config.topP)) {
+      requestBody.top_p = config.topP;
+    }
+    if (isFiniteNumber(config.topK) && Number.isInteger(config.topK)) {
+      requestBody.top_k = config.topK;
+    }
+    if (isFiniteNumber(config.contextTokens) && Number.isInteger(config.contextTokens)) {
+      requestBody.context_tokens = config.contextTokens;
+    }
+    if (isFiniteNumber(config.presencePenalty)) {
+      requestBody.presence_penalty = config.presencePenalty;
+    }
+    if (isFiniteNumber(config.frequencyPenalty)) {
+      requestBody.frequency_penalty = config.frequencyPenalty;
+    }
+    if (Array.isArray(config.stopSequences)) {
+      const stopSequences = config.stopSequences
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+
+      if (stopSequences.length > 0) {
+        requestBody.stop = stopSequences;
+      }
+    }
+
+    return { messages, requestBody };
   }
 
   private parseResponse(content: string): GenerateCodeResponse {
