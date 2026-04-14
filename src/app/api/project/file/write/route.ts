@@ -31,8 +31,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied', reason: 'outside_project' }, { status: 403 });
     }
 
-    if (!fs.existsSync(resolvedFilePath)) {
-      return NextResponse.json({ error: 'File not found', reason: 'file_not_found' }, { status: 404 });
+    const fileExists = fs.existsSync(resolvedFilePath);
+
+    if (!fileExists) {
+      // Create parent directories if needed, then create the file
+      const parentDir = path.dirname(resolvedFilePath);
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true });
+      }
+      fs.writeFileSync(resolvedFilePath, content, 'utf8');
+      const newStat = fs.statSync(resolvedFilePath);
+      return NextResponse.json({
+        success: true,
+        created: true,
+        path: filePath,
+        lastModifiedMs: newStat.mtimeMs,
+        size: newStat.size,
+      });
     }
 
     const currentStat = fs.statSync(resolvedFilePath);
