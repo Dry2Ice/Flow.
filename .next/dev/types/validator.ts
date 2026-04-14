@@ -74,6 +74,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../src/app/api/nim/models/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/nim/models">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/nim/models/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../src/app/api/nim/probe/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/nim/probe">> = Specific
+  const handler = {} as typeof import("../../../src/app/api/nim/probe/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../src/app/api/project/file/read/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/project/file/read">> = Specific

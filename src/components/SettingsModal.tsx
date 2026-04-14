@@ -34,11 +34,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
     setIsLoadingModels(true);
     try {
-      const response = await fetch(`${baseUrl}/models`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch('/api/nim/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey, baseUrl }),
       });
 
       if (response.ok) {
@@ -46,7 +45,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         const models = data.data?.map((model: any) => model.id) || [];
         setAvailableModels(models);
       } else {
-        alert('Failed to load models. Please check your API credentials.');
+        const err = await response.json().catch(() => ({}));
+        alert(`Failed to load models: ${err.error || response.statusText}`);
       }
     } catch (error) {
       console.error('Error loading models:', error);
@@ -64,17 +64,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
     setConnectionStatus('connecting');
     try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await fetch('/api/nim/probe', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: 'Hello' }],
-          max_tokens: 10,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey, baseUrl, model, message: 'Hello' }),
       });
 
       if (response.ok) {
@@ -99,17 +92,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
     setTestMessageStatus('sending');
     try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await fetch('/api/nim/probe', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          apiKey,
+          baseUrl,
           model,
-          messages: [{ role: 'user', content: 'Say "Hello from Flow!" and nothing else.' }],
-          max_tokens: 50,
-          temperature: 0.1,
+          message: 'Say "Hello from Flow!" and nothing else.',
         }),
       });
 
