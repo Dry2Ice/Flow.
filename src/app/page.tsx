@@ -21,7 +21,6 @@ import { useAppStore } from '@/lib/store';
 
 type SideTab = 'files' | 'projects';
 type RightTab = 'chat' | 'logs';
-type BottomTab = 'plan' | 'errors';
 type CenterMode = 'edit' | 'preview' | 'split';
 
 type WorkspaceLayout = {
@@ -193,7 +192,6 @@ export default function Home() {
   const [layoutKey, setLayoutKey] = useState(0);
   const [sideTab, setSideTab] = useState<SideTab>('files');
   const [rightTab, setRightTab] = useState<RightTab>('chat');
-  const [bottomTab, setBottomTab] = useState<BottomTab>('plan');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   // analyticsOpen is now controlled by layout.collapsed.stats
   const [apiConfigured, setApiConfigured] = useState(false);
@@ -545,32 +543,12 @@ export default function Home() {
                 }
               />
                {!layout.collapsed.bottom ? (
-                 <>
-                   <div className="border-b border-neutral-800/70 px-3 py-3 mt-2 bg-neutral-900/50">
-                     <div className="flex gap-2">
-                       <button
-                         data-active={bottomTab === 'plan'}
-                         onClick={() => setBottomTab('plan')}
-                         className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
-                       >
-                         🎯 Development Plan
-                       </button>
-                       <button
-                         data-active={bottomTab === 'errors'}
-                         onClick={() => setBottomTab('errors')}
-                         className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
-                       >
-                         ⚠️ Errors
-                       </button>
-                     </div>
-                   </div>
-                    <div className="h-[calc(100%-88px)] overflow-hidden">
-                      <DevelopmentPlan initialTab={bottomTab === 'plan' ? 'plan' : 'errors'} />
-                    </div>
-                 </>
+                 <div className="h-[calc(100%-41px)] overflow-hidden">
+                   <DevelopmentPlan />
+                 </div>
                ) : (
-                <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>
-              )}
+                 <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>
+               )}
             </div>
           </Allotment.Pane>
         </Allotment>
