@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Flow Test Page</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(message, success = true) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (success ? 'success' : 'error');
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        // Test 1: localStorage access
+        try {
+            localStorage.setItem('test', 'value');
+            const value = localStorage.getItem('test');
+            addResult('localStorage работает: ' + value);
+        } catch (e) {
+            addResult('localStorage заблокирован: ' + e.message, false);
+        }
+
+        // Test 2: API call
+        fetch('/api/nim/models', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: 'test', baseUrl: 'https://api.example.com' })
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json().then(data => addResult('API работает: ' + JSON.stringify(data)));
+            } else {
+                return response.text().then(text => addResult('API вернул ошибку: ' + response.status + ' - ' + text, false));
+            }
+        })
+        .catch(error => {
+            addResult('API недоступен: ' + error.message, false);
+        });
+
+        // Test 3: Check if we're in the right environment
+        addResult('User Agent: ' + navigator.userAgent);
+        addResult('URL: ' + window.location.href);
+    </script>
+</body>
+</html>

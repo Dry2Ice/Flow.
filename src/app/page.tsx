@@ -374,20 +374,32 @@ export default function Home() {
                       </PanelButton>
                     }
                   />
-                  {!layout.collapsed.right ? (
-                    <>
-                      <div className="border-b border-neutral-800/70 px-2 py-2">
-                        <div className="flex gap-2">
-                          <button data-active={rightTab === 'chat'} onClick={() => setRightTab('chat')} className="flow-tab flex-1">AI Chat</button>
-                          <button data-active={rightTab === 'logs'} onClick={() => setRightTab('logs')} className="flow-tab flex-1">Logs</button>
-                        </div>
-                      </div>
-                      <div className="h-[calc(100%-118px)]">{rightTab === 'chat' ? <AIChat /> : <SystemLogsPanel />}</div>
-                      <div className="border-t border-neutral-800"><PromptInput /></div>
-                    </>
-                  ) : (
-                    <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>
-                  )}
+                   {!layout.collapsed.right ? (
+                     <>
+                       <div className="border-b border-neutral-800/70 px-3 py-3 mt-2 bg-neutral-900/50">
+                         <div className="flex gap-2">
+                           <button
+                             data-active={rightTab === 'chat'}
+                             onClick={() => setRightTab('chat')}
+                             className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
+                           >
+                             💬 AI Chat
+                           </button>
+                           <button
+                             data-active={rightTab === 'logs'}
+                             onClick={() => setRightTab('logs')}
+                             className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
+                           >
+                             📋 Logs
+                           </button>
+                         </div>
+                       </div>
+                       <div className="h-[calc(100%-140px)]">{rightTab === 'chat' ? <AIChat /> : <SystemLogsPanel />}</div>
+                       <div className="border-t border-neutral-800"><PromptInput /></div>
+                     </>
+                   ) : (
+                     <div className="grid h-[calc(100%-42px)] place-items-center text-xs text-neutral-500">Collapsed</div>
+                   )}
                 </div>
               </Allotment.Pane>
             </Allotment>
@@ -404,17 +416,29 @@ export default function Home() {
                   </PanelButton>
                 }
               />
-              {!layout.collapsed.bottom ? (
-                <>
-                  <div className="border-b border-neutral-800/70 px-2 py-2">
-                    <div className="flex gap-2">
-                      <button data-active={bottomTab === 'plan'} onClick={() => setBottomTab('plan')} className="flow-tab flex-1">Development Plan</button>
-                      <button data-active={bottomTab === 'errors'} onClick={() => setBottomTab('errors')} className="flow-tab flex-1">Errors</button>
-                    </div>
-                  </div>
-                  <div className="h-[calc(100%-72px)] overflow-hidden">{bottomTab === 'plan' ? <DevelopmentPlan /> : <ErrorsPanel />}</div>
-                </>
-              ) : (
+               {!layout.collapsed.bottom ? (
+                 <>
+                   <div className="border-b border-neutral-800/70 px-3 py-3 mt-2 bg-neutral-900/50">
+                     <div className="flex gap-2">
+                       <button
+                         data-active={bottomTab === 'plan'}
+                         onClick={() => setBottomTab('plan')}
+                         className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
+                       >
+                         🎯 Development Plan
+                       </button>
+                       <button
+                         data-active={bottomTab === 'errors'}
+                         onClick={() => setBottomTab('errors')}
+                         className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
+                       >
+                         ⚠️ Errors
+                       </button>
+                     </div>
+                   </div>
+                   <div className="h-[calc(100%-88px)] overflow-hidden">{bottomTab === 'plan' ? <DevelopmentPlan /> : <ErrorsPanel />}</div>
+                 </>
+               ) : (
                 <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>
               )}
             </div>
