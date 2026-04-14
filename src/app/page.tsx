@@ -22,7 +22,7 @@ import { useAppStore } from '@/lib/store';
 type SideTab = 'files' | 'projects';
 type RightTab = 'chat' | 'logs';
 type BottomTab = 'plan' | 'errors';
-type CenterMode = 'edit' | 'preview';
+type CenterMode = 'edit' | 'preview' | 'split';
 
 type WorkspaceLayout = {
   top: [number, number, number];
@@ -343,11 +343,16 @@ export default function Home() {
               >
                 👁️ Preview
               </button>
+              <button
+                onClick={() => setCenterMode('split')}
+                className={`flow-tab text-xs px-3 py-1 ${centerMode === 'split' ? 'bg-purple-600/20 border-purple-400' : ''}`}
+              >
+                ⬛ Split
+              </button>
               {centerMode === 'edit' && (
                 <>
                   <button
                     onClick={() => {
-                      // Import and use the save function
                       import('@/components/CodeEditor').then(({ codeEditorActions }) => {
                         codeEditorActions.saveChanges();
                       });
@@ -370,15 +375,13 @@ export default function Home() {
                   </button>
                 </>
               )}
-              {centerMode === 'preview' && (
+              {(centerMode === 'preview' || centerMode === 'split') && (
                 <button
                   onClick={() => {
-                    // Refresh the preview iframe
                     const iframe = document.querySelector('iframe');
                     if (iframe) {
                       iframe.src = iframe.src;
                     } else {
-                      // Fallback: reload the page
                       window.location.reload();
                     }
                   }}
@@ -391,7 +394,20 @@ export default function Home() {
           }
         />
         <div className="h-[calc(100%-41px)]">
-          {centerMode === 'edit' ? <CodeEditor /> : <CodePreview />}
+          {centerMode === 'edit' && <CodeEditor />}
+          {centerMode === 'preview' && <CodePreview />}
+          {centerMode === 'split' && (
+            <Allotment
+              vertical
+              defaultSizes={layout.center}
+              onChange={(sizes: number[]) =>
+                setLayout((prev) => ({ ...prev, center: [sizes[0], sizes[1]] }))
+              }
+            >
+              <Allotment.Pane minSize={120}><CodeEditor /></Allotment.Pane>
+              <Allotment.Pane minSize={80}><CodePreview /></Allotment.Pane>
+            </Allotment>
+          )}
         </div>
       </div>
     </Allotment.Pane>
