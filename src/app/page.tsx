@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { Allotment } from 'allotment';
-import { BarChart3, Bot, ChevronDown, ChevronLeft, ChevronRight, Code2, FolderOpen, Settings, TriangleAlert, X } from 'lucide-react';
+import { ArrowLeftRight, BarChart3, Bot, ChevronDown, ChevronLeft, ChevronRight, Code2, FolderOpen, Settings, TriangleAlert, X } from 'lucide-react';
 import 'allotment/dist/style.css';
 
 import { CodeEditor } from '@/components/CodeEditor';
@@ -32,6 +32,10 @@ type WorkspaceLayout = {
     left: boolean;
     right: boolean;
     bottom: boolean;
+    stats: boolean;
+  };
+  order: {
+    leftRightSwapped: boolean;
   };
 };
 
@@ -44,6 +48,10 @@ const DEFAULT_LAYOUT: WorkspaceLayout = {
     left: false,
     right: false,
     bottom: false,
+    stats: true,
+  },
+  order: {
+    leftRightSwapped: false,
   },
 };
 
@@ -168,7 +176,7 @@ export default function Home() {
   const [rightTab, setRightTab] = useState<RightTab>('chat');
   const [bottomTab, setBottomTab] = useState<BottomTab>('plan');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  // analyticsOpen is now controlled by layout.collapsed.stats
   const [apiConfigured, setApiConfigured] = useState(false);
   const [centerMode, setCenterMode] = useState<CenterMode>('edit');
 
@@ -274,6 +282,168 @@ export default function Home() {
     setLayoutKey((key) => key + 1);
   };
 
+  const togglePanelOrder = () => {
+    setLayout((current) => ({
+      ...current,
+      order: {
+        ...current.order,
+        leftRightSwapped: !current.order.leftRightSwapped,
+      },
+    }));
+    setLayoutKey((key) => key + 1);
+  };
+
+  // Panel components
+  const leftPanel = (
+    <Allotment.Pane minSize={88} key="left">
+      <div className="flow-panel h-full">
+        <PanelHeader
+          title="Files & Projects"
+          icon={<FolderOpen className="h-3.5 w-3.5" />}
+          actions={
+            <PanelButton onClick={() => toggleCollapse('left')} title="Collapse left panel">
+              <ChevronLeft className="h-4 w-4" />
+            </PanelButton>
+          }
+        />
+        {!layout.collapsed.left ? (
+          <>
+            <div className="border-b border-neutral-800/70 px-2 py-2">
+              <div className="flex gap-2">
+                <button data-active={sideTab === 'files'} onClick={() => setSideTab('files')} className="flow-tab flex-1">Files</button>
+                <button data-active={sideTab === 'projects'} onClick={() => setSideTab('projects')} className="flow-tab flex-1">Projects</button>
+              </div>
+            </div>
+            <div className="h-[calc(100%-72px)]">{sideTab === 'files' ? <FileBrowser /> : <ProjectManager />}</div>
+          </>
+        ) : (
+          <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>
+        )}
+      </div>
+    </Allotment.Pane>
+  );
+
+  const centerPanel = (
+    <Allotment.Pane minSize={220} key="center">
+      <div className="flow-panel h-full">
+        <PanelHeader
+          title="Code Editor & Preview"
+          icon={<Code2 className="h-3.5 w-3.5" />}
+          actions={
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCenterMode('edit')}
+                className={`flow-tab text-xs px-3 py-1 ${centerMode === 'edit' ? 'bg-blue-600/20 border-blue-400' : ''}`}
+              >
+                ✏️ Edit
+              </button>
+              <button
+                onClick={() => setCenterMode('preview')}
+                className={`flow-tab text-xs px-3 py-1 ${centerMode === 'preview' ? 'bg-green-600/20 border-green-400' : ''}`}
+              >
+                👁️ Preview
+              </button>
+              {centerMode === 'edit' && (
+                <>
+                  <button
+                    onClick={() => {
+                      // Import and use the save function
+                      import('@/components/CodeEditor').then(({ codeEditorActions }) => {
+                        codeEditorActions.saveChanges();
+                      });
+                    }}
+                    className="flow-tab text-xs px-3 py-1 bg-green-600/20 border-green-400 hover:bg-green-500/30"
+                  >
+                    💾 Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Reset all unsaved changes? This will revert to the last saved version.')) {
+                        import('@/components/CodeEditor').then(({ codeEditorActions }) => {
+                          codeEditorActions.resetChanges();
+                        });
+                      }
+                    }}
+                    className="flow-tab text-xs px-3 py-1 bg-red-600/20 border-red-400 hover:bg-red-500/30"
+                  >
+                    🔄 Reset
+                  </button>
+                </>
+              )}
+              {centerMode === 'preview' && (
+                <button
+                  onClick={() => {
+                    // Refresh the preview iframe
+                    const iframe = document.querySelector('iframe');
+                    if (iframe) {
+                      iframe.src = iframe.src;
+                    } else {
+                      // Fallback: reload the page
+                      window.location.reload();
+                    }
+                  }}
+                  className="flow-tab text-xs px-3 py-1 bg-blue-600/20 border-blue-400 hover:bg-blue-500/30"
+                >
+                  🔄 Refresh Preview
+                </button>
+              )}
+            </div>
+          }
+        />
+        <div className="h-[calc(100%-41px)]">
+          {centerMode === 'edit' ? <CodeEditor /> : <CodePreview />}
+        </div>
+      </div>
+    </Allotment.Pane>
+  );
+
+  const rightPanel = (
+    <Allotment.Pane minSize={140} key="right">
+      <div className="flow-panel h-full">
+        <PanelHeader
+          title="AI Chat / Logs"
+          icon={<Bot className="h-3.5 w-3.5" />}
+          actions={
+            <PanelButton onClick={() => toggleCollapse('right')} title="Collapse right panel">
+              <ChevronRight className="h-4 w-4" />
+            </PanelButton>
+          }
+        />
+         {!layout.collapsed.right ? (
+           <>
+             <div className="border-b border-neutral-800/70 px-3 py-3 mt-2 bg-neutral-900/50">
+               <div className="flex gap-2">
+                 <button
+                   data-active={rightTab === 'chat'}
+                   onClick={() => setRightTab('chat')}
+                   className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
+                 >
+                   💬 AI Chat
+                 </button>
+                 <button
+                   data-active={rightTab === 'logs'}
+                   onClick={() => setRightTab('logs')}
+                   className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
+                 >
+                   📋 Logs
+                 </button>
+               </div>
+             </div>
+             <div className="h-[calc(100%-140px)]">{rightTab === 'chat' ? <AIChat /> : <SystemLogsPanel />}</div>
+             <div className="border-t border-neutral-800"><PromptInput /></div>
+           </>
+         ) : (
+           <div className="grid h-[calc(100%-42px)] place-items-center text-xs text-neutral-500">Collapsed</div>
+         )}
+      </div>
+    </Allotment.Pane>
+  );
+
+  // Determine panel order
+  const topPanels = layout.order.leftRightSwapped
+    ? [rightPanel, centerPanel, leftPanel]
+    : [leftPanel, centerPanel, rightPanel];
+
   return (
     <main className="min-h-screen text-neutral-100">
       <header className="app-header border-b border-neutral-800/90 bg-neutral-950/85 backdrop-blur-xl">
@@ -287,7 +457,10 @@ export default function Home() {
               <Settings className="h-4 w-4" />
             </TopControlButton>
             <ThemeToggle />
-            <TopControlButton onClick={() => setAnalyticsOpen((prev) => !prev)} label="Toggle statistics" isActive={analyticsOpen}>
+            <TopControlButton onClick={togglePanelOrder} label="Swap panel order" isActive={layout.order.leftRightSwapped}>
+              <ArrowLeftRight className="h-4 w-4" />
+            </TopControlButton>
+            <TopControlButton onClick={() => toggleCollapse('stats')} label="Toggle statistics" isActive={!layout.collapsed.stats}>
               <BarChart3 className="h-4 w-4" />
             </TopControlButton>
           </div>
@@ -322,145 +495,7 @@ export default function Home() {
               defaultSizes={effectiveTop}
               onChange={(sizes: number[]) => setLayout((prev) => ({ ...prev, top: [sizes[0], sizes[1], sizes[2]] }))}
             >
-              <Allotment.Pane minSize={88}>
-                <div className="flow-panel h-full">
-                  <PanelHeader
-                    title="Files & Projects"
-                    icon={<FolderOpen className="h-3.5 w-3.5" />}
-                    actions={
-                      <PanelButton onClick={() => toggleCollapse('left')} title="Collapse left panel">
-                        <ChevronLeft className="h-4 w-4" />
-                      </PanelButton>
-                    }
-                  />
-                  {!layout.collapsed.left ? (
-                    <>
-                      <div className="border-b border-neutral-800/70 px-2 py-2">
-                        <div className="flex gap-2">
-                          <button data-active={sideTab === 'files'} onClick={() => setSideTab('files')} className="flow-tab flex-1">Files</button>
-                          <button data-active={sideTab === 'projects'} onClick={() => setSideTab('projects')} className="flow-tab flex-1">Projects</button>
-                        </div>
-                      </div>
-                      <div className="h-[calc(100%-72px)]">{sideTab === 'files' ? <FileBrowser /> : <ProjectManager />}</div>
-                    </>
-                  ) : (
-                    <div className="grid h-[calc(100%-41px)] place-items-center text-xs text-neutral-500">Collapsed</div>
-                  )}
-                </div>
-              </Allotment.Pane>
-
-              <Allotment.Pane minSize={220}>
-                <div className="flow-panel h-full">
-                  <PanelHeader
-                    title="Code Editor & Preview"
-                    icon={<Code2 className="h-3.5 w-3.5" />}
-                    actions={
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setCenterMode('edit')}
-                          className={`flow-tab text-xs px-3 py-1 ${centerMode === 'edit' ? 'bg-blue-600/20 border-blue-400' : ''}`}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => setCenterMode('preview')}
-                          className={`flow-tab text-xs px-3 py-1 ${centerMode === 'preview' ? 'bg-green-600/20 border-green-400' : ''}`}
-                        >
-                          👁️ Preview
-                        </button>
-                        {centerMode === 'edit' && (
-                          <>
-                            <button
-                              onClick={() => {
-                                // Import and use the save function
-                                import('@/components/CodeEditor').then(({ codeEditorActions }) => {
-                                  codeEditorActions.saveChanges();
-                                });
-                              }}
-                              className="flow-tab text-xs px-3 py-1 bg-green-600/20 border-green-400 hover:bg-green-500/30"
-                            >
-                              💾 Save
-                            </button>
-                            <button
-                              onClick={() => {
-                                // Import and use the reset function
-                                if (confirm('Reset all unsaved changes? This will revert to the last saved version.')) {
-                                  import('@/components/CodeEditor').then(({ codeEditorActions }) => {
-                                    codeEditorActions.resetChanges();
-                                  });
-                                }
-                              }}
-                              className="flow-tab text-xs px-3 py-1 bg-red-600/20 border-red-400 hover:bg-red-500/30"
-                            >
-                              🔄 Reset
-                            </button>
-                          </>
-                        )}
-                        {centerMode === 'preview' && (
-                          <button
-                            onClick={() => {
-                              // Refresh the preview iframe
-                              const iframe = document.querySelector('iframe');
-                              if (iframe) {
-                                iframe.src = iframe.src;
-                              } else {
-                                // Fallback: reload the page
-                                window.location.reload();
-                              }
-                            }}
-                            className="flow-tab text-xs px-3 py-1 bg-blue-600/20 border-blue-400 hover:bg-blue-500/30"
-                          >
-                            🔄 Refresh Preview
-                          </button>
-                        )}
-                      </div>
-                    }
-                  />
-                  <div className="h-[calc(100%-41px)]">
-                    {centerMode === 'edit' ? <CodeEditor /> : <CodePreview />}
-                  </div>
-                </div>
-              </Allotment.Pane>
-
-              <Allotment.Pane minSize={140}>
-                <div className="flow-panel h-full">
-                  <PanelHeader
-                    title="AI Chat / Logs"
-                    icon={<Bot className="h-3.5 w-3.5" />}
-                    actions={
-                      <PanelButton onClick={() => toggleCollapse('right')} title="Collapse right panel">
-                        <ChevronRight className="h-4 w-4" />
-                      </PanelButton>
-                    }
-                  />
-                   {!layout.collapsed.right ? (
-                     <>
-                       <div className="border-b border-neutral-800/70 px-3 py-3 mt-2 bg-neutral-900/50">
-                         <div className="flex gap-2">
-                           <button
-                             data-active={rightTab === 'chat'}
-                             onClick={() => setRightTab('chat')}
-                             className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
-                           >
-                             💬 AI Chat
-                           </button>
-                           <button
-                             data-active={rightTab === 'logs'}
-                             onClick={() => setRightTab('logs')}
-                             className="flow-tab flex-1 text-xs font-medium px-3 py-2 min-h-[32px] transition-all duration-200 hover:scale-105"
-                           >
-                             📋 Logs
-                           </button>
-                         </div>
-                       </div>
-                       <div className="h-[calc(100%-140px)]">{rightTab === 'chat' ? <AIChat /> : <SystemLogsPanel />}</div>
-                       <div className="border-t border-neutral-800"><PromptInput /></div>
-                     </>
-                   ) : (
-                     <div className="grid h-[calc(100%-42px)] place-items-center text-xs text-neutral-500">Collapsed</div>
-                   )}
-                </div>
-              </Allotment.Pane>
+              {topPanels}
             </Allotment>
           </Allotment.Pane>
 
@@ -510,13 +545,13 @@ export default function Home() {
       {diffViewerOpen && <DiffViewer />}
       <aside
         className={`fixed inset-y-0 right-0 z-40 w-full max-w-[420px] border-l border-neutral-800 bg-neutral-950/96 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out ${
-          analyticsOpen ? 'translate-x-0' : 'translate-x-full'
+          !layout.collapsed.stats ? 'translate-x-0' : 'translate-x-full'
         }`}
-        aria-hidden={!analyticsOpen}
+        aria-hidden={layout.collapsed.stats}
       >
         <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
           <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">Statistics</h2>
-          <PanelButton onClick={() => setAnalyticsOpen(false)} title="Close statistics panel">
+          <PanelButton onClick={() => toggleCollapse('stats')} title="Close statistics panel">
             <X className="h-4 w-4" />
           </PanelButton>
         </div>

@@ -242,6 +242,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         left: false,
         right: false,
         bottom: false,
+        stats: true,
+      },
+      order: {
+        leftRightSwapped: false,
       },
     };
 
