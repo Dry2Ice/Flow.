@@ -54,26 +54,33 @@
   --radius: 0.75rem;
 
   /* Palette remap so existing neutral/gray utility classes work in light mode */
-  --color-neutral-950: oklch(98.4% 0.004 247);
-  --color-neutral-900: oklch(96.8% 0.006 247);
-  --color-neutral-800: oklch(93.8% 0.012 251);
-  --color-neutral-700: oklch(88.1% 0.017 252);
-  --color-neutral-600: oklch(80.6% 0.019 252);
-  --color-neutral-500: oklch(63.5% 0.02 255);
-  --color-neutral-400: oklch(50.2% 0.021 257);
-  --color-neutral-300: oklch(38.6% 0.021 257);
-  --color-neutral-200: oklch(28.7% 0.019 257);
-  --color-neutral-100: oklch(20.8% 0.014 257);
+  --color-neutral-50: hsl(210 40% 98%);
+  --color-neutral-100: hsl(210 40% 96%);
+  --color-neutral-200: hsl(210 40% 90%);
+  --color-neutral-300: hsl(210 40% 85%);
+  --color-neutral-400: hsl(210 40% 75%);
+  --color-neutral-500: hsl(210 40% 65%);
+  --color-neutral-600: hsl(210 40% 55%);
+  --color-neutral-700: hsl(210 40% 45%);
+  --color-neutral-800: hsl(210 40% 35%);
+  --color-neutral-900: hsl(210 40% 25%);
+  --color-neutral-950: hsl(210 40% 15%);
 
-  --color-gray-900: oklch(96.8% 0.006 247);
-  --color-gray-800: oklch(93.8% 0.012 251);
-  --color-gray-700: oklch(88.1% 0.017 252);
-  --color-gray-600: oklch(80.6% 0.019 252);
-  --color-gray-500: oklch(63.5% 0.02 255);
-  --color-gray-400: oklch(50.2% 0.021 257);
-  --color-gray-300: oklch(38.6% 0.021 257);
-  --color-gray-200: oklch(28.7% 0.019 257);
-  --color-gray-100: oklch(20.8% 0.014 257);
+  --color-gray-50: hsl(210 40% 98%);
+  --color-gray-100: hsl(210 40% 96%);
+  --color-gray-200: hsl(210 40% 90%);
+  --color-gray-300: hsl(210 40% 85%);
+  --color-gray-400: hsl(210 40% 75%);
+  --color-gray-500: hsl(210 40% 65%);
+  --color-gray-600: hsl(210 40% 55%);
+  --color-gray-700: hsl(210 40% 45%);
+  --color-gray-800: hsl(210 40% 35%);
+  --color-gray-900: hsl(210 40% 25%);
+  --color-gray-950: hsl(210 40% 15%);
+
+  /* Panel styles for light theme */
+  --flow-panel: color-mix(in srgb, hsl(0 0% 100%) 95%, transparent);
+  --flow-panel-border: color-mix(in srgb, hsl(214 27% 84%) 60%, transparent);
 }
 
 .dark {
@@ -97,6 +104,31 @@
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
   --ring: var(--flow-secondary);
+
+  /* Palette remap for dark theme */
+  --color-neutral-50: hsl(222 84% 5%);
+  --color-neutral-100: hsl(222 84% 10%);
+  --color-neutral-200: hsl(222 84% 15%);
+  --color-neutral-300: hsl(222 84% 20%);
+  --color-neutral-400: hsl(222 84% 30%);
+  --color-neutral-500: hsl(222 84% 40%);
+  --color-neutral-600: hsl(222 84% 50%);
+  --color-neutral-700: hsl(222 84% 60%);
+  --color-neutral-800: hsl(222 84% 70%);
+  --color-neutral-900: hsl(222 84% 80%);
+  --color-neutral-950: hsl(222 84% 90%);
+
+  --color-gray-50: hsl(222 84% 5%);
+  --color-gray-100: hsl(222 84% 10%);
+  --color-gray-200: hsl(222 84% 15%);
+  --color-gray-300: hsl(222 84% 20%);
+  --color-gray-400: hsl(222 84% 30%);
+  --color-gray-500: hsl(222 84% 40%);
+  --color-gray-600: hsl(222 84% 50%);
+  --color-gray-700: hsl(222 84% 60%);
+  --color-gray-800: hsl(222 84% 70%);
+  --color-gray-900: hsl(222 84% 80%);
+  --color-gray-950: hsl(222 84% 90%);
 }
 
 * {
@@ -108,10 +140,20 @@ body {
   color: hsl(var(--foreground));
   transition: background-color var(--theme-transition-base) ease, color var(--theme-transition-base) ease;
   font-feature-settings: "ss01" on, "ss02" on;
+}
+
+.dark body {
   background-image:
     radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.16), transparent 42%),
     radial-gradient(circle at 92% 8%, rgba(124, 58, 237, 0.14), transparent 36%),
     linear-gradient(180deg, rgba(10, 14, 24, 0.86) 0%, rgba(8, 11, 18, 0.95) 100%);
+}
+
+.light body {
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08), transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.06), transparent 50%),
+    linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.98) 100%);
 }
 
 button,
@@ -141,8 +183,15 @@ summary,
   border-radius: 14px;
   border: 1px solid var(--flow-panel-border);
   background: linear-gradient(180deg, color-mix(in srgb, var(--flow-panel) 94%, transparent), color-mix(in srgb, var(--flow-panel) 82%, transparent));
-  box-shadow: 0 16px 44px -28px rgba(0, 0, 0, 0.75);
   overflow: hidden;
+}
+
+.dark .flow-panel {
+  box-shadow: 0 16px 44px -28px rgba(0, 0, 0, 0.75);
+}
+
+.light .flow-panel {
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.15);
 }
 
 .flow-panel-header {
