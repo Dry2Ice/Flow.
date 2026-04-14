@@ -168,6 +168,7 @@ export default function Home() {
   const [bottomTab, setBottomTab] = useState<BottomTab>('plan');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [apiConfigured, setApiConfigured] = useState(false);
 
 
   useEffect(() => {
@@ -190,6 +191,23 @@ export default function Home() {
 
     window.addEventListener('storage', handleStorageReset);
     return () => window.removeEventListener('storage', handleStorageReset);
+  }, []);
+
+  useEffect(() => {
+    const check = () => {
+      try {
+        const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
+        setApiConfigured(
+          typeof s.apiKey === 'string' && s.apiKey.trim().length > 0 &&
+          typeof s.baseUrl === 'string' && s.baseUrl.trim().length > 0
+        );
+      } catch {
+        setApiConfigured(false);
+      }
+    };
+    check();
+    window.addEventListener('settings-saved', check);
+    return () => window.removeEventListener('settings-saved', check);
   }, []);
 
   useEffect(() => {
@@ -229,8 +247,21 @@ export default function Home() {
               <BarChart3 className="h-4 w-4" />
             </TopControlButton>
           </div>
-          <div className="justify-self-end text-[11px] uppercase tracking-[0.16em] text-neutral-500">
-            Developer Studio
+          <div className="justify-self-end flex items-center gap-2">
+            <span
+              className={`h-2 w-2 rounded-full ${apiConfigured ? 'bg-emerald-400' : 'bg-amber-400'}`}
+            />
+            <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-500">
+              {apiConfigured ? 'AI Ready' : (
+                <button
+                  type="button"
+                  onClick={() => setSettingsModalOpen(true)}
+                  className="uppercase tracking-[0.16em] text-amber-500 hover:text-amber-400 transition"
+                >
+                  Configure API
+                </button>
+              )}
+            </span>
           </div>
         </div>
       </header>
