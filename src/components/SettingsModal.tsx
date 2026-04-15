@@ -235,29 +235,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   };
 
   const handleResetLayout = () => {
-    const DEFAULT_LAYOUT = {
-      top: [20, 52, 28],
-      vertical: [74, 26],
-      center: [62, 38],
-      collapsed: {
-        left: false,
-        right: false,
-        bottom: false,
-        stats: true,
-      },
-      order: {
-        leftRightSwapped: false,
-      },
-    };
-
-    localStorage.setItem('flow.ide-layout.v2', JSON.stringify(DEFAULT_LAYOUT));
-    // Force a page-level re-read by dispatching a storage event
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'flow.ide-layout.v2',
-      newValue: JSON.stringify(DEFAULT_LAYOUT),
-      storageArea: localStorage,
-    }));
-
+    localStorage.removeItem('flow.dockview-layout.v1');
+    window.dispatchEvent(new CustomEvent('reset-dock-layout'));
     setMessage('Workspace layout reset to default!');
     setTimeout(() => setMessage(''), 2000);
   };

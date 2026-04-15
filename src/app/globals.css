@@ -337,3 +337,35 @@ summary,
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+/* Dockview dark theme */
+.dark .dockview-theme-dark {
+  --dv-background-color: hsl(var(--background));
+  --dv-group-view-background-color: hsl(var(--card));
+  --dv-tabs-and-actions-container-background-color: hsl(222 40% 5%);
+  --dv-activegroup-visibletab-color: hsl(var(--foreground));
+  --dv-activegroup-hiddentab-color: hsl(var(--muted-foreground));
+  --dv-inactivegroup-visibletab-color: hsl(var(--muted-foreground));
+  --dv-tab-divider-color: hsl(var(--border));
+  --dv-drag-over-background-color: hsl(var(--primary) / 0.15);
+  --dv-drag-over-border-color: hsl(var(--primary));
+  --dv-separator-border: hsl(var(--border));
+  --dv-paneview-header-border-color: hsl(var(--border));
+  --dv-overlay-z-index: 999;
+  --dv-floating-box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+}
+
+/* Dockview light theme */
+.light .dockview-theme-dark {
+  --dv-background-color: hsl(var(--background));
+  --dv-group-view-background-color: hsl(var(--card));
+  --dv-tabs-and-actions-container-background-color: hsl(210 30% 96%);
+  --dv-activegroup-visibletab-color: hsl(var(--foreground));
+  --dv-activegroup-hiddentab-color: hsl(var(--muted-foreground));
+  --dv-inactivegroup-visibletab-color: hsl(var(--muted-foreground));
+  --dv-tab-divider-color: hsl(var(--border));
+  --dv-drag-over-background-color: hsl(var(--primary) / 0.10);
+  --dv-drag-over-border-color: hsl(var(--primary));
+  --dv-separator-border: hsl(var(--border));
+  --dv-floating-box-shadow: 0 8px 24px -6px rgba(0,0,0,0.15);
+}
