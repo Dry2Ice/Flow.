@@ -137,33 +137,33 @@ const LAYOUT_KEY = 'flow.dockview-layout.v1';
 const DEFAULT_LAYOUT = {
   grid: {
     root: {
-      type: 'branch',
-      orientation: 'VERTICAL',
+      type: 'branch' as const,
+      orientation: 'VERTICAL' as const,
       data: [
         {
-          type: 'branch',
-          orientation: 'HORIZONTAL',
+          type: 'branch' as const,
+          orientation: 'HORIZONTAL' as const,
           size: 70,
           data: [
             { 
-              type: 'leaf', 
+              type: 'leaf' as const, 
               data: { views: ['files', 'projects'] }, 
               id: 'left-group', 
               size: 20 
             },
             {
-              type: 'branch',
-              orientation: 'HORIZONTAL',
+              type: 'branch' as const,
+              orientation: 'HORIZONTAL' as const,
               id: 'center-branch',
               data: [
                 { 
-                  type: 'leaf', 
+                  type: 'leaf' as const, 
                   data: { views: ['editor'] }, 
                   id: 'editor-group', 
                   size: 50 
                 },
                 { 
-                  type: 'leaf', 
+                  type: 'leaf' as const, 
                   data: { views: ['preview'] }, 
                   id: 'preview-group', 
                   size: 50 
@@ -171,7 +171,7 @@ const DEFAULT_LAYOUT = {
               ],
             },
             { 
-              type: 'leaf', 
+              type: 'leaf' as const, 
               data: { views: ['chat', 'logs'] }, 
               id: 'right-group', 
               size: 25 
@@ -179,7 +179,7 @@ const DEFAULT_LAYOUT = {
           ],
         },
         { 
-          type: 'leaf', 
+          type: 'leaf' as const, 
           data: { views: ['plan'] }, 
           id: 'bottom-group', 
           size: 30 
@@ -189,7 +189,7 @@ const DEFAULT_LAYOUT = {
     },
     width: 100,
     height: 100,
-    orientation: 'VERTICAL',
+    orientation: 'VERTICAL' as const,
   },
   panels: {
     files: {
