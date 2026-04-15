@@ -66,15 +66,15 @@ const DEFAULT_LAYOUT = {
     height: 100,
     orientation: 'VERTICAL',
   },
-  panels: [
-    { id: 'files', title: '📁 Files', component: 'files' },
-    { id: 'projects', title: '🗂 Projects', component: 'projects' },
-    { id: 'editor', title: '✏️ Editor', component: 'editor' },
-    { id: 'preview', title: '👁 Preview', component: 'preview' },
-    { id: 'chat', title: '💬 AI Chat', component: 'chat' },
-    { id: 'logs', title: '📋 Logs', component: 'logs' },
-    { id: 'plan', title: '🎯 Dev Plan', component: 'plan' },
-  ],
+  panels: {
+    files: { id: 'files', title: '📁 Files', component: 'files' },
+    projects: { id: 'projects', title: '🗂 Projects', component: 'projects' },
+    editor: { id: 'editor', title: '✏️ Editor', component: 'editor' },
+    preview: { id: 'preview', title: '👁 Preview', component: 'preview' },
+    chat: { id: 'chat', title: '💬 AI Chat', component: 'chat' },
+    logs: { id: 'logs', title: '📋 Logs', component: 'logs' },
+    plan: { id: 'plan', title: '🎯 Dev Plan', component: 'plan' },
+  },
   activeGroup: 'editor',
 };
 
