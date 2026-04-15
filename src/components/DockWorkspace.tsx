@@ -145,19 +145,45 @@ const DEFAULT_LAYOUT = {
           orientation: 'HORIZONTAL',
           size: 70,
           data: [
-            { type: 'leaf', data: { views: ['files', 'projects'] }, id: 'left', size: 20 },
+            { 
+              type: 'leaf', 
+              data: { views: ['files', 'projects'] }, 
+              id: 'left-group', 
+              size: 20 
+            },
             {
               type: 'branch',
               orientation: 'HORIZONTAL',
+              id: 'center-branch',
               data: [
-                { type: 'leaf', data: { views: ['editor'] }, id: 'editor', size: 50 },
-                { type: 'leaf', data: { views: ['preview'] }, id: 'preview', size: 50 },
+                { 
+                  type: 'leaf', 
+                  data: { views: ['editor'] }, 
+                  id: 'editor-group', 
+                  size: 50 
+                },
+                { 
+                  type: 'leaf', 
+                  data: { views: ['preview'] }, 
+                  id: 'preview-group', 
+                  size: 50 
+                },
               ],
             },
-            { type: 'leaf', data: { views: ['chat', 'logs'] }, id: 'right', size: 25 },
+            { 
+              type: 'leaf', 
+              data: { views: ['chat', 'logs'] }, 
+              id: 'right-group', 
+              size: 25 
+            },
           ],
         },
-        { type: 'leaf', data: { views: ['plan'] }, id: 'bottom', size: 30 },
+        { 
+          type: 'leaf', 
+          data: { views: ['plan'] }, 
+          id: 'bottom-group', 
+          size: 30 
+        },
       ],
       id: 'root',
     },
@@ -209,7 +235,7 @@ const DEFAULT_LAYOUT = {
       ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel
     },
   },
-  activeGroup: 'editor',
+  activeGroup: 'editor-group',
 };
 
 interface DockWorkspaceProps {
