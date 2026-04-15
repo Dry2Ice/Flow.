@@ -8,6 +8,8 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance
+- [x] Add debounced layout persistence: save dockview layout to localStorage 500ms after last change, show 'Layout saved' indicator with animation
 - [x] Replace Allotment with dockview: draggable/dockable panels, floating windows, tabbed groups, full layout serialization and restore from localStorage, Reset Layout integration
 - [x] Fix Tailwind v4 dark/light theme switching: added `@theme` block mapping neutral colors to `--tw-neutral-*` CSS variables, replaced `--color-neutral-*` with `--tw-neutral-*` in `.light`/`.dark` blocks, removed dead neutral/gray overrides from tailwind.config.ts
 - [x] Configure client-side Nvidia NIM service singleton directly after settings save and on app mount to ensure AI execution works immediately
@@ -208,6 +210,8 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-15 | Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance |
+| 2026-04-15 | Add debounced layout persistence: save dockview layout to localStorage 500ms after last change, show 'Layout saved' indicator with animation |
 | 2026-04-15 | Fixed dockview activeGroup validation error: changed activeGroup from 'center' branch id to 'editor' leaf id to satisfy dockview group id requirements |
 | 2026-04-15 | Fixed ThemeToggle hydration mismatch: prevent SSR/CSR content differences by delaying render until client-mounted with loading skeleton |
 | 2026-04-15 | Replaced Allotment with dockview: draggable/dockable panels, floating groups, tabbed views, full layout JSON serialization to localStorage, Reset Layout button integration |
