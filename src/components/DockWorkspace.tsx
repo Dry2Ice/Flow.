@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, lazy, Suspense } from 'react';
 import {
   DockviewReact,
   DockviewReadyEvent,
   IDockviewPanelProps,
   DockviewApi,
 } from 'dockview';
-import { CodeEditor } from '@/components/CodeEditor';
-import { CodePreview } from '@/components/CodePreview';
 import { FileBrowser } from '@/components/FileBrowser';
 import { ProjectManager } from '@/components/ProjectManager';
 import { AIChat } from '@/components/AIChat';
@@ -17,12 +15,34 @@ import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 
-// Map panel id → component
+// Lazy load heavy components
+const CodeEditor = lazy(() => import('@/components/CodeEditor').then(module => ({ default: module.CodeEditor })));
+const CodePreview = lazy(() => import('@/components/CodePreview').then(module => ({ default: module.CodePreview })));
+
+// Loading skeleton for lazy components
+const ComponentSkeleton = ({ title }: { title: string }) => (
+  <div className="h-full flex items-center justify-center p-8">
+    <div className="text-center">
+      <div className="w-12 h-12 border-4 border-neutral-600 border-t-neutral-400 rounded-full animate-spin mx-auto mb-4" />
+      <p className="text-sm text-neutral-400">Loading {title}...</p>
+    </div>
+  </div>
+);
+
+// Map panel id → component with lazy loading
 const components: Record<string, React.FC<IDockviewPanelProps>> = {
   files: () => <FileBrowser />,
   projects: () => <ProjectManager />,
-  editor: () => <CodeEditor />,
-  preview: () => <CodePreview />,
+  editor: () => (
+    <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
+      <CodeEditor />
+    </Suspense>
+  ),
+  preview: () => (
+    <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
+      <CodePreview />
+    </Suspense>
+  ),
   chat: () => (
     <div className="flex h-full flex-col">
       <AIErrorBoundary sessionId="chat-ai">
