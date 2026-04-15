@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import {
   DockviewReact,
   DockviewReadyEvent,
@@ -91,15 +91,29 @@ interface DockWorkspaceProps {
 
 export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const apiRef = useRef<DockviewApi | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [layoutSaved, setLayoutSaved] = useState(false);
 
+  // Debounced layout save (500ms delay)
   const saveLayout = useCallback(() => {
     if (!apiRef.current) return;
-    try {
-      const layout = apiRef.current.toJSON();
-      localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
-    } catch {
-      // ignore
+
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(() => {
+      try {
+        const layout = apiRef.current!.toJSON();
+        localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+        setLayoutSaved(true);
+        setTimeout(() => setLayoutSaved(false), 2000); // Hide indicator after 2s
+      } catch {
+        // ignore save errors
+      }
+    }, 500);
   }, []);
 
   const loadLayout = useCallback((api: DockviewApi) => {
@@ -121,6 +135,15 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     apiRef.current.fromJSON(DEFAULT_LAYOUT as any);
   }, []);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     onResetLayout?.(resetLayout);
   }, [resetLayout, onResetLayout]);
@@ -132,11 +155,22 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   }, [loadLayout, saveLayout]);
 
   return (
-    <DockviewReact
-      className="dockview-theme-dark h-full w-full"
-      components={components}
-      onReady={onReady}
-      singleTabMode="fullwidth"
-    />
+    <div className="relative h-full w-full">
+      <DockviewReact
+        className="dockview-theme-dark h-full w-full"
+        components={components}
+        onReady={onReady}
+        singleTabMode="fullwidth"
+      />
+
+      {/* Layout saved indicator */}
+      {layoutSaved && (
+        <div className="absolute top-4 right-4 z-50 animate-fade-in">
+          <div className="bg-green-600/90 text-green-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm">
+            Layout saved
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
