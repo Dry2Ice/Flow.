@@ -219,22 +219,55 @@ export default function Home() {
     return () => window.removeEventListener('storage', handleStorageReset);
   }, []);
 
-  useEffect(() => {
-    const check = () => {
-      try {
-        const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
-        setApiConfigured(
-          typeof s.apiKey === 'string' && s.apiKey.trim().length > 0 &&
-          typeof s.baseUrl === 'string' && s.baseUrl.trim().length > 0
-        );
-      } catch {
-        setApiConfigured(false);
-      }
-    };
-    check();
-    window.addEventListener('settings-saved', check);
-    return () => window.removeEventListener('settings-saved', check);
-  }, []);
+   useEffect(() => {
+     const check = () => {
+       try {
+         const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
+         setApiConfigured(
+           typeof s.apiKey === 'string' && s.apiKey.trim().length > 0 &&
+           typeof s.baseUrl === 'string' && s.baseUrl.trim().length > 0
+         );
+       } catch {
+         setApiConfigured(false);
+       }
+     };
+     check();
+     window.addEventListener('settings-saved', check);
+     return () => window.removeEventListener('settings-saved', check);
+   }, []);
+
+   // Auto-initialize NIM config from saved localStorage settings
+   useEffect(() => {
+     const initNimConfig = async () => {
+       try {
+         const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
+         if (s.apiKey && s.baseUrl && s.model) {
+           const payload: any = {
+             apiKey: s.apiKey,
+             baseUrl: s.baseUrl,
+             model: s.model,
+           };
+           // Include optional params if present
+           if (s.temperature !== undefined) payload.temperature = s.temperature;
+           if (s.topP !== undefined) payload.topP = s.topP;
+           if (s.topK !== undefined) payload.topK = s.topK;
+           if (s.maxTokens !== undefined) payload.maxTokens = s.maxTokens;
+           if (s.contextTokens !== undefined) payload.contextTokens = s.contextTokens;
+           if (s.presencePenalty !== undefined) payload.presencePenalty = s.presencePenalty;
+           if (s.frequencyPenalty !== undefined) payload.frequencyPenalty = s.frequencyPenalty;
+           if (s.stopSequences && Array.isArray(s.stopSequences)) payload.stopSequences = s.stopSequences;
+           await fetch('/api/nim/config', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(payload),
+           });
+         }
+       } catch (error) {
+         console.error('Failed to initialize NIM config:', error);
+       }
+     };
+     initNimConfig();
+   }, []);
 
   useEffect(() => {
     if (projects.length === 0) {
