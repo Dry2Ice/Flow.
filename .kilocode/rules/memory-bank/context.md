@@ -8,6 +8,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Configure client-side Nvidia NIM service singleton directly after settings save and on app mount to ensure AI execution works immediately
 - [x] Auto-initialize NVIDIA NIM config from localStorage on app startup to prevent "configuration not set" errors during AI execution
 - [x] Base Next.js 16 setup with App Router
 - [x] TypeScript configuration with strict mode
@@ -120,7 +121,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 - [x] CORS исправление: API маршруты для NVIDIA NIM (/api/nim/models, /api/nim/probe, /api/nim/config)
 - [x] Layout система: Сброс workspace layout с правильным форматом данных
 - [x] Статистика токенов: Разделение на Context Tokens (оценка размера запроса) и Session Tokens (общее потребление)
-- [x] Панель ошибок: Кнопки Check/Fix с интеграцией ИИ для анализа и исправления багов
+- [x] Панель ошибок: Кнопки Check/Fix с интеграцией ИИ для анализа и исправление багов
 - [x] Индикатор API: Статус подключения в заголовке с автоматическим обновлением
 - [x] Демо-проект: Автоматическое создание при первом запуске с приветственным сообщением
 - [x] Центральная панель: Переключение между режимами Edit (с кнопками Save/Reset) и Preview (с кнопкой Refresh)
@@ -204,6 +205,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-15 | Fixed client-side NIM service configuration: now calls `nvidiaNimService.setConfig()` directly in SettingsModal after save and on app mount from localStorage, ensuring AI execution has config immediately. |
 | 2026-04-15 | Auto-initialize NIM config on mount: POST saved settings from localStorage to `/api/nim/config` to ensure server-side singleton is configured before AI execution, preventing "Nvidia NIM configuration not set" errors. |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
