@@ -113,10 +113,14 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const apiRef = useRef<DockviewApi | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [layoutSaved, setLayoutSaved] = useState(false);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
 
   // Debounced layout save (500ms delay)
   const saveLayout = useCallback(() => {
     if (!apiRef.current) return;
+
+    // Set unsaved changes flag immediately
+    setUnsavedChanges(true);
 
     // Clear previous timeout
     if (saveTimeoutRef.current) {
@@ -129,6 +133,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         const layout = apiRef.current!.toJSON();
         localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
         setLayoutSaved(true);
+        setUnsavedChanges(false);
         setTimeout(() => setLayoutSaved(false), 2000); // Hide indicator after 2s
       } catch {
         // ignore save errors
@@ -155,14 +160,23 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     apiRef.current.fromJSON(DEFAULT_LAYOUT as any);
   }, []);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeout on unmount and save immediately
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
+      // Save immediately on unmount if there are unsaved changes
+      if (saveTimeoutRef.current && unsavedChanges && apiRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        try {
+          const layout = apiRef.current.toJSON();
+          localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+        } catch {
+          // ignore save errors on unmount
+        }
+      } else if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, []);
+  }, [unsavedChanges]);
 
   useEffect(() => {
     onResetLayout?.(resetLayout);
@@ -183,11 +197,20 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         singleTabMode="fullwidth"
       />
 
-      {/* Layout saved indicator */}
+      {/* Layout indicators */}
       {layoutSaved && (
         <div className="absolute top-4 right-4 z-50 animate-fade-in">
           <div className="bg-green-600/90 text-green-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm">
             Layout saved
+          </div>
+        </div>
+      )}
+
+      {unsavedChanges && !layoutSaved && (
+        <div className="absolute top-4 right-4 z-50">
+          <div className="bg-amber-600/90 text-amber-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2">
+            <div className="w-2 h-2 bg-amber-300 rounded-full animate-pulse" />
+            Saving layout...
           </div>
         </div>
       )}
