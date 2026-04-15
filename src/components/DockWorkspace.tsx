@@ -75,7 +75,7 @@ const DEFAULT_LAYOUT = {
     { id: 'logs', title: '📋 Logs', component: 'logs' },
     { id: 'plan', title: '🎯 Dev Plan', component: 'plan' },
   ],
-  activeGroup: 'center',
+  activeGroup: 'editor',
 };
 
 interface DockWorkspaceProps {

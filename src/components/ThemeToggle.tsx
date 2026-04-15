@@ -13,7 +13,9 @@ export function ThemeToggle() {
     // Read theme preference and mark as hydrated
     const saved = localStorage.getItem('flow-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDark(saved ? saved === 'dark' : prefersDark);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHydrated(true);
   }, []);
 
