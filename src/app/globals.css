@@ -2,6 +2,35 @@
 @variant dark (&:where(.dark, .dark *));
 @variant light (&:where(.light, .light *));
 
+@theme {
+  /* Neutral scale — maps Tailwind neutral-* to CSS vars overridden by .light/.dark */
+  --color-neutral-50:  var(--tw-neutral-50,  oklch(98.4% 0.003 247));
+  --color-neutral-100: var(--tw-neutral-100, oklch(96.8% 0.005 247));
+  --color-neutral-200: var(--tw-neutral-200, oklch(93.8% 0.010 251));
+  --color-neutral-300: var(--tw-neutral-300, oklch(88.1% 0.015 252));
+  --color-neutral-400: var(--tw-neutral-400, oklch(80.6% 0.017 252));
+  --color-neutral-500: var(--tw-neutral-500, oklch(63.5% 0.018 255));
+  --color-neutral-600: var(--tw-neutral-600, oklch(50.2% 0.019 257));
+  --color-neutral-700: var(--tw-neutral-700, oklch(38.6% 0.019 257));
+  --color-neutral-800: var(--tw-neutral-800, oklch(28.7% 0.017 257));
+  --color-neutral-900: var(--tw-neutral-900, oklch(20.8% 0.013 257));
+  --color-neutral-950: var(--tw-neutral-950, oklch(14.5% 0.009 257));
+
+  /* Semantic colors — consumed by bg-background, text-foreground, etc. */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card:       hsl(var(--card));
+  --color-border:     hsl(var(--border));
+  --color-input:      hsl(var(--input));
+  --color-ring:       hsl(var(--ring));
+  --color-muted:      hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent:     hsl(var(--accent));
+  --color-primary:    hsl(var(--primary));
+  --color-secondary:  hsl(var(--secondary));
+  --color-destructive: hsl(var(--destructive));
+}
+
 :root {
   /* Brand tokens */
   --flow-primary: 262 83% 58%;
@@ -52,32 +81,32 @@
   --border: 214 32% 91%; /* Light borders */
   --input: 214 32% 91%;
   --ring: var(--flow-primary);
-  --radius: 0.75rem;
+   --radius: 0.75rem;
 
-  /* High-contrast neutral palette for light theme */
-  --color-neutral-50: hsl(210 20% 98%);
-  --color-neutral-100: hsl(210 15% 95%);
-  --color-neutral-200: hsl(210 10% 89%);
-  --color-neutral-300: hsl(210 8% 83%);
-  --color-neutral-400: hsl(210 6% 69%);
-  --color-neutral-500: hsl(210 4% 58%);
-  --color-neutral-600: hsl(210 6% 46%);
-  --color-neutral-700: hsl(210 8% 37%);
-  --color-neutral-800: hsl(210 10% 29%);
-  --color-neutral-900: hsl(210 15% 21%);
-  --color-neutral-950: hsl(210 20% 13%);
+   /* High-contrast neutral palette for light theme */
+   --tw-neutral-50:  hsl(210 20% 98%);
+   --tw-neutral-100: hsl(210 15% 95%);
+   --tw-neutral-200: hsl(210 10% 89%);
+   --tw-neutral-300: hsl(210 8% 83%);
+   --tw-neutral-400: hsl(210 6% 69%);
+   --tw-neutral-500: hsl(210 4% 58%);
+   --tw-neutral-600: hsl(210 6% 46%);
+   --tw-neutral-700: hsl(210 8% 37%);
+   --tw-neutral-800: hsl(210 10% 29%);
+   --tw-neutral-900: hsl(210 15% 21%);
+   --tw-neutral-950: hsl(210 20% 13%);
 
-  --color-gray-50: hsl(210 20% 98%);
-  --color-gray-100: hsl(210 15% 95%);
-  --color-gray-200: hsl(210 10% 89%);
-  --color-gray-300: hsl(210 8% 83%);
-  --color-gray-400: hsl(210 6% 69%);
-  --color-gray-500: hsl(210 4% 58%);
-  --color-gray-600: hsl(210 6% 46%);
-  --color-gray-700: hsl(210 8% 37%);
-  --color-gray-800: hsl(210 10% 29%);
-  --color-gray-900: hsl(210 15% 21%);
-  --color-gray-950: hsl(210 20% 13%);
+   --color-gray-50: hsl(210 20% 98%);
+   --color-gray-100: hsl(210 15% 95%);
+   --color-gray-200: hsl(210 10% 89%);
+   --color-gray-300: hsl(210 8% 83%);
+   --color-gray-400: hsl(210 6% 69%);
+   --color-gray-500: hsl(210 4% 58%);
+   --color-gray-600: hsl(210 6% 46%);
+   --color-gray-700: hsl(210 8% 37%);
+   --color-gray-800: hsl(210 10% 29%);
+   --color-gray-900: hsl(210 15% 21%);
+   --color-gray-950: hsl(210 20% 13%);
 
   /* Light theme panel styles - clean and minimal */
   --flow-panel: color-mix(in srgb, hsl(0 0% 100%) 98%, transparent);
@@ -105,32 +134,32 @@
   --destructive-foreground: 210 40% 98%;
   --border: 217 33% 12%; /* Subtle dark borders */
   --input: 217 33% 8%;
-  --ring: var(--flow-primary);
+   --ring: var(--flow-primary);
 
-  /* High-contrast dark neutral palette */
-  --color-neutral-50: hsl(222 84% 3%);
-  --color-neutral-100: hsl(222 84% 6%);
-  --color-neutral-200: hsl(222 84% 9%);
-  --color-neutral-300: hsl(222 84% 13%);
-  --color-neutral-400: hsl(222 84% 20%);
-  --color-neutral-500: hsl(222 84% 30%);
-  --color-neutral-600: hsl(222 84% 45%);
-  --color-neutral-700: hsl(222 84% 60%);
-  --color-neutral-800: hsl(222 84% 75%);
-  --color-neutral-900: hsl(222 84% 85%);
-  --color-neutral-950: hsl(222 84% 95%);
+   /* High-contrast dark neutral palette */
+   --tw-neutral-50:  hsl(222 15% 96%);
+   --tw-neutral-100: hsl(222 15% 90%);
+   --tw-neutral-200: hsl(222 12% 78%);
+   --tw-neutral-300: hsl(222 10% 65%);
+   --tw-neutral-400: hsl(222 8% 50%);
+   --tw-neutral-500: hsl(222 8% 38%);
+   --tw-neutral-600: hsl(222 10% 27%);
+   --tw-neutral-700: hsl(222 14% 18%);
+   --tw-neutral-800: hsl(222 20% 12%);
+   --tw-neutral-900: hsl(222 30% 7%);
+   --tw-neutral-950: hsl(222 40% 4%);
 
-  --color-gray-50: hsl(222 84% 3%);
-  --color-gray-100: hsl(222 84% 6%);
-  --color-gray-200: hsl(222 84% 9%);
-  --color-gray-300: hsl(222 84% 13%);
-  --color-gray-400: hsl(222 84% 20%);
-  --color-gray-500: hsl(222 84% 30%);
-  --color-gray-600: hsl(222 84% 45%);
-  --color-gray-700: hsl(222 84% 60%);
-  --color-gray-800: hsl(222 84% 75%);
-  --color-gray-900: hsl(222 84% 85%);
-  --color-gray-950: hsl(222 84% 95%);
+   --color-gray-50: hsl(222 15% 96%);
+   --color-gray-100: hsl(222 15% 90%);
+   --color-gray-200: hsl(222 12% 78%);
+   --color-gray-300: hsl(222 10% 65%);
+   --color-gray-400: hsl(222 8% 50%);
+   --color-gray-500: hsl(222 8% 38%);
+   --color-gray-600: hsl(222 10% 27%);
+   --color-gray-700: hsl(222 14% 18%);
+   --color-gray-800: hsl(222 20% 12%);
+   --color-gray-900: hsl(222 30% 7%);
+   --color-gray-950: hsl(222 40% 4%);
 }
 
 * {
