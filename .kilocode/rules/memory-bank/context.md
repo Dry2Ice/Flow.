@@ -208,6 +208,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-15 | Fixed dockview activeGroup validation error: changed activeGroup from 'center' branch id to 'editor' leaf id to satisfy dockview group id requirements |
 | 2026-04-15 | Fixed ThemeToggle hydration mismatch: prevent SSR/CSR content differences by delaying render until client-mounted with loading skeleton |
 | 2026-04-15 | Replaced Allotment with dockview: draggable/dockable panels, floating groups, tabbed views, full layout JSON serialization to localStorage, Reset Layout button integration |
 | 2026-04-15 | Fixed Tailwind v4 dark/light theme switching: added `@theme` directive mapping neutral scale to `--tw-neutral-*` CSS variables, swapped `--color-neutral-*` to `--tw-neutral-*` in theme blocks, and removed inert neutral/gray config overrides from tailwind.config.ts |
