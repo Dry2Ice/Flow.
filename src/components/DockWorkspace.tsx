@@ -15,6 +15,7 @@ import { AIChat } from '@/components/AIChat';
 import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
+import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 
 // Map panel id → component
 const components: Record<string, React.FC<IDockviewPanelProps>> = {
@@ -24,12 +25,18 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
   preview: () => <CodePreview />,
   chat: () => (
     <div className="flex h-full flex-col">
-      <AIChat />
+      <AIErrorBoundary sessionId="chat-ai">
+        <AIChat />
+      </AIErrorBoundary>
       <PromptInput />
     </div>
   ),
   logs: () => <SystemLogsPanel />,
-  plan: () => <DevelopmentPlan />,
+  plan: () => (
+    <AIErrorBoundary sessionId="plan-ai">
+      <DevelopmentPlan />
+    </AIErrorBoundary>
+  ),
 };
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
