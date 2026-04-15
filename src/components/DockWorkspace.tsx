@@ -41,38 +41,40 @@ const DEFAULT_LAYOUT = {
       data: [
         {
           type: 'branch',
-          data: [
-            { type: 'leaf', data: { views: ['files'] }, id: 'left', size: 20 },
-            {
-              type: 'branch',
-              data: [
-                { type: 'leaf', data: { views: ['editor', 'preview'] }, id: 'center', size: 60 },
-              ],
-              size: 55,
-            },
-            { type: 'leaf', data: { views: ['chat'] }, id: 'right', size: 25 },
-          ],
+          orientation: 'HORIZONTAL',
           id: 'top',
           size: 70,
+          data: [
+            { type: 'leaf', data: { views: ['files', 'projects'] }, id: 'left', size: 20 },
+            {
+              type: 'branch',
+              orientation: 'HORIZONTAL',
+              id: 'center',
+              data: [
+                { type: 'leaf', data: { views: ['editor'] }, id: 'editor', size: 50 },
+                { type: 'leaf', data: { views: ['preview'] }, id: 'preview', size: 50 },
+              ],
+            },
+            { type: 'leaf', data: { views: ['chat', 'logs'] }, id: 'right', size: 25 },
+          ],
         },
         { type: 'leaf', data: { views: ['plan'] }, id: 'bottom', size: 30 },
       ],
       id: 'root',
-      size: 100,
     },
     width: 100,
     height: 100,
     orientation: 'VERTICAL',
   },
-  panels: {
-    files: { id: 'files', title: '📁 Files', component: 'files' },
-    projects: { id: 'projects', title: '🗂 Projects', component: 'projects' },
-    editor: { id: 'editor', title: '✏️ Editor', component: 'editor' },
-    preview: { id: 'preview', title: '👁 Preview', component: 'preview' },
-    chat: { id: 'chat', title: '💬 AI Chat', component: 'chat' },
-    logs: { id: 'logs', title: '📋 Logs', component: 'logs' },
-    plan: { id: 'plan', title: '🎯 Dev Plan', component: 'plan' },
-  },
+  panels: [
+    { id: 'files', title: '📁 Files', component: 'files' },
+    { id: 'projects', title: '🗂 Projects', component: 'projects' },
+    { id: 'editor', title: '✏️ Editor', component: 'editor' },
+    { id: 'preview', title: '👁 Preview', component: 'preview' },
+    { id: 'chat', title: '💬 AI Chat', component: 'chat' },
+    { id: 'logs', title: '📋 Logs', component: 'logs' },
+    { id: 'plan', title: '🎯 Dev Plan', component: 'plan' },
+  ],
   activeGroup: 'center',
 };
 
