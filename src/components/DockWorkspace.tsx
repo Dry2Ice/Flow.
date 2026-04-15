@@ -16,8 +16,16 @@ import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 
 // Lazy load heavy components
-const CodeEditor = lazy(() => import('@/components/CodeEditor').then(module => ({ default: module.CodeEditor })));
-const CodePreview = lazy(() => import('@/components/CodePreview').then(module => ({ default: module.CodePreview })));
+const CodeEditor = lazy(() =>
+  import('@/components/CodeEditor').then((module) => ({
+    default: module.CodeEditor,
+  }))
+);
+const CodePreview = lazy(() =>
+  import('@/components/CodePreview').then((module) => ({
+    default: module.CodePreview,
+  }))
+);
 
 // Loading skeleton for lazy components
 const ComponentSkeleton = ({ title }: { title: string }) => (
@@ -41,38 +49,38 @@ const PANEL_ACCESSIBILITY = {
   files: {
     title: '📁 Files',
     ariaLabel: 'File browser panel - view and manage project files',
-    description: 'Browse, open, and manage files in your project'
+    description: 'Browse, open, and manage files in your project',
   },
   projects: {
     title: '🗂 Projects',
     ariaLabel: 'Project manager panel - create and switch between projects',
-    description: 'Create new projects and switch between existing ones'
+    description: 'Create new projects and switch between existing ones',
   },
   editor: {
     title: '✏️ Editor',
     ariaLabel: 'Code editor panel - write and edit source code',
-    description: 'Monaco editor for writing and editing code files'
+    description: 'Monaco editor for writing and editing code files',
   },
   preview: {
     title: '👁 Preview',
     ariaLabel: 'Code preview panel - view rendered output',
-    description: 'Live preview of HTML, CSS, and JavaScript code'
+    description: 'Live preview of HTML, CSS, and JavaScript code',
   },
   chat: {
     title: '💬 AI Chat',
     ariaLabel: 'AI chat panel - interact with AI assistant',
-    description: 'Chat interface for AI-powered code assistance'
+    description: 'Chat interface for AI-powered code assistance',
   },
   logs: {
     title: '📋 Logs',
     ariaLabel: 'System logs panel - view application logs and errors',
-    description: 'View system logs, AI responses, and error messages'
+    description: 'View system logs, AI responses, and error messages',
   },
   plan: {
     title: '🎯 Dev Plan',
     ariaLabel: 'Development plan panel - track tasks and progress',
-    description: 'Manage development tasks, track progress, and handle bugs'
-  }
+    description: 'Manage development tasks, track progress, and handle bugs',
+  },
 };
 
 // Enhanced component wrapper with accessibility
@@ -80,7 +88,8 @@ const createAccessibleComponent = (
   Component: React.ReactNode,
   panelId: string
 ) => {
-  const config = PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY];
+  const config =
+    PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY];
   return (
     <div
       role="tabpanel"
@@ -98,65 +107,95 @@ const createAccessibleComponent = (
   );
 };
 
-// Map panel id → component with lazy loading and accessibility
+// Map panel id to component with lazy loading and accessibility
 const components: Record<string, React.FC<IDockviewPanelProps>> = {
-  files: () => createAccessibleComponent(<FileBrowser />, 'files'),
-  projects: () => createAccessibleComponent(<ProjectManager />, 'projects'),
-  editor: () => createAccessibleComponent(
-    <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
-      <CodeEditor />
-    </Suspense>,
-    'editor'
-  ),
-  preview: () => createAccessibleComponent(
-    <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
-      <CodePreview />
-    </Suspense>,
-    'preview'
-  ),
-  chat: () => createAccessibleComponent(
-    <div className="flex h-full flex-col">
-      <AIErrorBoundary sessionId="chat-ai">
-        <AIChat />
-      </AIErrorBoundary>
-      <PromptInput />
-    </div>,
-    'chat'
-  ),
-  logs: () => createAccessibleComponent(<SystemLogsPanel />, 'logs'),
-  plan: () => createAccessibleComponent(
-    <AIErrorBoundary sessionId="plan-ai">
-      <DevelopmentPlan />
-    </AIErrorBoundary>,
-    'plan'
-  ),
+  files: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(<FileBrowser />, 'files'),
+  projects: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(<ProjectManager />, 'projects'),
+  editor: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(
+      <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
+        <CodeEditor />
+      </Suspense>,
+      'editor'
+    ),
+  preview: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(
+      <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
+        <CodePreview />
+      </Suspense>,
+      'preview'
+    ),
+  chat: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(
+      <div className="flex h-full flex-col">
+        <AIErrorBoundary sessionId="chat-ai">
+          <AIChat />
+        </AIErrorBoundary>
+        <PromptInput />
+      </div>,
+      'chat'
+    ),
+  logs: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(<SystemLogsPanel />, 'logs'),
+  plan: (props: IDockviewPanelProps) =>
+    createAccessibleComponent(
+      <AIErrorBoundary sessionId="plan-ai">
+        <DevelopmentPlan />
+      </AIErrorBoundary>,
+      'plan'
+    ),
 };
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
 
-// Type definitions for dockview layout structure
-interface DockviewLayout {
-  grid: {
-    root: GridNode;
-  };
-  panels: Record<string, { id: string; title: string; component: string; ariaLabel?: string }>;
-  activeGroup?: string;
+// ---------------------------------------------------------------------------
+// TypeScript: strict types matching dockview's SerializedDockview schema
+// ---------------------------------------------------------------------------
+
+interface GroupData {
+  id: string;
+  views: string[];
+  activeView?: string;
 }
 
-interface GridNode {
-  type: 'branch' | 'leaf';
-  orientation?: 'VERTICAL' | 'HORIZONTAL';
-  data?: (GridNode | LeafNode)[];
-  id: string;
+interface BranchNode {
+  type: 'branch';
+  orientation: 'VERTICAL' | 'HORIZONTAL';
+  data: GridNode[];
   size?: number;
+  visible?: boolean;
 }
 
 interface LeafNode {
   type: 'leaf';
-  data: { views: string[] };
-  id: string;
+  data: GroupData;
   size?: number;
+  visible?: boolean;
 }
+
+type GridNode = BranchNode | LeafNode;
+
+interface SerializedDockviewPanel {
+  id: string;
+  title: string;
+  contentComponent: string;
+  tabComponent?: string;
+  params?: Record<string, unknown>;
+}
+
+interface DockviewLayout {
+  grid: {
+    root: GridNode;
+  };
+  panels: Record<string, SerializedDockviewPanel>;
+  activeGroup?: string;
+}
+
+// ---------------------------------------------------------------------------
+// DEFAULT_LAYOUT
+// ---------------------------------------------------------------------------
 
 const DEFAULT_LAYOUT: DockviewLayout = {
   grid: {
@@ -169,97 +208,233 @@ const DEFAULT_LAYOUT: DockviewLayout = {
           orientation: 'HORIZONTAL',
           size: 70,
           data: [
-            { 
-              type: 'leaf', 
-              data: { views: ['files', 'projects'] }, 
-              id: 'left-group', 
-              size: 20 
+            {
+              type: 'leaf',
+              size: 20,
+              data: {
+                id: 'left-group',
+                views: ['files', 'projects'],
+                activeView: 'files',
+              },
             },
             {
               type: 'branch',
               orientation: 'HORIZONTAL',
-              id: 'center-branch',
+              size: 55,
               data: [
-                { 
-                  type: 'leaf', 
-                  data: { views: ['editor'] }, 
-                  id: 'editor-group', 
-                  size: 50 
+                {
+                  type: 'leaf',
+                  size: 50,
+                  data: {
+                    id: 'editor-group',
+                    views: ['editor'],
+                    activeView: 'editor',
+                  },
                 },
-                { 
-                  type: 'leaf', 
-                  data: { views: ['preview'] }, 
-                  id: 'preview-group', 
-                  size: 50 
+                {
+                  type: 'leaf',
+                  size: 50,
+                  data: {
+                    id: 'preview-group',
+                    views: ['preview'],
+                    activeView: 'preview',
+                  },
                 },
               ],
             },
-            { 
-              type: 'leaf', 
-              data: { views: ['chat', 'logs'] }, 
-              id: 'right-group', 
-              size: 25 
+            {
+              type: 'leaf',
+              size: 25,
+              data: {
+                id: 'right-group',
+                views: ['chat', 'logs'],
+                activeView: 'chat',
+              },
             },
           ],
         },
-        { 
-          type: 'leaf', 
-          data: { views: ['plan'] }, 
-          id: 'bottom-group', 
-          size: 30 
+        {
+          type: 'leaf',
+          size: 30,
+          data: {
+            id: 'bottom-group',
+            views: ['plan'],
+            activeView: 'plan',
+          },
         },
       ],
-      id: 'root',
     },
-    // REMOVED: width, height, and duplicate orientation at grid level
-    // These fields are not part of dockview's expected schema and can cause validation errors
   },
   panels: {
     files: {
       id: 'files',
       title: PANEL_ACCESSIBILITY.files.title,
-      component: 'files',
-      ariaLabel: PANEL_ACCESSIBILITY.files.ariaLabel
+      contentComponent: 'files',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.files.ariaLabel },
     },
     projects: {
       id: 'projects',
       title: PANEL_ACCESSIBILITY.projects.title,
-      component: 'projects',
-      ariaLabel: PANEL_ACCESSIBILITY.projects.ariaLabel
+      contentComponent: 'projects',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.projects.ariaLabel },
     },
     editor: {
       id: 'editor',
       title: PANEL_ACCESSIBILITY.editor.title,
-      component: 'editor',
-      ariaLabel: PANEL_ACCESSIBILITY.editor.ariaLabel
+      contentComponent: 'editor',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.editor.ariaLabel },
     },
     preview: {
       id: 'preview',
       title: PANEL_ACCESSIBILITY.preview.title,
-      component: 'preview',
-      ariaLabel: PANEL_ACCESSIBILITY.preview.ariaLabel
+      contentComponent: 'preview',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.preview.ariaLabel },
     },
     chat: {
       id: 'chat',
       title: PANEL_ACCESSIBILITY.chat.title,
-      component: 'chat',
-      ariaLabel: PANEL_ACCESSIBILITY.chat.ariaLabel
+      contentComponent: 'chat',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.chat.ariaLabel },
     },
     logs: {
       id: 'logs',
       title: PANEL_ACCESSIBILITY.logs.title,
-      component: 'logs',
-      ariaLabel: PANEL_ACCESSIBILITY.logs.ariaLabel
+      contentComponent: 'logs',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.logs.ariaLabel },
     },
     plan: {
       id: 'plan',
       title: PANEL_ACCESSIBILITY.plan.title,
-      component: 'plan',
-      ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel
+      contentComponent: 'plan',
+      params: { ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel },
     },
   },
   activeGroup: 'editor-group',
 };
+
+// ---------------------------------------------------------------------------
+// validateLayout — pure function outside the component
+// ---------------------------------------------------------------------------
+
+function validateLayout(layout: unknown): boolean {
+  if (!layout || typeof layout !== 'object') {
+    console.warn('[DockWorkspace] validate: layout is not an object');
+    return false;
+  }
+
+  const layoutObj = layout as Record<string, unknown>;
+
+  if (!layoutObj.grid || typeof layoutObj.grid !== 'object') {
+    console.warn('[DockWorkspace] validate: missing or invalid "grid"');
+    return false;
+  }
+
+  const gridObj = layoutObj.grid as Record<string, unknown>;
+
+  if (!gridObj.root || typeof gridObj.root !== 'object') {
+    console.warn('[DockWorkspace] validate: missing or invalid "grid.root"');
+    return false;
+  }
+
+  if (!layoutObj.panels || typeof layoutObj.panels !== 'object') {
+    console.warn('[DockWorkspace] validate: missing or invalid "panels"');
+    return false;
+  }
+
+  const panelsObj = layoutObj.panels as Record<string, unknown>;
+
+  for (const [key, panel] of Object.entries(panelsObj)) {
+    if (!panel || typeof panel !== 'object') {
+      console.warn(`[DockWorkspace] validate: panel "${key}" is not an object`);
+      return false;
+    }
+
+    const p = panel as Record<string, unknown>;
+
+    if (typeof p.contentComponent !== 'string' || p.contentComponent.trim() === '') {
+      console.error(
+        `[DockWorkspace] validate: panel "${key}" has missing or invalid "contentComponent".`
+      );
+      return false;
+    }
+
+    if (typeof p.id !== 'string' || p.id.trim() === '') {
+      console.error(`[DockWorkspace] validate: panel "${key}" has missing or invalid "id"`);
+      return false;
+    }
+  }
+
+  const validateNode = (node: unknown, path: string): boolean => {
+    if (!node || typeof node !== 'object') {
+      console.warn(`[DockWorkspace] validate: node at ${path} is not an object`);
+      return false;
+    }
+
+    const n = node as Record<string, unknown>;
+
+    if (n.type !== 'branch' && n.type !== 'leaf') {
+      console.error(`[DockWorkspace] validate: node at ${path} has invalid type: ${JSON.stringify(n.type)}`);
+      return false;
+    }
+
+    if (n.type === 'branch') {
+      if (n.orientation !== 'VERTICAL' && n.orientation !== 'HORIZONTAL') {
+        console.error(`[DockWorkspace] validate: branch at ${path} has invalid orientation`);
+        return false;
+      }
+
+      if (!Array.isArray(n.data) || n.data.length === 0) {
+        console.error(`[DockWorkspace] validate: branch at ${path} must have a non-empty "data" array`);
+        return false;
+      }
+
+      for (let i = 0; i < n.data.length; i++) {
+        if (!validateNode(n.data[i], `${path} > branch.data[${i}]`)) {
+          return false;
+        }
+      }
+    }
+
+    if (n.type === 'leaf') {
+      if (!n.data || typeof n.data !== 'object' || Array.isArray(n.data)) {
+        console.error(`[DockWorkspace] validate: leaf at ${path} is missing "data" object`);
+        return false;
+      }
+
+      const leafData = n.data as Record<string, unknown>;
+
+      if (typeof leafData.id !== 'string' || (leafData.id as string).trim() === '') {
+        console.error(
+          `[DockWorkspace] validate: leaf at ${path} has missing or invalid "data.id". Without it, dockview generates a numeric group id causing "group id must be of type string".`
+        );
+        return false;
+      }
+
+      if (!Array.isArray(leafData.views)) {
+        console.error(`[DockWorkspace] validate: leaf at ${path} (group "${leafData.id}") missing "data.views" array`);
+        return false;
+      }
+
+      if (!leafData.views.every((v: unknown) => typeof v === 'string')) {
+        console.error(`[DockWorkspace] validate: leaf at ${path} (group "${leafData.id}") has non-string entries in "data.views"`);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  try {
+    return validateNode(gridObj.root, 'grid.root');
+  } catch (error) {
+    console.error('[DockWorkspace] validate: exception during validation:', error);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 interface DockWorkspaceProps {
   onResetLayout?: (resetFn: () => void) => void;
@@ -271,70 +446,71 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const [layoutSaved, setLayoutSaved] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
 
-  // Keyboard navigation support
-  const panelOrder = useMemo(() => ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'], []);
+  const panelOrder = useMemo(
+    () => ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'],
+    []
+  );
 
-  const handleKeyboardNavigation = useCallback((event: KeyboardEvent) => {
-    if (!apiRef.current) return;
+  const handleKeyboardNavigation = useCallback(
+    (event: KeyboardEvent) => {
+      if (!apiRef.current) return;
 
-    const activeGroup = apiRef.current.activeGroup;
-    if (!activeGroup) return;
+      const activeGroup = apiRef.current.activeGroup;
+      if (!activeGroup) return;
 
-    const currentIndex = panelOrder.findIndex(id =>
-      activeGroup.panels.some(panel => panel.id === id)
-    );
+      const currentIndex = panelOrder.findIndex((id) =>
+        activeGroup.panels.some((panel) => panel.id === id)
+      );
 
-    if (currentIndex === -1) return;
+      if (currentIndex === -1) return;
 
-    let targetIndex = currentIndex;
+      let targetIndex = currentIndex;
 
-    // Handle arrow key navigation
-    if (event.ctrlKey && event.key === 'ArrowLeft') {
-      event.preventDefault();
-      targetIndex = Math.max(0, currentIndex - 1);
-    } else if (event.ctrlKey && event.key === 'ArrowRight') {
-      event.preventDefault();
-      targetIndex = Math.min(panelOrder.length - 1, currentIndex + 1);
-    }
-
-    if (targetIndex !== currentIndex) {
-      const targetPanelId = panelOrder[targetIndex];
-      const targetPanel = activeGroup.panels.find(p => p.id === targetPanelId);
-      if (targetPanel) {
-        activeGroup.focus();
-        // Focus will be managed by dockview's internal focus management
+      if (event.ctrlKey && event.key === 'ArrowLeft') {
+        event.preventDefault();
+        targetIndex = Math.max(0, currentIndex - 1);
+      } else if (event.ctrlKey && event.key === 'ArrowRight') {
+        event.preventDefault();
+        targetIndex = Math.min(panelOrder.length - 1, currentIndex + 1);
       }
-    }
-  }, [panelOrder]);
 
-  // Add keyboard event listeners
+      if (targetIndex !== currentIndex) {
+        const targetPanelId = panelOrder[targetIndex];
+        const targetPanel = activeGroup.panels.find(
+          (p) => p.id === targetPanelId
+        );
+        if (targetPanel) {
+          activeGroup.focus();
+        }
+      }
+    },
+    [panelOrder]
+  );
+
   useEffect(() => {
     document.addEventListener('keydown', handleKeyboardNavigation);
-    return () => document.removeEventListener('keydown', handleKeyboardNavigation);
+    return () =>
+      document.removeEventListener('keydown', handleKeyboardNavigation);
   }, [handleKeyboardNavigation]);
 
-  // Debounced layout save (500ms delay)
   const saveLayout = useCallback(() => {
     if (!apiRef.current) return;
 
-    // Set unsaved changes flag immediately
     setUnsavedChanges(true);
 
-    // Clear previous timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout
     saveTimeoutRef.current = setTimeout(() => {
       try {
         const layout = apiRef.current!.toJSON();
         localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
         setLayoutSaved(true);
         setUnsavedChanges(false);
-        setTimeout(() => setLayoutSaved(false), 2000); // Hide indicator after 2s
-      } catch {
-        // ignore save errors
+        setTimeout(() => setLayoutSaved(false), 2000);
+      } catch (error) {
+        console.error('[DockWorkspace] Failed to save layout:', error);
       }
     }, 500);
   }, []);
@@ -343,152 +519,63 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     try {
       const saved = localStorage.getItem(LAYOUT_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        // Validate that the saved layout has valid structure
-        if (parsed && typeof parsed === 'object') {
-          // Comprehensive validation: check grid structure, string ids, and leaf data
-          const isValidLayout = validateLayout(parsed);
-          if (isValidLayout) {
-            try {
-              api.fromJSON(parsed);
-              return;
-            } catch (fromJsonError) {
-              console.warn('[DockWorkspace] fromJSON failed with saved layout, clearing and using default:', fromJsonError);
-              localStorage.removeItem(LAYOUT_KEY);
-            }
-          } else {
-            console.warn('[DockWorkspace] Invalid layout structure detected, clearing and using default');
+        const parsed: unknown = JSON.parse(saved);
+
+        if (parsed && typeof parsed === 'object' && validateLayout(parsed)) {
+          try {
+            api.fromJSON(parsed as Parameters<DockviewApi['fromJSON']>[0]);
+            return;
+          } catch (fromJsonError) {
+            console.error(
+              '[DockWorkspace] fromJSON failed with saved layout, clearing localStorage:',
+              fromJsonError
+            );
             localStorage.removeItem(LAYOUT_KEY);
           }
+        } else {
+          console.warn(
+            '[DockWorkspace] Saved layout failed validation, clearing localStorage'
+          );
+          localStorage.removeItem(LAYOUT_KEY);
         }
       }
     } catch (error) {
-      console.warn('[DockWorkspace] Failed to load saved layout, using default:', error);
-      // Clear potentially corrupted data
+      console.error(
+        '[DockWorkspace] Failed to load/parse saved layout, clearing localStorage:',
+        error
+      );
       localStorage.removeItem(LAYOUT_KEY);
-      // fall through to default layout
     }
-    // Load default layout as fallback
-    api.fromJSON(DEFAULT_LAYOUT);
-  }, []);
-
-  /**
-   * Validates dockview layout structure to ensure compatibility.
-   * Checks:
-   * - All nodes have string ids (required by dockview for group identification)
-   * - Leaf nodes have data.views as string array
-   * - No extraneous fields at grid level (width, height, orientation cause errors)
-   */
-  const validateLayout = (layout: unknown): boolean => {
-    // Basic structure check
-    if (!layout || typeof layout !== 'object') {
-      console.warn('[DockWorkspace] Layout is not an object');
-      return false;
-    }
-
-    const layoutObj = layout as Record<string, unknown>;
-    
-    // Check required top-level properties
-    if (!layoutObj.grid || typeof layoutObj.grid !== 'object') {
-      console.warn('[DockWorkspace] Missing or invalid grid property');
-      return false;
-    }
-
-    const gridObj = layoutObj.grid as Record<string, unknown>;
-    
-    if (!gridObj.root || typeof gridObj.root !== 'object') {
-      console.warn('[DockWorkspace] Missing or invalid grid.root property');
-      return false;
-    }
-
-    // Validate node recursively
-    const validateNode = (node: unknown, depth = 0): boolean => {
-      if (!node || typeof node !== 'object') {
-        console.warn(`[DockWorkspace] Node at depth ${depth} is not an object`);
-        return false;
-      }
-
-      const nodeObj = node as Record<string, unknown>;
-
-      // Check id exists and is a non-empty string (critical for dockview)
-      if (typeof nodeObj.id !== 'string' || nodeObj.id.trim() === '') {
-        console.warn(`[DockWorkspace] Invalid node id at depth ${depth}:`, nodeObj.id);
-        return false;
-      }
-
-      // Check type field
-      const nodeType = nodeObj.type;
-      if (nodeType !== 'branch' && nodeType !== 'leaf') {
-        console.warn(`[DockWorkspace] Invalid node type at depth ${depth}:`, nodeType);
-        return false;
-      }
-
-      // For leaf nodes, validate data.views
-      if (nodeType === 'leaf') {
-        const data = nodeObj.data;
-        if (!data || typeof data !== 'object') {
-          console.warn(`[DockWorkspace] Leaf node "${nodeObj.id}" missing data property`);
-          return false;
-        }
-        const dataObj = data as Record<string, unknown>;
-        if (!Array.isArray(dataObj.views)) {
-          console.warn(`[DockWorkspace] Leaf node "${nodeObj.id}" missing views array`);
-          return false;
-        }
-        // Ensure all views are strings
-        if (!dataObj.views.every((v: unknown) => typeof v === 'string')) {
-          console.warn(`[DockWorkspace] Leaf node "${nodeObj.id}" has non-string views`);
-          return false;
-        }
-      }
-
-      // Recursively validate child nodes in data array
-      if (nodeObj.data && Array.isArray(nodeObj.data)) {
-        for (const child of nodeObj.data) {
-          if (!validateNode(child, depth + 1)) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    };
 
     try {
-      const rootObj = gridObj.root as Record<string, unknown>;
-      
-      // Check for extraneous fields at grid level that can cause dockview errors
-      const extraneousFields = ['width', 'height'];
-      for (const field of extraneousFields) {
-        if (field in gridObj) {
-          console.warn(`[DockWorkspace] Extraneous field "${field}" at grid level may cause issues`);
-        }
-      }
-
-      return validateNode(rootObj);
-    } catch (error) {
-      console.error('[DockWorkspace] Layout validation threw exception:', error);
-      return false;
+      api.fromJSON(DEFAULT_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
+    } catch (defaultError) {
+      console.error(
+        '[DockWorkspace] CRITICAL: Failed to load DEFAULT_LAYOUT. The workspace will be empty. Error:',
+        defaultError
+      );
     }
-  };
+  }, []);
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
     localStorage.removeItem(LAYOUT_KEY);
-    apiRef.current.fromJSON(DEFAULT_LAYOUT);
+    try {
+      apiRef.current.fromJSON(DEFAULT_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
+    } catch (error) {
+      console.error('[DockWorkspace] Failed to reset layout:', error);
+    }
   }, []);
 
-  // Cleanup timeout on unmount and save immediately
   useEffect(() => {
     return () => {
-      // Save immediately on unmount if there are unsaved changes
       if (saveTimeoutRef.current && unsavedChanges && apiRef.current) {
         clearTimeout(saveTimeoutRef.current);
         try {
           const layout = apiRef.current.toJSON();
           localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
         } catch {
-          // ignore save errors on unmount
+          // ignore
         }
       } else if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
@@ -500,15 +587,17 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     onResetLayout?.(resetLayout);
   }, [resetLayout, onResetLayout]);
 
-  const onReady = useCallback((event: DockviewReadyEvent) => {
-    apiRef.current = event.api;
-    event.api.onDidLayoutChange(() => saveLayout());
-    loadLayout(event.api);
-  }, [loadLayout, saveLayout]);
+  const onReady = useCallback(
+    (event: DockviewReadyEvent) => {
+      apiRef.current = event.api;
+      event.api.onDidLayoutChange(() => saveLayout());
+      loadLayout(event.api);
+    },
+    [loadLayout, saveLayout]
+  );
 
   return (
     <div className="relative h-full w-full">
-      {/* Skip link for accessibility */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -530,7 +619,6 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         />
       </div>
 
-      {/* Layout indicators with better accessibility */}
       {layoutSaved && (
         <div
           className="absolute top-4 right-4 z-50 animate-fade-in"
@@ -552,7 +640,10 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
           aria-label="Saving layout changes"
         >
           <div className="bg-amber-600/90 text-amber-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2 border border-amber-500/30">
-            <div className="w-2 h-2 bg-amber-300 rounded-full animate-pulse" aria-hidden="true" />
+            <div
+              className="w-2 h-2 bg-amber-300 rounded-full animate-pulse"
+              aria-hidden="true"
+            />
             Saving layout...
           </div>
         </div>
