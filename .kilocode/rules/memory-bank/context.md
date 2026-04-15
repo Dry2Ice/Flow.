@@ -9,7 +9,8 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 ## Recently Completed
 
 - [x] Configure client-side Nvidia NIM service singleton directly after settings save and on app mount to ensure AI execution works immediately
-- [x] Auto-initialize NVIDIA NIM config from localStorage on app startup to prevent "configuration not set" errors during AI execution
+- [x] Set client NIM config synchronously on mount from localStorage (matches `apiConfigured` state), eliminating race where UI shows "AI Ready" but service is unconfigured
+- [x] Auto-initialize NVIDIA NIM config on server via POST on mount to keep server singleton in sync
 - [x] Base Next.js 16 setup with App Router
 - [x] TypeScript configuration with strict mode
 - [x] Tailwind CSS 4 integration
@@ -205,7 +206,8 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
-| 2026-04-15 | Fixed client-side NIM service configuration: now calls `nvidiaNimService.setConfig()` directly in SettingsModal after save and on app mount from localStorage, ensuring AI execution has config immediately. |
+| 2026-04-15 | Set client NIM config synchronously on mount from localStorage (matches `apiConfigured` state), eliminating race where UI shows "AI Ready" but service is unconfigured |
+| 2026-04-15 | Fixed client-side NIM service configuration: now calls `nvidiaNimService.setConfig()` directly in SettingsModal after save and on app mount from localStorage, ensuring AI execution has config immediately |
 | 2026-04-15 | Auto-initialize NIM config on mount: POST saved settings from localStorage to `/api/nim/config` to ensure server-side singleton is configured before AI execution, preventing "Nvidia NIM configuration not set" errors. |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
