@@ -8,6 +8,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Fix dockview group id validation error: remove conflicting branch id 'center' and ensure proper orientation structure for dockview layout loading
 - [x] Add comprehensive test suite: NIM config initialization, AI stream error handling, DockWorkspace layout persistence, ThemeToggle hydration behavior, layout formatting on resize, and performance tests using vitest + @testing-library
 - [x] Add comprehensive accessibility support for dockview: ARIA labels, keyboard navigation (Ctrl+Arrow keys), focus indicators, contrast verification for dark/light themes, skip links, screen reader support, high contrast mode, and reduced motion preferences
 - [x] Enhance debounced layout persistence: add unsavedChanges flag with saving indicator, save immediately on component unmount
@@ -214,6 +215,7 @@ export async function GET() {
 | Date | Changes |
 |------|---------|
 | 2026-04-15 | Enhance debounced layout persistence: add unsavedChanges flag with saving indicator, save immediately on component unmount |
+| 2026-04-15 | Fix dockview group id validation error: remove conflicting branch id 'center' and ensure proper orientation structure for dockview layout loading |
 | 2026-04-15 | Add comprehensive test suite: NIM config initialization, AI stream error handling, DockWorkspace layout persistence, ThemeToggle hydration behavior, layout formatting on resize, and performance tests using vitest + @testing-library |
 | 2026-04-15 | Add comprehensive accessibility support for dockview: ARIA labels, keyboard navigation (Ctrl+Arrow keys), focus indicators, contrast verification for dark/light themes, skip links, screen reader support, high contrast mode, and reduced motion preferences |
 | 2026-04-15 | Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance |
