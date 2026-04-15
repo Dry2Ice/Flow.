@@ -8,6 +8,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Auto-initialize NVIDIA NIM config from localStorage on app startup to prevent "configuration not set" errors during AI execution
 - [x] Base Next.js 16 setup with App Router
 - [x] TypeScript configuration with strict mode
 - [x] Tailwind CSS 4 integration
@@ -88,7 +89,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 - [x] Enhanced theme toggle with tooltip and visual feedback
 - [x] Comprehensive Project Statistics dashboard with file analysis, language distribution, code metrics, AI usage tracking, and project health indicators
 - [x] Five independent workspace zones: Files/Projects, Code+Preview, Chat/Logs, Plan/Bugs, and dedicated Statistics panel
-- [x] Centralized control buttons in header center (Statistics focus, Theme toggle, Settings)
+- [x] Centralized control buttons in header center (Settings, Theme toggle, Statistics)
 - [x] Resizable panel system allowing customization of all five workspace zones
 - [x] Real-time project metrics including token consumption, language distribution, file sizes, and development activity
 - [x] Prompt preset editing now updates Zustand store state directly and persists `promptPresets`/`activePreset` to localStorage via selector subscriptions
@@ -108,10 +109,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 - [x] Persisted workspace layout topology/state in localStorage under `flow.ide-layout.v2` for immediate restoration on load
 - [x] Top navigation redesigned to a minimal centered control cluster (Settings, Theme toggle, Statistics) with compact icon buttons, tooltips, motion states, and slide-over analytics panel toggle
 - [x] Chat UX compactness pass: minimized prompt composer, embedded in-composer preset switching, compact send + Ultra controls, and logs view sections for AI actions/file changes/errors
-- [x] Full AI Settings panel upgrade: manual-entry controls for Temperature/Top-p/Top-k/Frequency penalty/Presence penalty/Context Tokens (Unlimited)/Max Response Tokens with no UI min/max clamps
-- [x] Model management upgrades in settings with dedicated "Load Models" flow, model selector, and connection/test controls
-- [x] Prompt presets editor constrained to 3 editable presets with persistent storage and active preset selection continuity
-- [x] Global system prompt messaging clarified and preserved as an always-appended instruction layer on every request
+- [x] Full AI Settings panel upgrade: converted all generation controls to clearly labeled manual numeric inputs without UI min/max clamps, limited editable preset cards to three, renamed model discovery action to "Load Models", and updated backend/request validation to accept user-provided values without artificial range bounds while keeping numeric type checks.
 - [x] NIM config validation/request plumbing relaxed to avoid artificial parameter range caps while preserving numeric/integer type safety
 - [x] Development Plan panel upgraded with focused Plan/Errors tabs, plan-level controls ("Check all tasks" + "Execute plan"), sequential full-plan execution feedback, task continuation actions, editable task descriptions, and checkbox-only subtasks that auto-roll task status
 - [x] Error Tracking UI expanded with auto-ingest from logs/failed AI actions, manual user error intake form, explicit Description/Status/Source display, and direct AI actions for "Check bug" (analysis preset) + "Fix bug" (debug preset)
@@ -206,6 +204,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-15 | Auto-initialize NIM config on mount: POST saved settings from localStorage to `/api/nim/config` to ensure server-side singleton is configured before AI execution, preventing "Nvidia NIM configuration not set" errors. |
 | 2026-04-12 | Hardened project API routes with WORKSPACE_ROOT validation, traversal prevention, recursion/file-count limits, and security warning logs |
 | Initial | Template created with base setup |
 | 2026-04-12 | Hardened `POST /api/projects/create` with explicit `src/app` directory creation, robust file-write error handling, generated `tsconfig.json` + `.gitignore`, and response metadata for created files/directories |
