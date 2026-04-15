@@ -134,36 +134,60 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
 
-const DEFAULT_LAYOUT = {
+// Type definitions for dockview layout structure
+interface DockviewLayout {
+  grid: {
+    root: GridNode;
+  };
+  panels: Record<string, { id: string; title: string; component: string; ariaLabel?: string }>;
+  activeGroup?: string;
+}
+
+interface GridNode {
+  type: 'branch' | 'leaf';
+  orientation?: 'VERTICAL' | 'HORIZONTAL';
+  data?: (GridNode | LeafNode)[];
+  id: string;
+  size?: number;
+}
+
+interface LeafNode {
+  type: 'leaf';
+  data: { views: string[] };
+  id: string;
+  size?: number;
+}
+
+const DEFAULT_LAYOUT: DockviewLayout = {
   grid: {
     root: {
-      type: 'branch' as const,
-      orientation: 'VERTICAL' as const,
+      type: 'branch',
+      orientation: 'VERTICAL',
       data: [
         {
-          type: 'branch' as const,
-          orientation: 'HORIZONTAL' as const,
+          type: 'branch',
+          orientation: 'HORIZONTAL',
           size: 70,
           data: [
             { 
-              type: 'leaf' as const, 
+              type: 'leaf', 
               data: { views: ['files', 'projects'] }, 
               id: 'left-group', 
               size: 20 
             },
             {
-              type: 'branch' as const,
-              orientation: 'HORIZONTAL' as const,
+              type: 'branch',
+              orientation: 'HORIZONTAL',
               id: 'center-branch',
               data: [
                 { 
-                  type: 'leaf' as const, 
+                  type: 'leaf', 
                   data: { views: ['editor'] }, 
                   id: 'editor-group', 
                   size: 50 
                 },
                 { 
-                  type: 'leaf' as const, 
+                  type: 'leaf', 
                   data: { views: ['preview'] }, 
                   id: 'preview-group', 
                   size: 50 
@@ -171,7 +195,7 @@ const DEFAULT_LAYOUT = {
               ],
             },
             { 
-              type: 'leaf' as const, 
+              type: 'leaf', 
               data: { views: ['chat', 'logs'] }, 
               id: 'right-group', 
               size: 25 
@@ -179,7 +203,7 @@ const DEFAULT_LAYOUT = {
           ],
         },
         { 
-          type: 'leaf' as const, 
+          type: 'leaf', 
           data: { views: ['plan'] }, 
           id: 'bottom-group', 
           size: 30 
@@ -187,9 +211,8 @@ const DEFAULT_LAYOUT = {
       ],
       id: 'root',
     },
-    width: 100,
-    height: 100,
-    orientation: 'VERTICAL' as const,
+    // REMOVED: width, height, and duplicate orientation at grid level
+    // These fields are not part of dockview's expected schema and can cause validation errors
   },
   panels: {
     files: {
@@ -321,65 +344,130 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
       const saved = localStorage.getItem(LAYOUT_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Validate that the saved layout has valid group ids
+        // Validate that the saved layout has valid structure
         if (parsed && typeof parsed === 'object') {
-          // Additional validation: check that grid structure has valid string ids
+          // Comprehensive validation: check grid structure, string ids, and leaf data
           const isValidLayout = validateLayout(parsed);
           if (isValidLayout) {
             try {
-              api.fromJSON(parsed as any);
+              api.fromJSON(parsed);
               return;
             } catch (fromJsonError) {
-              console.warn('fromJSON failed with saved layout, clearing and using default:', fromJsonError);
+              console.warn('[DockWorkspace] fromJSON failed with saved layout, clearing and using default:', fromJsonError);
               localStorage.removeItem(LAYOUT_KEY);
             }
           } else {
-            console.warn('Invalid layout structure detected, clearing and using default');
+            console.warn('[DockWorkspace] Invalid layout structure detected, clearing and using default');
             localStorage.removeItem(LAYOUT_KEY);
           }
         }
       }
     } catch (error) {
-      console.warn('Failed to load saved layout, using default:', error);
+      console.warn('[DockWorkspace] Failed to load saved layout, using default:', error);
       // Clear potentially corrupted data
       localStorage.removeItem(LAYOUT_KEY);
-      // fall through
+      // fall through to default layout
     }
-    api.fromJSON(DEFAULT_LAYOUT as any);
+    // Load default layout as fallback
+    api.fromJSON(DEFAULT_LAYOUT);
   }, []);
 
-  // Validate layout structure to ensure group ids are strings
-  const validateLayout = (layout: any): boolean => {
-    if (!layout || !layout.grid || !layout.grid.root) {
+  /**
+   * Validates dockview layout structure to ensure compatibility.
+   * Checks:
+   * - All nodes have string ids (required by dockview for group identification)
+   * - Leaf nodes have data.views as string array
+   * - No extraneous fields at grid level (width, height, orientation cause errors)
+   */
+  const validateLayout = (layout: unknown): boolean => {
+    // Basic structure check
+    if (!layout || typeof layout !== 'object') {
+      console.warn('[DockWorkspace] Layout is not an object');
       return false;
     }
+
+    const layoutObj = layout as Record<string, unknown>;
     
-    const validateNode = (node: any): boolean => {
+    // Check required top-level properties
+    if (!layoutObj.grid || typeof layoutObj.grid !== 'object') {
+      console.warn('[DockWorkspace] Missing or invalid grid property');
+      return false;
+    }
+
+    const gridObj = layoutObj.grid as Record<string, unknown>;
+    
+    if (!gridObj.root || typeof gridObj.root !== 'object') {
+      console.warn('[DockWorkspace] Missing or invalid grid.root property');
+      return false;
+    }
+
+    // Validate node recursively
+    const validateNode = (node: unknown, depth = 0): boolean => {
       if (!node || typeof node !== 'object') {
+        console.warn(`[DockWorkspace] Node at depth ${depth} is not an object`);
         return false;
       }
-      // Check that id exists and is a string
-      if (node.id === undefined || node.id === null || typeof node.id !== 'string') {
-        console.warn('Invalid node id detected:', node.id);
+
+      const nodeObj = node as Record<string, unknown>;
+
+      // Check id exists and is a non-empty string (critical for dockview)
+      if (typeof nodeObj.id !== 'string' || nodeObj.id.trim() === '') {
+        console.warn(`[DockWorkspace] Invalid node id at depth ${depth}:`, nodeObj.id);
         return false;
       }
-      // Recursively validate child nodes
-      if (node.data) {
-        if (Array.isArray(node.data)) {
-          for (const child of node.data) {
-            if (!validateNode(child)) {
-              return false;
-            }
+
+      // Check type field
+      const nodeType = nodeObj.type;
+      if (nodeType !== 'branch' && nodeType !== 'leaf') {
+        console.warn(`[DockWorkspace] Invalid node type at depth ${depth}:`, nodeType);
+        return false;
+      }
+
+      // For leaf nodes, validate data.views
+      if (nodeType === 'leaf') {
+        const data = nodeObj.data;
+        if (!data || typeof data !== 'object') {
+          console.warn(`[DockWorkspace] Leaf node "${nodeObj.id}" missing data property`);
+          return false;
+        }
+        const dataObj = data as Record<string, unknown>;
+        if (!Array.isArray(dataObj.views)) {
+          console.warn(`[DockWorkspace] Leaf node "${nodeObj.id}" missing views array`);
+          return false;
+        }
+        // Ensure all views are strings
+        if (!dataObj.views.every((v: unknown) => typeof v === 'string')) {
+          console.warn(`[DockWorkspace] Leaf node "${nodeObj.id}" has non-string views`);
+          return false;
+        }
+      }
+
+      // Recursively validate child nodes in data array
+      if (nodeObj.data && Array.isArray(nodeObj.data)) {
+        for (const child of nodeObj.data) {
+          if (!validateNode(child, depth + 1)) {
+            return false;
           }
         }
       }
+
       return true;
     };
-    
+
     try {
-      return validateNode(layout.grid.root);
+      const rootObj = gridObj.root as Record<string, unknown>;
+      
+      // Check for extraneous fields at grid level that can cause dockview errors
+      const extraneousFields = ['width', 'height'];
+      for (const field of extraneousFields) {
+        if (field in gridObj) {
+          console.warn(`[DockWorkspace] Extraneous field "${field}" at grid level may cause issues`);
+        }
+      }
+
+      return validateNode(rootObj);
     } catch (error) {
-      console.error('Layout validation error:', error);
+      console.error('[DockWorkspace] Layout validation threw exception:', error);
       return false;
     }
   };
@@ -387,7 +475,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
     localStorage.removeItem(LAYOUT_KEY);
-    apiRef.current.fromJSON(DEFAULT_LAYOUT as any);
+    apiRef.current.fromJSON(DEFAULT_LAYOUT);
   }, []);
 
   // Cleanup timeout on unmount and save immediately
