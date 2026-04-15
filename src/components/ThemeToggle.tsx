@@ -6,22 +6,34 @@ import { useState, useEffect } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(() => {
-    // Initialize theme preference from localStorage or system preference
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('flow-theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      return saved ? saved === 'dark' : prefersDark;
-    }
-    return true; // Default to dark mode
-  });
+  const [isDark, setIsDark] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Apply theme to document
-    document.documentElement.classList.toggle('dark', isDark);
-    document.documentElement.classList.toggle('light', !isDark);
-    localStorage.setItem('flow-theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
+    // Read theme preference and mark as hydrated
+    const saved = localStorage.getItem('flow-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDark(saved ? saved === 'dark' : prefersDark);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) {
+      // Apply theme to document
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.classList.toggle('light', !isDark);
+      localStorage.setItem('flow-theme', isDark ? 'dark' : 'light');
+    }
+  }, [isDark, hydrated]);
+
+  // Don't render until hydrated to prevent hydration mismatch
+  if (!hydrated) {
+    return (
+      <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-700/70 bg-neutral-900/70">
+        <div className="h-4 w-4 animate-pulse rounded bg-neutral-600" />
+      </div>
+    );
+  }
 
   return (
     <button
