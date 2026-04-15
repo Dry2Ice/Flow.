@@ -326,8 +326,13 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
           // Additional validation: check that grid structure has valid string ids
           const isValidLayout = validateLayout(parsed);
           if (isValidLayout) {
-            api.fromJSON(parsed as any);
-            return;
+            try {
+              api.fromJSON(parsed as any);
+              return;
+            } catch (fromJsonError) {
+              console.warn('fromJSON failed with saved layout, clearing and using default:', fromJsonError);
+              localStorage.removeItem(LAYOUT_KEY);
+            }
           } else {
             console.warn('Invalid layout structure detected, clearing and using default');
             localStorage.removeItem(LAYOUT_KEY);
@@ -355,18 +360,28 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
       }
       // Check that id exists and is a string
       if (node.id === undefined || node.id === null || typeof node.id !== 'string') {
+        console.warn('Invalid node id detected:', node.id);
         return false;
       }
       // Recursively validate child nodes
       if (node.data) {
         if (Array.isArray(node.data)) {
-          return node.data.every(validateNode);
+          for (const child of node.data) {
+            if (!validateNode(child)) {
+              return false;
+            }
+          }
         }
       }
       return true;
     };
     
-    return validateNode(layout.grid.root);
+    try {
+      return validateNode(layout.grid.root);
+    } catch (error) {
+      console.error('Layout validation error:', error);
+      return false;
+    }
   };
 
   const resetLayout = useCallback(() => {
