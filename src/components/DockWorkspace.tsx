@@ -320,14 +320,54 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     try {
       const saved = localStorage.getItem(LAYOUT_KEY);
       if (saved) {
-        api.fromJSON(JSON.parse(saved) as any);
-        return;
+        const parsed = JSON.parse(saved);
+        // Validate that the saved layout has valid group ids
+        if (parsed && typeof parsed === 'object') {
+          // Additional validation: check that grid structure has valid string ids
+          const isValidLayout = validateLayout(parsed);
+          if (isValidLayout) {
+            api.fromJSON(parsed as any);
+            return;
+          } else {
+            console.warn('Invalid layout structure detected, clearing and using default');
+            localStorage.removeItem(LAYOUT_KEY);
+          }
+        }
       }
-    } catch {
+    } catch (error) {
+      console.warn('Failed to load saved layout, using default:', error);
+      // Clear potentially corrupted data
+      localStorage.removeItem(LAYOUT_KEY);
       // fall through
     }
     api.fromJSON(DEFAULT_LAYOUT as any);
   }, []);
+
+  // Validate layout structure to ensure group ids are strings
+  const validateLayout = (layout: any): boolean => {
+    if (!layout || !layout.grid || !layout.grid.root) {
+      return false;
+    }
+    
+    const validateNode = (node: any): boolean => {
+      if (!node || typeof node !== 'object') {
+        return false;
+      }
+      // Check that id is a string if present
+      if (node.id !== undefined && typeof node.id !== 'string') {
+        return false;
+      }
+      // Recursively validate child nodes
+      if (node.data) {
+        if (Array.isArray(node.data)) {
+          return node.data.every(validateNode);
+        }
+      }
+      return true;
+    };
+    
+    return validateNode(layout.grid.root);
+  };
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
