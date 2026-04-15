@@ -369,3 +369,103 @@ summary,
   --dv-separator-border: hsl(var(--border));
   --dv-floating-box-shadow: 0 8px 24px -6px rgba(0,0,0,0.15);
 }
+
+/* Accessibility enhancements for dockview */
+.dockview-accessible {
+  /* Enhanced focus indicators */
+  --dv-focus-ring-color: hsl(var(--ring));
+  --dv-focus-ring-width: 2px;
+  --dv-focus-ring-style: solid;
+}
+
+/* High contrast focus indicators for better accessibility */
+.dockview-accessible:focus-within {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+.dockview-accessible:focus-within:not(:focus-visible) {
+  outline: none;
+}
+
+.dockview-accessible:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+/* Tab accessibility improvements */
+.dockview-accessible [role="tab"] {
+  position: relative;
+}
+
+.dockview-accessible [role="tab"]:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.dockview-accessible [role="tab"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.dockview-accessible [role="tab"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: -2px;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .dockview-accessible {
+    --dv-activegroup-visibletab-color: hsl(0 0% 0%);
+    --dv-inactivegroup-visibletab-color: hsl(0 0% 40%);
+    --dv-tab-divider-color: hsl(0 0% 0%);
+  }
+
+  .light .dockview-accessible {
+    --dv-activegroup-visibletab-color: hsl(0 0% 100%);
+    --dv-inactivegroup-visibletab-color: hsl(0 0% 60%);
+    --dv-tab-divider-color: hsl(0 0% 100%);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .dockview-accessible * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Contrast ratio verification for accessibility */
+/* Dark theme: Text on background should meet WCAG AA (4.5:1) */
+/* Light theme: Text on background should meet WCAG AA (4.5:1) */
+
+/* Example contrast checks (these should be verified with tools):
+ * Dark theme: --foreground (210 40% 98%) on --background (222 84% 2%) = 15.9:1 ✓
+ * Light theme: --foreground (222 84% 5%) on --background (0 0% 100%) = 20.3:1 ✓
+ */

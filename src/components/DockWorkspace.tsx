@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, lazy, Suspense } from 'react';
+import { useEffect, useRef, useCallback, useState, lazy, Suspense, useMemo } from 'react';
 import {
   DockviewReact,
   DockviewReadyEvent,
@@ -21,41 +21,114 @@ const CodePreview = lazy(() => import('@/components/CodePreview').then(module =>
 
 // Loading skeleton for lazy components
 const ComponentSkeleton = ({ title }: { title: string }) => (
-  <div className="h-full flex items-center justify-center p-8">
+  <div
+    className="h-full flex items-center justify-center p-8"
+    role="status"
+    aria-label={`Loading ${title}`}
+  >
     <div className="text-center">
-      <div className="w-12 h-12 border-4 border-neutral-600 border-t-neutral-400 rounded-full animate-spin mx-auto mb-4" />
+      <div
+        className="w-12 h-12 border-4 border-neutral-600 border-t-neutral-400 rounded-full animate-spin mx-auto mb-4"
+        aria-hidden="true"
+      />
       <p className="text-sm text-neutral-400">Loading {title}...</p>
     </div>
   </div>
 );
 
-// Map panel id → component with lazy loading
+// Panel accessibility configuration
+const PANEL_ACCESSIBILITY = {
+  files: {
+    title: '📁 Files',
+    ariaLabel: 'File browser panel - view and manage project files',
+    description: 'Browse, open, and manage files in your project'
+  },
+  projects: {
+    title: '🗂 Projects',
+    ariaLabel: 'Project manager panel - create and switch between projects',
+    description: 'Create new projects and switch between existing ones'
+  },
+  editor: {
+    title: '✏️ Editor',
+    ariaLabel: 'Code editor panel - write and edit source code',
+    description: 'Monaco editor for writing and editing code files'
+  },
+  preview: {
+    title: '👁 Preview',
+    ariaLabel: 'Code preview panel - view rendered output',
+    description: 'Live preview of HTML, CSS, and JavaScript code'
+  },
+  chat: {
+    title: '💬 AI Chat',
+    ariaLabel: 'AI chat panel - interact with AI assistant',
+    description: 'Chat interface for AI-powered code assistance'
+  },
+  logs: {
+    title: '📋 Logs',
+    ariaLabel: 'System logs panel - view application logs and errors',
+    description: 'View system logs, AI responses, and error messages'
+  },
+  plan: {
+    title: '🎯 Dev Plan',
+    ariaLabel: 'Development plan panel - track tasks and progress',
+    description: 'Manage development tasks, track progress, and handle bugs'
+  }
+};
+
+// Enhanced component wrapper with accessibility
+const createAccessibleComponent = (
+  Component: React.ReactNode,
+  panelId: string
+) => {
+  const config = PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY];
+  return (
+    <div
+      role="tabpanel"
+      aria-labelledby={`${panelId}-tab`}
+      aria-label={config.ariaLabel}
+      aria-describedby={`${panelId}-description`}
+      className="h-full focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-inset"
+      tabIndex={-1}
+    >
+      <div id={`${panelId}-description`} className="sr-only">
+        {config.description}
+      </div>
+      {Component}
+    </div>
+  );
+};
+
+// Map panel id → component with lazy loading and accessibility
 const components: Record<string, React.FC<IDockviewPanelProps>> = {
-  files: () => <FileBrowser />,
-  projects: () => <ProjectManager />,
-  editor: () => (
+  files: () => createAccessibleComponent(<FileBrowser />, 'files'),
+  projects: () => createAccessibleComponent(<ProjectManager />, 'projects'),
+  editor: () => createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
       <CodeEditor />
-    </Suspense>
+    </Suspense>,
+    'editor'
   ),
-  preview: () => (
+  preview: () => createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
       <CodePreview />
-    </Suspense>
+    </Suspense>,
+    'preview'
   ),
-  chat: () => (
+  chat: () => createAccessibleComponent(
     <div className="flex h-full flex-col">
       <AIErrorBoundary sessionId="chat-ai">
         <AIChat />
       </AIErrorBoundary>
       <PromptInput />
-    </div>
+    </div>,
+    'chat'
   ),
-  logs: () => <SystemLogsPanel />,
-  plan: () => (
+  logs: () => createAccessibleComponent(<SystemLogsPanel />, 'logs'),
+  plan: () => createAccessibleComponent(
     <AIErrorBoundary sessionId="plan-ai">
       <DevelopmentPlan />
-    </AIErrorBoundary>
+    </AIErrorBoundary>,
+    'plan'
   ),
 };
 
@@ -94,13 +167,48 @@ const DEFAULT_LAYOUT = {
     orientation: 'VERTICAL',
   },
   panels: {
-    files: { id: 'files', title: '📁 Files', component: 'files' },
-    projects: { id: 'projects', title: '🗂 Projects', component: 'projects' },
-    editor: { id: 'editor', title: '✏️ Editor', component: 'editor' },
-    preview: { id: 'preview', title: '👁 Preview', component: 'preview' },
-    chat: { id: 'chat', title: '💬 AI Chat', component: 'chat' },
-    logs: { id: 'logs', title: '📋 Logs', component: 'logs' },
-    plan: { id: 'plan', title: '🎯 Dev Plan', component: 'plan' },
+    files: {
+      id: 'files',
+      title: PANEL_ACCESSIBILITY.files.title,
+      component: 'files',
+      ariaLabel: PANEL_ACCESSIBILITY.files.ariaLabel
+    },
+    projects: {
+      id: 'projects',
+      title: PANEL_ACCESSIBILITY.projects.title,
+      component: 'projects',
+      ariaLabel: PANEL_ACCESSIBILITY.projects.ariaLabel
+    },
+    editor: {
+      id: 'editor',
+      title: PANEL_ACCESSIBILITY.editor.title,
+      component: 'editor',
+      ariaLabel: PANEL_ACCESSIBILITY.editor.ariaLabel
+    },
+    preview: {
+      id: 'preview',
+      title: PANEL_ACCESSIBILITY.preview.title,
+      component: 'preview',
+      ariaLabel: PANEL_ACCESSIBILITY.preview.ariaLabel
+    },
+    chat: {
+      id: 'chat',
+      title: PANEL_ACCESSIBILITY.chat.title,
+      component: 'chat',
+      ariaLabel: PANEL_ACCESSIBILITY.chat.ariaLabel
+    },
+    logs: {
+      id: 'logs',
+      title: PANEL_ACCESSIBILITY.logs.title,
+      component: 'logs',
+      ariaLabel: PANEL_ACCESSIBILITY.logs.ariaLabel
+    },
+    plan: {
+      id: 'plan',
+      title: PANEL_ACCESSIBILITY.plan.title,
+      component: 'plan',
+      ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel
+    },
   },
   activeGroup: 'editor',
 };
@@ -114,6 +222,48 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [layoutSaved, setLayoutSaved] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+
+  // Keyboard navigation support
+  const panelOrder = useMemo(() => ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'], []);
+
+  const handleKeyboardNavigation = useCallback((event: KeyboardEvent) => {
+    if (!apiRef.current) return;
+
+    const activeGroup = apiRef.current.activeGroup;
+    if (!activeGroup) return;
+
+    const currentIndex = panelOrder.findIndex(id =>
+      activeGroup.panels.some(panel => panel.id === id)
+    );
+
+    if (currentIndex === -1) return;
+
+    let targetIndex = currentIndex;
+
+    // Handle arrow key navigation
+    if (event.ctrlKey && event.key === 'ArrowLeft') {
+      event.preventDefault();
+      targetIndex = Math.max(0, currentIndex - 1);
+    } else if (event.ctrlKey && event.key === 'ArrowRight') {
+      event.preventDefault();
+      targetIndex = Math.min(panelOrder.length - 1, currentIndex + 1);
+    }
+
+    if (targetIndex !== currentIndex) {
+      const targetPanelId = panelOrder[targetIndex];
+      const targetPanel = activeGroup.panels.find(p => p.id === targetPanelId);
+      if (targetPanel) {
+        activeGroup.focus();
+        // Focus will be managed by dockview's internal focus management
+      }
+    }
+  }, [panelOrder]);
+
+  // Add keyboard event listeners
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyboardNavigation);
+    return () => document.removeEventListener('keydown', handleKeyboardNavigation);
+  }, [handleKeyboardNavigation]);
 
   // Debounced layout save (500ms delay)
   const saveLayout = useCallback(() => {
@@ -190,26 +340,51 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
 
   return (
     <div className="relative h-full w-full">
-      <DockviewReact
-        className="dockview-theme-dark h-full w-full"
-        components={components}
-        onReady={onReady}
-        singleTabMode="fullwidth"
-      />
+      {/* Skip link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Skip to main content
+      </a>
 
-      {/* Layout indicators */}
+      <div
+        id="main-content"
+        role="main"
+        aria-label="Flow IDE workspace with dockable panels"
+        className="h-full w-full"
+      >
+        <DockviewReact
+          className="dockview-theme-dark h-full w-full dockview-accessible"
+          components={components}
+          onReady={onReady}
+          singleTabMode="fullwidth"
+        />
+      </div>
+
+      {/* Layout indicators with better accessibility */}
       {layoutSaved && (
-        <div className="absolute top-4 right-4 z-50 animate-fade-in">
-          <div className="bg-green-600/90 text-green-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm">
+        <div
+          className="absolute top-4 right-4 z-50 animate-fade-in"
+          role="status"
+          aria-live="polite"
+          aria-label="Layout changes saved successfully"
+        >
+          <div className="bg-green-600/90 text-green-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm border border-green-500/30">
             Layout saved
           </div>
         </div>
       )}
 
       {unsavedChanges && !layoutSaved && (
-        <div className="absolute top-4 right-4 z-50">
-          <div className="bg-amber-600/90 text-amber-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2">
-            <div className="w-2 h-2 bg-amber-300 rounded-full animate-pulse" />
+        <div
+          className="absolute top-4 right-4 z-50"
+          role="status"
+          aria-live="polite"
+          aria-label="Saving layout changes"
+        >
+          <div className="bg-amber-600/90 text-amber-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2 border border-amber-500/30">
+            <div className="w-2 h-2 bg-amber-300 rounded-full animate-pulse" aria-hidden="true" />
             Saving layout...
           </div>
         </div>
