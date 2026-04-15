@@ -8,6 +8,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Enhance debounced layout persistence: add unsavedChanges flag with saving indicator, save immediately on component unmount
 - [x] Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance
 - [x] Add debounced layout persistence: save dockview layout to localStorage 500ms after last change, show 'Layout saved' indicator with animation
 - [x] Replace Allotment with dockview: draggable/dockable panels, floating windows, tabbed groups, full layout serialization and restore from localStorage, Reset Layout integration
@@ -210,6 +211,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-15 | Enhance debounced layout persistence: add unsavedChanges flag with saving indicator, save immediately on component unmount |
 | 2026-04-15 | Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance |
 | 2026-04-15 | Add debounced layout persistence: save dockview layout to localStorage 500ms after last change, show 'Layout saved' indicator with animation |
 | 2026-04-15 | Fixed dockview activeGroup validation error: changed activeGroup from 'center' branch id to 'editor' leaf id to satisfy dockview group id requirements |
