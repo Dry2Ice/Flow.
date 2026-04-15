@@ -208,7 +208,8 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
-| 2026-04-15 | Replaced Allotment docking with dockview: draggable panels, floating groups, tabbed views, full layout JSON serialization to localStorage, Reset Layout button integration |
+| 2026-04-15 | Fixed ThemeToggle hydration mismatch: prevent SSR/CSR content differences by delaying render until client-mounted with loading skeleton |
+| 2026-04-15 | Replaced Allotment with dockview: draggable/dockable panels, floating groups, tabbed views, full layout JSON serialization to localStorage, Reset Layout button integration |
 | 2026-04-15 | Fixed Tailwind v4 dark/light theme switching: added `@theme` directive mapping neutral scale to `--tw-neutral-*` CSS variables, swapped `--color-neutral-*` to `--tw-neutral-*` in theme blocks, and removed inert neutral/gray config overrides from tailwind.config.ts |
 | 2026-04-15 | Set client NIM config synchronously on mount from localStorage (matches `apiConfigured` state), eliminating race where UI shows "AI Ready" but service is unconfigured |
 | 2026-04-15 | Fixed client-side NIM service configuration: now calls `nvidiaNimService.setConfig()` directly in SettingsModal after save and on app mount from localStorage, ensuring AI execution has config immediately |
