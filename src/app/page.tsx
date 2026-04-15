@@ -224,10 +224,25 @@ export default function Home() {
      const check = () => {
        try {
          const s = JSON.parse(localStorage.getItem('nim-settings') || '{}');
-         setApiConfigured(
-           typeof s.apiKey === 'string' && s.apiKey.trim().length > 0 &&
-           typeof s.baseUrl === 'string' && s.baseUrl.trim().length > 0
-         );
+         const configured = typeof s.apiKey === 'string' && s.apiKey.trim().length > 0 &&
+           typeof s.baseUrl === 'string' && s.baseUrl.trim().length > 0;
+         setApiConfigured(configured);
+         // Also configure client-side service immediately if we have a full config
+         if (configured && s.model) {
+          nvidiaNimService.setConfig({
+            apiKey: s.apiKey,
+            baseUrl: s.baseUrl,
+            model: s.model,
+            temperature: s.temperature ?? 0.7,
+            topP: s.topP ?? 1.0,
+            topK: s.topK ?? 50,
+            maxTokens: s.maxTokens ?? 4000,
+            contextTokens: s.contextTokens ?? 0,
+            presencePenalty: s.presencePenalty ?? 0.0,
+            frequencyPenalty: s.frequencyPenalty ?? 0.0,
+            stopSequences: Array.isArray(s.stopSequences) ? s.stopSequences : [],
+          });
+         }
        } catch {
          setApiConfigured(false);
        }
@@ -237,7 +252,7 @@ export default function Home() {
      return () => window.removeEventListener('settings-saved', check);
    }, []);
 
-   // Auto-initialize NIM config from saved localStorage settings
+   // Auto-initialize NIM config on server via API (server-side singleton)
    useEffect(() => {
      const initNimConfig = async () => {
        try {
@@ -262,23 +277,9 @@ export default function Home() {
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify(payload),
            });
-           // Also configure client-side service directly
-           nvidiaNimService.setConfig({
-             apiKey: s.apiKey,
-             baseUrl: s.baseUrl,
-             model: s.model,
-             temperature: s.temperature,
-             topP: s.topP,
-             topK: s.topK,
-             maxTokens: s.maxTokens,
-             contextTokens: s.contextTokens,
-             presencePenalty: s.presencePenalty,
-             frequencyPenalty: s.frequencyPenalty,
-             stopSequences: s.stopSequences,
-           });
          }
        } catch (error) {
-         console.error('Failed to initialize NIM config:', error);
+         console.error('Failed to initialize NIM config on server:', error);
        }
      };
      initNimConfig();
