@@ -8,6 +8,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Add comprehensive accessibility support for dockview: ARIA labels, keyboard navigation (Ctrl+Arrow keys), focus indicators, contrast verification for dark/light themes, skip links, screen reader support, high contrast mode, and reduced motion preferences
 - [x] Enhance debounced layout persistence: add unsavedChanges flag with saving indicator, save immediately on component unmount
 - [x] Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance
 - [x] Add debounced layout persistence: save dockview layout to localStorage 500ms after last change, show 'Layout saved' indicator with animation
@@ -212,6 +213,7 @@ export async function GET() {
 | Date | Changes |
 |------|---------|
 | 2026-04-15 | Enhance debounced layout persistence: add unsavedChanges flag with saving indicator, save immediately on component unmount |
+| 2026-04-15 | Add comprehensive accessibility support for dockview: ARIA labels, keyboard navigation (Ctrl+Arrow keys), focus indicators, contrast verification for dark/light themes, skip links, screen reader support, high contrast mode, and reduced motion preferences |
 | 2026-04-15 | Add lazy loading for CodeEditor and CodePreview: use React.lazy + Suspense with loading skeletons to improve initial load performance |
 | 2026-04-15 | Add debounced layout persistence: save dockview layout to localStorage 500ms after last change, show 'Layout saved' indicator with animation |
 | 2026-04-15 | Fixed dockview activeGroup validation error: changed activeGroup from 'center' branch id to 'editor' leaf id to satisfy dockview group id requirements |
