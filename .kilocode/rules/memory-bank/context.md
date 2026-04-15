@@ -8,6 +8,7 @@ Flow IDE is a complete AI-powered development environment with comprehensive fea
 
 ## Recently Completed
 
+- [x] Fix Tailwind v4 dark/light theme switching: added `@theme` block mapping neutral colors to `--tw-neutral-*` CSS variables, replaced `--color-neutral-*` with `--tw-neutral-*` in `.light`/`.dark` blocks, removed dead neutral/gray overrides from tailwind.config.ts
 - [x] Configure client-side Nvidia NIM service singleton directly after settings save and on app mount to ensure AI execution works immediately
 - [x] Set client NIM config synchronously on mount from localStorage (matches `apiConfigured` state), eliminating race where UI shows "AI Ready" but service is unconfigured
 - [x] Auto-initialize NVIDIA NIM config on server via POST on mount to keep server singleton in sync
@@ -206,6 +207,7 @@ export async function GET() {
 
 | Date | Changes |
 |------|---------|
+| 2026-04-15 | Fixed Tailwind v4 dark/light theme switching: added `@theme` directive mapping neutral scale to `--tw-neutral-*` CSS variables, swapped `--color-neutral-*` to `--tw-neutral-*` in theme blocks, and removed inert neutral/gray config overrides from tailwind.config.ts |
 | 2026-04-15 | Set client NIM config synchronously on mount from localStorage (matches `apiConfigured` state), eliminating race where UI shows "AI Ready" but service is unconfigured |
 | 2026-04-15 | Fixed client-side NIM service configuration: now calls `nvidiaNimService.setConfig()` directly in SettingsModal after save and on app mount from localStorage, ensuring AI execution has config immediately |
 | 2026-04-15 | Auto-initialize NIM config on mount: POST saved settings from localStorage to `/api/nim/config` to ensure server-side singleton is configured before AI execution, preventing "Nvidia NIM configuration not set" errors. |
