@@ -18,6 +18,7 @@ import { PromptInput } from '@/components/PromptInput';
 import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { useAppStore } from '@/lib/store';
+import { nvidiaNimService } from '@/lib/nvidia-nim';
 
 type SideTab = 'files' | 'projects';
 type RightTab = 'chat' | 'logs';
@@ -260,6 +261,20 @@ export default function Home() {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify(payload),
+           });
+           // Also configure client-side service directly
+           nvidiaNimService.setConfig({
+             apiKey: s.apiKey,
+             baseUrl: s.baseUrl,
+             model: s.model,
+             temperature: s.temperature,
+             topP: s.topP,
+             topK: s.topK,
+             maxTokens: s.maxTokens,
+             contextTokens: s.contextTokens,
+             presencePenalty: s.presencePenalty,
+             frequencyPenalty: s.frequencyPenalty,
+             stopSequences: s.stopSequences,
            });
          }
        } catch (error) {

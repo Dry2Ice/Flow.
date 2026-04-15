@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { X, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
+import { nvidiaNimService } from '@/lib/nvidia-nim';
 
 interface SettingsModalProps {
   isOpen?: boolean;
@@ -325,6 +326,21 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       const response = await axios.post('/api/nim/config', config);
 
       if (response.data.success) {
+        // Configure client-side service directly (server instance is configured via the API)
+        nvidiaNimService.setConfig({
+          apiKey,
+          baseUrl,
+          model,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          contextTokens,
+          presencePenalty,
+          frequencyPenalty,
+          stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
+        });
+
         // Update store
         setProjectPath(projectPath);
 
