@@ -33,11 +33,13 @@ function normalizeTrustedRoots(trustedRoots: string[]): string[] {
 export function getWorkspaceRoot(): string {
   const configuredRoot = process.env.WORKSPACE_ROOT;
 
-  if (!configuredRoot || !configuredRoot.trim()) {
-    throw new WorkspaceSecurityError(500, 'missing_workspace_root', 'Server workspace root is not configured');
+  if (configuredRoot && configuredRoot.trim()) {
+    return path.resolve(configuredRoot);
   }
 
-  return path.resolve(configuredRoot);
+  // Fallback to current working directory for development convenience
+  // This ensures the app works out-of-the-box without explicit configuration
+  return process.cwd();
 }
 
 export function getConfiguredTrustedRoots(workspaceRoot: string): string[] {
