@@ -1,1 +1,1 @@
-Nothing needs to be added to the .gitignore file since only a source code file (DockWorkspace.tsx) was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+Nothing needs to be added to .gitignore since only a source code file (.tsx) was modified and no build artifacts, dependencies, or temporary files were present in the changes.
