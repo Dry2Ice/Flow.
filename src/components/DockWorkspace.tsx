@@ -138,18 +138,17 @@ const DEFAULT_LAYOUT = {
   grid: {
     root: {
       type: 'branch',
+      orientation: 'VERTICAL',
       data: [
         {
           type: 'branch',
           orientation: 'HORIZONTAL',
-          id: 'top',
           size: 70,
           data: [
             { type: 'leaf', data: { views: ['files', 'projects'] }, id: 'left', size: 20 },
             {
               type: 'branch',
               orientation: 'HORIZONTAL',
-              id: 'center',
               data: [
                 { type: 'leaf', data: { views: ['editor'] }, id: 'editor', size: 50 },
                 { type: 'leaf', data: { views: ['preview'] }, id: 'preview', size: 50 },
