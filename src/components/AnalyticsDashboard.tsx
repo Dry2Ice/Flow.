@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { BarChart3, Code, Clock, Zap, TrendingUp, AlertTriangle, CheckCircle, XCircle, Target, Activity } from 'lucide-react';
 
@@ -78,6 +78,12 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color, progress }: {
 export function AnalyticsDashboard() {
   const { projects, currentProject, logs, bugs, aiRequests, tasks } = useAppStore();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
   const stats = useMemo(() => {
     const totalFiles = currentProject?.files.length || 0;
     const totalTasks = tasks.length;
@@ -126,6 +132,11 @@ export function AnalyticsDashboard() {
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, 5);
   }, [logs]);
+
+  // Prevent hydration mismatch by not rendering until mounted on client
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="h-full dark:bg-neutral-900 light:bg-gray-50 p-4 space-y-6 transition-colors duration-300">
