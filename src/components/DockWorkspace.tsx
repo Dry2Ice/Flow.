@@ -353,8 +353,8 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
       if (!node || typeof node !== 'object') {
         return false;
       }
-      // Check that id is a string if present
-      if (node.id !== undefined && typeof node.id !== 'string') {
+      // Check that id exists and is a string
+      if (node.id === undefined || node.id === null || typeof node.id !== 'string') {
         return false;
       }
       // Recursively validate child nodes
