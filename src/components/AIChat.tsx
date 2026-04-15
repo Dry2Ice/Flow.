@@ -23,6 +23,8 @@ export function AIChat() {
   const activeSession = sessions[activeSessionId] ?? { messages: [], isGenerating: false };
   const messages = activeSession.messages;
   const isGenerating = activeSession.isGenerating;
+  const connectionStatus = activeSession.connectionStatus;
+  const reconnectDelay = activeSession.reconnectDelay;
   const sessionLogs = logs.filter((log) => !log.sessionId || log.sessionId === activeSessionId);
   const aiActionLogs = sessionLogs.filter((log) => log.source === 'ai_execution' || log.source === 'user_action');
   const errorLogs = sessionLogs.filter((log) => log.type === 'error');
@@ -121,6 +123,35 @@ export function AIChat() {
               </option>
             ))}
           </select>
+
+          {/* Connection status indicator */}
+          <div className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs">
+            {connectionStatus === 'connected' && (
+              <>
+                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-emerald-400">Connected</span>
+              </>
+            )}
+            {connectionStatus === 'reconnecting' && (
+              <>
+                <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-amber-400">Reconnecting{reconnectDelay ? ` (${(reconnectDelay / 1000).toFixed(0)}s)` : ''}</span>
+              </>
+            )}
+            {connectionStatus === 'failed' && (
+              <>
+                <div className="h-2 w-2 rounded-full bg-red-400" />
+                <span className="text-red-400">Connection Failed</span>
+              </>
+            )}
+            {!connectionStatus && (
+              <>
+                <div className="h-2 w-2 rounded-full bg-neutral-500" />
+                <span className="text-neutral-500">Idle</span>
+              </>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => createSession()}

@@ -8,6 +8,8 @@ export interface SessionState {
   messages: AIMessage[];
   isGenerating: boolean;
   activeRequests: number;
+  connectionStatus?: 'connected' | 'reconnecting' | 'failed';
+  reconnectDelay?: number;
 }
 
 export interface OpenFile {

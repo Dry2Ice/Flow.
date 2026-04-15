@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import { DevelopmentTask, CodeChange, PromptRequest } from '@/types';
+import { useAppStore } from '@/lib/store';
 
 export interface NvidiaNimConfig {
   apiKey: string;
@@ -359,47 +360,140 @@ class NvidiaNimService {
 
     const { requestBody } = this.buildRequestPayload(request);
 
-    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ...requestBody, stream: true }),
-      signal,
-    });
-
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    if (!response.body) throw new Error('No response body');
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = '';
+    // Exponential backoff retry logic
+    let delay = 1000;
+    let attempt = 0;
+    const MAX_RETRY_DELAY = 8000;
 
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      try {
+        attempt++;
+        // Log connection attempt
+        if (attempt > 1) {
+          // Log reconnect event
+          const state = useAppStore.getState();
+          const activeSessionId = state.activeSessionId;
+          state.addLog({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId,
+            timestamp: new Date(),
+            type: 'warning',
+            message: `Reconnecting to AI service... (attempt ${attempt})`,
+            source: 'ai_execution',
+            details: `Waiting ${delay}ms before retry`,
+          });
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter((l) => l.startsWith('data: '));
+          // Signal reconnecting state
+          useAppStore.setState((state: any) => ({
+            sessions: {
+              ...state.sessions,
+              [activeSessionId]: {
+                ...state.sessions[activeSessionId],
+                connectionStatus: 'reconnecting',
+                reconnectDelay: delay,
+              },
+            },
+          }));
 
-      for (const line of lines) {
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') break;
-        try {
-          const parsed = JSON.parse(data);
-          const delta = parsed.choices?.[0]?.delta?.content ?? '';
-          if (typeof delta === 'string' && delta) {
-            fullContent += delta;
-            onChunk(delta);
+          // Wait exponential delay
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay = Math.min(delay * 2, MAX_RETRY_DELAY);
+        }
+
+        const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.config.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...requestBody, stream: true }),
+          signal,
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        if (!response.body) throw new Error('No response body');
+
+        // Update connection status to connected
+        const state = useAppStore.getState();
+        const activeSessionId = state.activeSessionId;
+        useAppStore.setState((state: any) => ({
+          sessions: {
+            ...state.sessions,
+            [activeSessionId]: {
+              ...state.sessions[activeSessionId],
+              connectionStatus: 'connected',
+              reconnectDelay: 0,
+            },
+          },
+        }));
+
+        // Log successful connection
+        if (attempt > 1) {
+          state.addLog({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId,
+            timestamp: new Date(),
+            type: 'success',
+            message: `AI service reconnected successfully after ${attempt} attempts`,
+            source: 'ai_execution',
+          });
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter((l) => l.startsWith('data: '));
+
+          for (const line of lines) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta?.content ?? '';
+              if (typeof delta === 'string' && delta) {
+                fullContent += delta;
+                onChunk(delta);
+              }
+            } catch {
+              // Skip malformed SSE lines
+            }
           }
-        } catch {
-          // Skip malformed SSE lines
+        }
+
+        return this.parseResponse(fullContent);
+      } catch (error) {
+        // Handle aborted requests normally
+        if (signal?.aborted) throw error;
+        
+        // Check if we can retry
+        const isRetryable = 
+          (error instanceof Error && error.message.includes('API error:')) ||
+          (error instanceof Error && error.message.includes('fetch')) ||
+          (error instanceof Error && error.message.includes('network'));
+
+        if (!isRetryable || delay >= MAX_RETRY_DELAY) {
+          // Update connection status to failed
+          const state = useAppStore.getState();
+          const activeSessionId = state.activeSessionId;
+          useAppStore.setState((state: any) => ({
+            sessions: {
+              ...state.sessions,
+              [activeSessionId]: {
+                ...state.sessions[activeSessionId],
+                connectionStatus: 'failed',
+              },
+            },
+          }));
+          throw error;
         }
       }
     }
-
-    return this.parseResponse(fullContent);
   }
 
   private buildRequestPayload(request: GenerateCodeRequest): { messages: any[]; requestBody: any } {
