@@ -14,7 +14,11 @@ import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
-import { useAppStore } from '@/lib/store';
+import {
+  PANEL_REGISTRY,
+  SerializedDockviewPanels,
+  normalizeUniqueTitles,
+} from '@/lib/panel-registry';
 
 // Lazy load heavy components
 const CodeEditor = lazy(() =>
@@ -176,19 +180,11 @@ interface LeafNode {
 
 type GridNode = BranchNode | LeafNode;
 
-interface SerializedDockviewPanel {
-  id: string;
-  title: string;
-  contentComponent: string;
-  tabComponent?: string;
-  params?: Record<string, unknown>;
-}
-
 interface DockviewLayout {
   grid: {
     root: GridNode;
   };
-  panels: Record<string, SerializedDockviewPanel>;
+  panels: SerializedDockviewPanels;
   activeGroup?: string;
 }
 
@@ -267,43 +263,43 @@ const DEFAULT_LAYOUT: DockviewLayout = {
   panels: {
     files: {
       id: 'files',
-      title: PANEL_ACCESSIBILITY.files.title,
+      title: PANEL_REGISTRY.files.defaultTitle,
       contentComponent: 'files',
       params: { ariaLabel: PANEL_ACCESSIBILITY.files.ariaLabel },
     },
     projects: {
       id: 'projects',
-      title: PANEL_ACCESSIBILITY.projects.title,
+      title: PANEL_REGISTRY.projects.defaultTitle,
       contentComponent: 'projects',
       params: { ariaLabel: PANEL_ACCESSIBILITY.projects.ariaLabel },
     },
     editor: {
       id: 'editor',
-      title: PANEL_ACCESSIBILITY.editor.title,
+      title: PANEL_REGISTRY.editor.defaultTitle,
       contentComponent: 'editor',
       params: { ariaLabel: PANEL_ACCESSIBILITY.editor.ariaLabel },
     },
     preview: {
       id: 'preview',
-      title: PANEL_ACCESSIBILITY.preview.title,
+      title: PANEL_REGISTRY.preview.defaultTitle,
       contentComponent: 'preview',
       params: { ariaLabel: PANEL_ACCESSIBILITY.preview.ariaLabel },
     },
     chat: {
       id: 'chat',
-      title: PANEL_ACCESSIBILITY.chat.title,
+      title: PANEL_REGISTRY.chat.defaultTitle,
       contentComponent: 'chat',
       params: { ariaLabel: PANEL_ACCESSIBILITY.chat.ariaLabel },
     },
     logs: {
       id: 'logs',
-      title: PANEL_ACCESSIBILITY.logs.title,
+      title: PANEL_REGISTRY.logs.defaultTitle,
       contentComponent: 'logs',
       params: { ariaLabel: PANEL_ACCESSIBILITY.logs.ariaLabel },
     },
     plan: {
       id: 'plan',
-      title: PANEL_ACCESSIBILITY.plan.title,
+      title: PANEL_REGISTRY.plan.defaultTitle,
       contentComponent: 'plan',
       params: { ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel },
     },
@@ -342,6 +338,9 @@ function validateLayout(layout: unknown): boolean {
 
   const panelsObj = layoutObj.panels as Record<string, unknown>;
 
+  const panelIds = new Set<string>();
+  const panelTitles = new Set<string>();
+
   for (const [key, panel] of Object.entries(panelsObj)) {
     if (!panel || typeof panel !== 'object') {
       console.warn(`[DockWorkspace] validate: panel "${key}" is not an object`);
@@ -361,6 +360,25 @@ function validateLayout(layout: unknown): boolean {
       console.error(`[DockWorkspace] validate: panel "${key}" has missing or invalid "id"`);
       return false;
     }
+
+    const normalizedPanelId = p.id.trim();
+    if (panelIds.has(normalizedPanelId)) {
+      console.error(`[DockWorkspace] validate: duplicate panel id "${normalizedPanelId}"`);
+      return false;
+    }
+    panelIds.add(normalizedPanelId);
+
+    if (typeof p.title !== 'string' || p.title.trim() === '') {
+      console.error(`[DockWorkspace] validate: panel "${key}" has missing or invalid "title"`);
+      return false;
+    }
+
+    const normalizedTitle = p.title.trim();
+    if (panelTitles.has(normalizedTitle)) {
+      console.error(`[DockWorkspace] validate: duplicate panel title "${normalizedTitle}"`);
+      return false;
+    }
+    panelTitles.add(normalizedTitle);
   }
 
   const validateNode = (node: unknown, path: string): boolean => {
@@ -462,6 +480,14 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     saveDraftLayout: state.saveDraftLayout,
   }));
 
+  const applyLayout = useCallback((api: DockviewApi, layout: DockviewLayout) => {
+    const normalizedLayout: DockviewLayout = {
+      ...layout,
+      panels: normalizeUniqueTitles(layout.panels),
+    };
+    api.fromJSON(normalizedLayout as Parameters<DockviewApi['fromJSON']>[0]);
+  }, []);
+
   const panelOrder = useMemo(
     () => ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'],
     []
@@ -532,20 +558,33 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   }, [saveDraftLayout]);
 
   const loadLayout = useCallback((api: DockviewApi) => {
-    const activePreset = workspacePresets.find((preset) => preset.id === activeWorkspacePresetId);
-    const candidateLayout = activePreset?.layout ?? draftLayout;
+    try {
+      const saved = localStorage.getItem(LAYOUT_KEY);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
 
-    if (candidateLayout && validateLayout(candidateLayout)) {
-      try {
-        api.fromJSON(candidateLayout as Parameters<DockviewApi['fromJSON']>[0]);
-        return;
-      } catch (error) {
-        console.error('[DockWorkspace] fromJSON failed with preset/draft layout:', error);
+        if (parsed && typeof parsed === 'object' && validateLayout(parsed)) {
+          try {
+            applyLayout(api, parsed as DockviewLayout);
+            return;
+          } catch (fromJsonError) {
+            console.error(
+              '[DockWorkspace] fromJSON failed with saved layout, clearing localStorage:',
+              fromJsonError
+            );
+            localStorage.removeItem(LAYOUT_KEY);
+          }
+        } else {
+          console.warn(
+            '[DockWorkspace] Saved layout failed validation, clearing localStorage'
+          );
+          localStorage.removeItem(LAYOUT_KEY);
+        }
       }
     }
 
     try {
-      api.fromJSON(DEFAULT_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
+      applyLayout(api, DEFAULT_LAYOUT);
     } catch (defaultError) {
       console.error(
         '[DockWorkspace] CRITICAL: Failed to load DEFAULT_LAYOUT. The workspace will be empty. Error:',
@@ -576,12 +615,11 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
     try {
-      apiRef.current.fromJSON(DEFAULT_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
-      saveDraftLayout(DEFAULT_LAYOUT);
+      applyLayout(apiRef.current, DEFAULT_LAYOUT);
     } catch (error) {
       console.error('[DockWorkspace] Failed to reset layout:', error);
     }
-  }, [saveDraftLayout]);
+  }, [applyLayout]);
 
   useEffect(() => {
     return () => {
