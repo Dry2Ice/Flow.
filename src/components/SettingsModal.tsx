@@ -158,6 +158,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setProjectPath,
     generalPrompt,
     setGeneralPrompt,
+    currentProject,
+    workspacePresets,
+    activeWorkspacePresetId,
+    draftLayout,
+    createWorkspacePreset,
+    renameWorkspacePreset,
+    deleteWorkspacePreset,
+    applyWorkspacePreset,
+    saveDraftLayout,
   } = useAppStore();
 
   const projectPresets = promptPresets.filter(
@@ -243,9 +252,69 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   };
 
   const handleResetLayout = () => {
-    localStorage.removeItem('flow.dockview-layout.v1');
+    saveDraftLayout(null);
     window.dispatchEvent(new CustomEvent('reset-dock-layout'));
     setMessage('Workspace layout reset to default!');
+    setTimeout(() => setMessage(''), 2000);
+  };
+
+  const availableWorkspacePresets = workspacePresets.filter((preset) => {
+    if (preset.scope === 'global') return true;
+    return preset.projectId === currentProject?.id;
+  });
+
+  const handleCreateWorkspacePreset = () => {
+    if (!draftLayout) {
+      setMessage('No layout available yet. Open workspace first.');
+      return;
+    }
+
+    const nextPreset = createWorkspacePreset({
+      name: newWorkspacePresetName || `Preset ${availableWorkspacePresets.length + 1}`,
+      layout: draftLayout,
+      scope: currentProject ? 'project' : 'global',
+      projectId: currentProject?.id,
+    });
+    setNewWorkspacePresetName('');
+    applyWorkspacePreset(nextPreset.id);
+    setMessage('Workspace preset created.');
+    setTimeout(() => setMessage(''), 2000);
+  };
+
+  const handleSaveCurrentLayoutAsPreset = () => {
+    if (!draftLayout) {
+      setMessage('No layout available to save.');
+      return;
+    }
+
+    const activePreset = availableWorkspacePresets.find((preset) => preset.id === activeWorkspacePresetId);
+    if (!activePreset) {
+      handleCreateWorkspacePreset();
+      return;
+    }
+
+    if (activePreset.isReadonly) {
+      const nextPreset = createWorkspacePreset({
+        name: `${activePreset.name} Copy`,
+        layout: draftLayout,
+        scope: currentProject ? 'project' : 'global',
+        projectId: currentProject?.id,
+      });
+      applyWorkspacePreset(nextPreset.id);
+      setMessage('Saved layout as a new preset.');
+      setTimeout(() => setMessage(''), 2000);
+      return;
+    }
+
+    deleteWorkspacePreset(activePreset.id);
+    const replacement = createWorkspacePreset({
+      name: activePreset.name,
+      layout: draftLayout,
+      scope: activePreset.scope,
+      projectId: activePreset.projectId,
+    });
+    applyWorkspacePreset(replacement.id);
+    setMessage('Current layout saved to active preset.');
     setTimeout(() => setMessage(''), 2000);
   };
 
@@ -374,15 +443,130 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               {/* Quick Actions */}
               <div className="border-b border-neutral-600 pb-4">
                 <h4 className="text-md font-medium text-neutral-200 mb-3">Quick Actions</h4>
-                <button
-                  type="button"
-                  onClick={handleResetLayout}
-                  className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset Workspace Layout
-                </button>
-                <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetLayout}
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset Workspace Layout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveCurrentLayoutAsPreset}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-sm transition-colors"
+                  >
+                    Save Current Layout to Preset
+                  </button>
+                </div>
+                <p className="text-xs text-neutral-500 mt-2">Restore default layout or save current workspace arrangement.</p>
+              </div>
+
+              {/* Workspace Presets */}
+              <div>
+                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                  Workspace Presets
+                </h4>
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newWorkspacePresetName}
+                    onChange={(e) => setNewWorkspacePresetName(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Preset name"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateWorkspacePreset}
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm transition-colors"
+                  >
+                    Create
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {availableWorkspacePresets.map((preset) => (
+                    <div key={preset.id} className="p-3 border border-neutral-600 rounded bg-neutral-800/60">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => applyWorkspacePreset(preset.id)}
+                            className={`px-2 py-1 text-xs rounded transition-colors ${
+                              activeWorkspacePresetId === preset.id
+                                ? 'bg-green-600 text-white'
+                                : 'bg-neutral-700 hover:bg-neutral-600 text-neutral-200'
+                            }`}
+                          >
+                            {activeWorkspacePresetId === preset.id ? 'Active' : 'Select'}
+                          </button>
+                          {renamingWorkspacePresetId === preset.id ? (
+                            <input
+                              type="text"
+                              value={renameWorkspacePresetName}
+                              onChange={(e) => setRenameWorkspacePresetName(e.target.value)}
+                              className="px-2 py-1 bg-neutral-700 border border-neutral-600 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm text-neutral-200">{preset.name}</span>
+                          )}
+                          <span className="text-xs text-neutral-500">{preset.scope}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {renamingWorkspacePresetId === preset.id ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  renameWorkspacePreset(preset.id, renameWorkspacePresetName);
+                                  setRenamingWorkspacePresetId(null);
+                                  setRenameWorkspacePresetName('');
+                                }}
+                                disabled={preset.isReadonly}
+                                className="px-2 py-1 text-xs bg-green-700 hover:bg-green-600 disabled:bg-neutral-700 rounded"
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRenamingWorkspacePresetId(null);
+                                  setRenameWorkspacePresetName('');
+                                }}
+                                className="px-2 py-1 text-xs bg-neutral-700 hover:bg-neutral-600 rounded"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRenamingWorkspacePresetId(preset.id);
+                                setRenameWorkspacePresetName(preset.name);
+                              }}
+                              disabled={preset.isReadonly}
+                              className="px-2 py-1 text-xs bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 rounded"
+                            >
+                              Rename
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => deleteWorkspacePreset(preset.id)}
+                            disabled={preset.isReadonly}
+                            className="px-2 py-1 text-xs bg-red-700 hover:bg-red-600 disabled:bg-neutral-800 rounded"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {availableWorkspacePresets.length === 0 && (
+                    <p className="text-xs text-neutral-500">No workspace presets yet.</p>
+                  )}
+                </div>
               </div>
 
               {/* API Configuration Section */}
