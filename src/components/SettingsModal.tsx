@@ -148,14 +148,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
   const [generalPromptText, setGeneralPromptText] = useState('');
-  const [newWorkspacePresetName, setNewWorkspacePresetName] = useState('');
-  const [renamingWorkspacePresetId, setRenamingWorkspacePresetId] = useState<string | null>(null);
-  const [renameWorkspacePresetName, setRenameWorkspacePresetName] = useState('');
+  const [presetScopeFilter, setPresetScopeFilter] = useState<'project' | 'global'>('project');
   const {
     activePreset,
     promptPresets,
     setActivePreset,
     updatePromptPreset,
+    currentProject,
     setProjectPath,
     generalPrompt,
     setGeneralPrompt,
@@ -169,6 +168,12 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     applyWorkspacePreset,
     saveDraftLayout,
   } = useAppStore();
+
+  const projectPresets = promptPresets.filter(
+    (preset) => preset.scope === 'project' && preset.projectId === currentProject?.id
+  );
+  const globalPresets = promptPresets.filter((preset) => preset.scope === 'global');
+  const visiblePresets = presetScopeFilter === 'project' ? projectPresets : globalPresets;
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -886,10 +891,34 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               {/* Prompt Presets Section */}
               <div>
                 <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
-                  Prompt Presets (3 editable)
+                  Prompt Presets
                 </h4>
+                <div className="mb-3 inline-flex rounded-lg border border-neutral-600 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setPresetScopeFilter('project')}
+                    className={`px-3 py-1.5 text-sm transition-colors ${
+                      presetScopeFilter === 'project'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                    }`}
+                  >
+                    Этот проект
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPresetScopeFilter('global')}
+                    className={`px-3 py-1.5 text-sm transition-colors ${
+                      presetScopeFilter === 'global'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                    }`}
+                  >
+                    Глобальные
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  {promptPresets.slice(0, 3).map((preset) => (
+                  {visiblePresets.map((preset) => (
                     <div
                       key={preset.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -963,6 +992,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       </div>
                     </div>
                   ))}
+                  {visiblePresets.length === 0 && (
+                    <div className="p-3 text-sm text-neutral-400 border border-dashed border-neutral-600 rounded">
+                      {presetScopeFilter === 'project'
+                        ? 'Для текущего проекта пресеты не найдены.'
+                        : 'Глобальные пресеты не найдены.'}
+                    </div>
+                  )}
                 </div>
                 {activePreset && (
                   <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded">
