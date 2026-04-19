@@ -14,7 +14,12 @@ import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
-import { useAppStore } from '@/lib/store';
+import {
+  DEFAULT_DOCKVIEW_LAYOUT,
+  deserializeDockviewLayout,
+  DOCKVIEW_LAYOUT_STORAGE_KEY,
+  serializeDockviewLayout,
+} from '@/lib/dock-layout';
 
 // Lazy load heavy components
 const CodeEditor = lazy(() =>
@@ -550,7 +555,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     saveTimeoutRef.current = setTimeout(() => {
       try {
         const layout = apiRef.current!.toJSON();
-        saveDraftLayout(layout);
+        localStorage.setItem(DOCKVIEW_LAYOUT_STORAGE_KEY, serializeDockviewLayout(layout));
         setLayoutSaved(true);
         setUnsavedChanges(false);
         setTimeout(() => setLayoutSaved(false), 2000);
@@ -562,9 +567,9 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
 
   const loadLayout = useCallback((api: DockviewApi) => {
     try {
-      const saved = localStorage.getItem(LAYOUT_KEY);
+      const saved = localStorage.getItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
       if (saved) {
-        const parsed: unknown = JSON.parse(saved);
+        const parsed = deserializeDockviewLayout(saved);
 
         const validationResult = validateLayout(parsed);
 
@@ -577,31 +582,29 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
               '[DockWorkspace] fromJSON failed with saved layout, clearing localStorage:',
               fromJsonError
             );
-            localStorage.removeItem(LAYOUT_KEY);
+            localStorage.removeItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
           }
         } else {
           const reason = validationResult.reason ?? 'unknown reason';
           console.warn(
             `[DockWorkspace] Saved layout failed validation (${reason}), clearing localStorage`
           );
-          addLog({
-            id: crypto.randomUUID(),
-            timestamp: new Date(),
-            type: 'warning',
-            message: '[DockWorkspace] Saved layout rejected by validation',
-            details: reason,
-            source: 'user_action',
-          });
-          localStorage.removeItem(LAYOUT_KEY);
+          localStorage.removeItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
         }
       }
+    } catch (error) {
+      console.error(
+        '[DockWorkspace] Failed to load/parse saved layout, clearing localStorage:',
+        error
+      );
+      localStorage.removeItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
     }
 
     try {
-      applyLayout(api, DEFAULT_LAYOUT);
+      api.fromJSON(DEFAULT_DOCKVIEW_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
     } catch (defaultError) {
       console.error(
-        '[DockWorkspace] CRITICAL: Failed to load DEFAULT_LAYOUT. The workspace will be empty. Error:',
+        '[DockWorkspace] CRITICAL: Failed to load DEFAULT_DOCKVIEW_LAYOUT. The workspace will be empty. Error:',
         defaultError
       );
     }
@@ -628,8 +631,9 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
+    localStorage.removeItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
     try {
-      applyLayout(apiRef.current, DEFAULT_LAYOUT);
+      apiRef.current.fromJSON(DEFAULT_DOCKVIEW_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
     } catch (error) {
       console.error('[DockWorkspace] Failed to reset layout:', error);
     }
@@ -641,7 +645,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         clearTimeout(saveTimeoutRef.current);
         try {
           const layout = apiRef.current.toJSON();
-          saveDraftLayout(layout);
+          localStorage.setItem(DOCKVIEW_LAYOUT_STORAGE_KEY, serializeDockviewLayout(layout));
         } catch {
           // ignore
         }
