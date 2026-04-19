@@ -22,8 +22,18 @@ const DEFAULT_SESSION_ID = 'default';
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
 const ACTIVE_PRESET_STORAGE_KEY = 'flow-active-preset-id';
+const LEGACY_PRESET_KEY = 'flow.dockview-layout.v1';
+const LEGACY_PRESET_MIGRATION_KEY = 'flow.workspace-preset-migration.v1';
+const GLOBAL_DEFAULT_PRESET_ID = 'global-default';
 
 const DEFAULT_PROMPT_PRESETS: PromptPreset[] = [
+  {
+    id: GLOBAL_DEFAULT_PRESET_ID,
+    name: 'Global Default',
+    description: 'Default global preset used when no project preset is available',
+    systemPrompt: 'You are a senior software engineer. Provide clear, production-ready and maintainable solutions.',
+    scope: 'global',
+  },
   {
     id: 'debug',
     name: 'Bug Detection & Fixing',
@@ -44,7 +54,8 @@ When analyzing the project, consider:
 - Code maintainability
 - Best practices compliance
 
-Provide actionable recommendations that can be implemented immediately.`
+Provide actionable recommendations that can be implemented immediately.`,
+    scope: 'global',
   },
   {
     id: 'analyze',
@@ -67,7 +78,8 @@ Consider:
 - Testing coverage and quality assurance
 - Documentation and developer experience
 
-Generate a comprehensive improvement roadmap with measurable goals and success criteria.`
+Generate a comprehensive improvement roadmap with measurable goals and success criteria.`,
+    scope: 'global',
   },
   {
     id: 'develop',
@@ -91,33 +103,109 @@ When making changes:
 - Optimize for performance where appropriate
 - Ensure compatibility with existing dependencies
 
-Deliver production-ready code that solves the user's problem effectively.`
+Deliver production-ready code that solves the user's problem effectively.`,
+    scope: 'global',
   }
 ];
 
 const isClient = typeof window !== 'undefined';
 
+const normalizePromptPreset = (preset: unknown): PromptPreset | null => {
+  if (!preset || typeof preset !== 'object') return null;
+
+  const candidate = preset as Partial<PromptPreset>;
+
+  if (
+    typeof candidate.id !== 'string'
+    || typeof candidate.name !== 'string'
+    || typeof candidate.description !== 'string'
+    || typeof candidate.systemPrompt !== 'string'
+  ) {
+    return null;
+  }
+
+  const normalizedScope = candidate.scope === 'project' ? 'project' : 'global';
+  const normalizedProjectId =
+    normalizedScope === 'project' && typeof candidate.projectId === 'string' && candidate.projectId.trim()
+      ? candidate.projectId
+      : undefined;
+
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    description: candidate.description,
+    systemPrompt: candidate.systemPrompt,
+    scope: normalizedScope,
+    ...(normalizedProjectId ? { projectId: normalizedProjectId } : {}),
+  };
+};
+
+const extractLegacyPrompt = (legacyValue: string): string | null => {
+  try {
+    const parsed = JSON.parse(legacyValue);
+    if (typeof parsed === 'string' && parsed.trim()) return parsed;
+
+    if (parsed && typeof parsed === 'object') {
+      const value = parsed as Record<string, unknown>;
+      const candidates = [value.systemPrompt, value.prompt, value.content];
+      const firstString = candidates.find((item) => typeof item === 'string' && item.trim()) as string | undefined;
+      if (firstString) return firstString;
+    }
+  } catch {
+    if (legacyValue.trim()) return legacyValue;
+  }
+
+  return null;
+};
+
+const migrateLegacyPresetIfNeeded = (presets: PromptPreset[]): PromptPreset[] => {
+  if (!isClient) return presets;
+  if (localStorage.getItem(LEGACY_PRESET_MIGRATION_KEY)) return presets;
+
+  const legacyValue = localStorage.getItem(LEGACY_PRESET_KEY);
+  if (!legacyValue) {
+    localStorage.setItem(LEGACY_PRESET_MIGRATION_KEY, 'done');
+    return presets;
+  }
+
+  const legacyPrompt = extractLegacyPrompt(legacyValue);
+  localStorage.setItem(LEGACY_PRESET_MIGRATION_KEY, 'done');
+
+  if (!legacyPrompt) return presets;
+  if (presets.some((preset) => preset.id === GLOBAL_DEFAULT_PRESET_ID)) return presets;
+
+  const migrated = [
+    {
+      id: GLOBAL_DEFAULT_PRESET_ID,
+      name: 'Global Default',
+      description: 'Migrated from legacy workspace preset',
+      systemPrompt: legacyPrompt,
+      scope: 'global' as const,
+    },
+    ...presets,
+  ];
+
+  localStorage.setItem(PROMPT_PRESETS_STORAGE_KEY, JSON.stringify(migrated));
+  return migrated;
+};
+
 const loadPromptPresets = (): PromptPreset[] => {
   if (!isClient) return DEFAULT_PROMPT_PRESETS;
 
   const saved = localStorage.getItem(PROMPT_PRESETS_STORAGE_KEY);
-  if (!saved) return DEFAULT_PROMPT_PRESETS;
+  if (!saved) return migrateLegacyPresetIfNeeded(DEFAULT_PROMPT_PRESETS);
 
   try {
     const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return DEFAULT_PROMPT_PRESETS;
+    if (!Array.isArray(parsed)) return migrateLegacyPresetIfNeeded(DEFAULT_PROMPT_PRESETS);
 
-    return parsed.filter((preset): preset is PromptPreset => {
-      return (
-        typeof preset?.id === 'string'
-        && typeof preset?.name === 'string'
-        && typeof preset?.description === 'string'
-        && typeof preset?.systemPrompt === 'string'
-      );
-    });
+    const normalized = parsed
+      .map((preset) => normalizePromptPreset(preset))
+      .filter((preset): preset is PromptPreset => Boolean(preset));
+    return migrateLegacyPresetIfNeeded(normalized.length > 0 ? normalized : DEFAULT_PROMPT_PRESETS);
   } catch (error) {
     console.error('Failed to parse saved prompt presets:', error);
-    return DEFAULT_PROMPT_PRESETS;
+    return migrateLegacyPresetIfNeeded(DEFAULT_PROMPT_PRESETS);
   }
 };
 
@@ -142,9 +230,17 @@ const saveActivePresetId = (presetId: string | null) => {
   localStorage.removeItem(ACTIVE_PRESET_STORAGE_KEY);
 };
 
+const resolveDefaultGlobalPreset = (presets: PromptPreset[]): PromptPreset | null => {
+  return presets.find((preset) => preset.scope === 'global' && preset.id === GLOBAL_DEFAULT_PRESET_ID)
+    ?? presets.find((preset) => preset.scope === 'global')
+    ?? null;
+};
+
 const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
-const initialActivePreset = initialPromptPresets.find((preset) => preset.id === initialActivePresetId) ?? null;
+const initialActivePreset =
+  initialPromptPresets.find((preset) => preset.id === initialActivePresetId)
+  ?? resolveDefaultGlobalPreset(initialPromptPresets);
 const WINDOWS_DRIVE_PATH_PATTERN = /^[a-zA-Z]:[\\/]/;
 
 const isAbsoluteProjectPath = (projectPath: string): boolean => {
@@ -868,8 +964,16 @@ export const useAppStore = create<AppState>()(
       }
     },
     switchProject: (projectId: string) => set((state) => {
-      const project = state.projects.find(p => p.id === projectId);
-      return { currentProject: project || null };
+      const project = state.projects.find((item) => item.id === projectId);
+      const projectPreset = state.promptPresets.find(
+        (preset) => preset.scope === 'project' && preset.projectId === projectId
+      ) ?? null;
+      const fallbackGlobalPreset = resolveDefaultGlobalPreset(state.promptPresets);
+
+      return {
+        currentProject: project || null,
+        activePreset: projectPreset ?? fallbackGlobalPreset,
+      };
     }),
     deleteProject: (projectId: string) => set((state) => ({
       projects: state.projects.filter(p => p.id !== projectId),

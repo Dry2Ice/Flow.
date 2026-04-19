@@ -137,6 +137,8 @@ export interface PromptPreset {
   name: string;
   description: string;
   systemPrompt: string;
+  scope: 'global' | 'project';
+  projectId?: string;
 }
 
 export interface FileWithMetadata {
