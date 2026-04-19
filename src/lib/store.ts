@@ -18,6 +18,11 @@ export interface OpenFile {
   lastModifiedMs?: number;
 }
 
+export interface WorkspaceLayoutState {
+  presetId: string;
+  version: number;
+}
+
 const DEFAULT_SESSION_ID = 'default';
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
@@ -246,6 +251,7 @@ interface AppState {
     statsPanel: number;
     centerVertical: number;
   };
+  workspaceLayout: WorkspaceLayoutState;
 
   // Actions
   setCurrentProject: (project: Project | null) => void;
@@ -310,6 +316,8 @@ interface AppState {
 
   // Workspace actions
   setPanelSizes: (sizes: Partial<AppState['panelSizes']>) => void;
+  resetWorkspaceLayout: () => void;
+  applyWorkspacePreset: (id: string) => void;
 
   // Logging and bug tracking
   addLog: (log: LogEntry) => void;
@@ -373,6 +381,10 @@ export const useAppStore = create<AppState>()(
       planPanel: 16, // percentage - Plan/Bugs panel
       statsPanel: 12, // percentage - Statistics panel
       centerVertical: 60, // percentage of code panel for code editor
+    },
+    workspaceLayout: {
+      presetId: 'default',
+      version: 0,
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
@@ -879,6 +891,18 @@ export const useAppStore = create<AppState>()(
     // Workspace actions
     setPanelSizes: (sizes) => set((state) => ({
       panelSizes: { ...state.panelSizes, ...sizes }
+    })),
+    resetWorkspaceLayout: () => set((state) => ({
+      workspaceLayout: {
+        presetId: 'default',
+        version: state.workspaceLayout.version + 1,
+      },
+    })),
+    applyWorkspacePreset: (id) => set((state) => ({
+      workspaceLayout: {
+        presetId: id,
+        version: state.workspaceLayout.version + 1,
+      },
     })),
 
     // Logging and bug tracking

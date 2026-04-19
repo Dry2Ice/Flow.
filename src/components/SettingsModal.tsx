@@ -156,6 +156,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setProjectPath,
     generalPrompt,
     setGeneralPrompt,
+    resetWorkspaceLayout,
   } = useAppStore();
 
   // Load settings from localStorage on mount
@@ -235,8 +236,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   };
 
   const handleResetLayout = () => {
-    localStorage.removeItem('flow.dockview-layout.v1');
-    window.dispatchEvent(new CustomEvent('reset-dock-layout'));
+    resetWorkspaceLayout();
     setMessage('Workspace layout reset to default!');
     setTimeout(() => setMessage(''), 2000);
   };

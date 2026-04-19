@@ -14,6 +14,7 @@ import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
+import type { WorkspaceLayoutState } from '@/lib/store';
 
 // Lazy load heavy components
 const CodeEditor = lazy(() =>
@@ -437,10 +438,10 @@ function validateLayout(layout: unknown): boolean {
 // ---------------------------------------------------------------------------
 
 interface DockWorkspaceProps {
-  onResetLayout?: (resetFn: () => void) => void;
+  workspaceLayout: WorkspaceLayoutState;
 }
 
-export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
+export function DockWorkspace({ workspaceLayout }: DockWorkspaceProps) {
   const apiRef = useRef<DockviewApi | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [layoutSaved, setLayoutSaved] = useState(false);
@@ -567,6 +568,19 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     }
   }, []);
 
+
+  useEffect(() => {
+    if (!apiRef.current) return;
+
+    if (workspaceLayout.presetId === 'default') {
+      resetLayout();
+      return;
+    }
+
+    console.warn(`[DockWorkspace] Unknown workspace preset: ${workspaceLayout.presetId}. Applying default.`);
+    resetLayout();
+  }, [workspaceLayout, resetLayout]);
+
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current && unsavedChanges && apiRef.current) {
@@ -583,9 +597,6 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     };
   }, [unsavedChanges]);
 
-  useEffect(() => {
-    onResetLayout?.(resetLayout);
-  }, [resetLayout, onResetLayout]);
 
   const onReady = useCallback(
     (event: DockviewReadyEvent) => {
