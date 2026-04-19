@@ -237,16 +237,6 @@ interface AppState {
   // General prompt
   generalPrompt: string;
 
-  // Workspace layout
-  panelSizes: {
-    filesPanel: number;
-    codePanel: number;
-    chatPanel: number;
-    planPanel: number;
-    statsPanel: number;
-    centerVertical: number;
-  };
-
   // Actions
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
@@ -308,9 +298,6 @@ interface AppState {
   // General prompt actions
   setGeneralPrompt: (prompt: string) => void;
 
-  // Workspace actions
-  setPanelSizes: (sizes: Partial<AppState['panelSizes']>) => void;
-
   // Logging and bug tracking
   addLog: (log: LogEntry) => void;
   addBug: (bug: BugReport) => void;
@@ -366,14 +353,6 @@ export const useAppStore = create<AppState>()(
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
-    panelSizes: {
-      filesPanel: 17, // percentage - Files/Projects panel
-      codePanel: 36, // percentage - Code+Preview panel
-      chatPanel: 19, // percentage - Chat/Logs panel
-      planPanel: 16, // percentage - Plan/Bugs panel
-      statsPanel: 12, // percentage - Statistics panel
-      centerVertical: 60, // percentage of code panel for code editor
-    },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
 **Code Quality & Best Practices:**
@@ -874,11 +853,6 @@ export const useAppStore = create<AppState>()(
     deleteProject: (projectId: string) => set((state) => ({
       projects: state.projects.filter(p => p.id !== projectId),
       currentProject: state.currentProject?.id === projectId ? null : state.currentProject
-    })),
-
-    // Workspace actions
-    setPanelSizes: (sizes) => set((state) => ({
-      panelSizes: { ...state.panelSizes, ...sizes }
     })),
 
     // Logging and bug tracking
