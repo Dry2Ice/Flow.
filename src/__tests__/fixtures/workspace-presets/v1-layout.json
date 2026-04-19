@@ -1,0 +1,21 @@
+{
+  "grid": {
+    "root": {
+      "type": "leaf",
+      "size": 100,
+      "data": {
+        "id": "g1",
+        "views": ["editor"],
+        "activeView": "editor"
+      }
+    }
+  },
+  "panels": {
+    "editor": {
+      "id": "editor",
+      "title": "✏️ Editor",
+      "contentComponent": "editor"
+    }
+  },
+  "activeGroup": "g1"
+}

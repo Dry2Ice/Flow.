@@ -1,0 +1,32 @@
+{
+  "presets": [
+    {
+      "id": "legacy-v2",
+      "name": "Legacy workspace",
+      "layout": {
+        "grid": {
+          "root": {
+            "type": "leaf",
+            "size": 100,
+            "data": {
+              "id": "g2",
+              "views": ["chat"],
+              "activeView": "chat"
+            }
+          }
+        },
+        "panels": {
+          "chat": {
+            "id": "chat",
+            "title": "💬 AI Chat",
+            "contentComponent": "chat"
+          }
+        },
+        "activeGroup": "g2"
+      },
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "activePresetId": "legacy-v2"
+}

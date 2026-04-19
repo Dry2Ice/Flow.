@@ -15,11 +15,11 @@ import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 import {
-  DEFAULT_DOCKVIEW_LAYOUT,
-  deserializeDockviewLayout,
-  DOCKVIEW_LAYOUT_STORAGE_KEY,
-  serializeDockviewLayout,
-} from '@/lib/dock-layout';
+  DEFAULT_LAYOUT,
+  migrateWorkspaceStorage,
+  WORKSPACE_STORAGE_VERSION,
+  type WorkspacePresetsEnvelope,
+} from '@/lib/workspace-presets';
 
 // Lazy load heavy components
 const CodeEditor = lazy(() =>
@@ -603,6 +603,41 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
       document.removeEventListener('keydown', handleKeyboardNavigation);
   }, [handleKeyboardNavigation]);
 
+  const persistLayout = useCallback((layout: unknown) => {
+    const migration = migrateWorkspaceStorage(localStorage.getItem(LAYOUT_KEY));
+    const previousEnvelope = migration.envelope;
+    const timestamp = new Date().toISOString();
+
+    const nextPresets = previousEnvelope.presets.map((preset) =>
+      preset.id === previousEnvelope.activePresetId
+        ? { ...preset, layout: layout as typeof preset.layout, updatedAt: timestamp }
+        : preset
+    );
+
+    const hasActivePreset = nextPresets.some((preset) => preset.id === previousEnvelope.activePresetId);
+    const envelope: WorkspacePresetsEnvelope = hasActivePreset
+      ? {
+          ...previousEnvelope,
+          version: WORKSPACE_STORAGE_VERSION,
+          presets: nextPresets,
+        }
+      : {
+          version: WORKSPACE_STORAGE_VERSION,
+          activePresetId: 'workspace-main',
+          presets: [
+            {
+              id: 'workspace-main',
+              name: 'Main workspace',
+              layout: layout as typeof DEFAULT_LAYOUT,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            },
+          ],
+        };
+
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(envelope));
+  }, []);
+
   const saveLayout = useCallback(() => {
     if (!apiRef.current) return;
 
@@ -623,9 +658,18 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         console.error('[DockWorkspace] Failed to save layout:', error);
       }
     }, 500);
-  }, [saveDraftLayout]);
+  }, [persistLayout]);
 
   const loadLayout = useCallback((api: DockviewApi) => {
+    const saved = localStorage.getItem(LAYOUT_KEY);
+
+    const migration = migrateWorkspaceStorage(saved);
+    const activePreset = migration.envelope.presets.find(
+      (preset) => preset.id === migration.envelope.activePresetId
+    ) ?? migration.envelope.presets[0];
+
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(migration.envelope));
+
     try {
       const saved = localStorage.getItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
       if (saved) {
@@ -659,6 +703,9 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
       );
       localStorage.removeItem(DOCKVIEW_LAYOUT_STORAGE_KEY);
     }
+
+    const fallback = migrateWorkspaceStorage(null).envelope;
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(fallback));
 
     try {
       api.fromJSON(DEFAULT_DOCKVIEW_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
@@ -718,7 +765,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         clearTimeout(saveTimeoutRef.current);
         try {
           const layout = apiRef.current.toJSON();
-          localStorage.setItem(DOCKVIEW_LAYOUT_STORAGE_KEY, serializeDockviewLayout(layout));
+          persistLayout(layout);
         } catch {
           // ignore
         }
@@ -726,8 +773,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [saveDraftLayout, unsavedChanges]);
-
+  }, [persistLayout, unsavedChanges]);
 
   useEffect(() => {
     if (!apiRef.current || !activeWorkspacePresetId) {
