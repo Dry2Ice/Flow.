@@ -137,6 +137,21 @@ export interface PromptPreset {
   name: string;
   description: string;
   systemPrompt: string;
+  scope: 'global' | 'project';
+  projectId?: string;
+}
+
+export type WorkspacePresetScope = 'global' | 'project';
+
+export interface WorkspacePreset {
+  id: string;
+  name: string;
+  layout: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  isReadonly: boolean;
+  scope: WorkspacePresetScope;
+  projectId?: string;
 }
 
 export interface FileWithMetadata {

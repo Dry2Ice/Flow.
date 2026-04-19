@@ -149,8 +149,6 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
     ),
 };
 
-const LAYOUT_KEY = 'flow.dockview-layout.v1';
-
 // ---------------------------------------------------------------------------
 // TypeScript: strict types matching dockview's SerializedDockview schema
 // ---------------------------------------------------------------------------
@@ -178,19 +176,11 @@ interface LeafNode {
 
 type GridNode = BranchNode | LeafNode;
 
-interface SerializedDockviewPanel {
-  id: string;
-  title: string;
-  contentComponent: string;
-  tabComponent?: string;
-  params?: Record<string, unknown>;
-}
-
 interface DockviewLayout {
   grid: {
     root: GridNode;
   };
-  panels: Record<string, SerializedDockviewPanel>;
+  panels: SerializedDockviewPanels;
   activeGroup?: string;
 }
 
@@ -269,43 +259,43 @@ const DEFAULT_LAYOUT: DockviewLayout = {
   panels: {
     files: {
       id: 'files',
-      title: PANEL_ACCESSIBILITY.files.title,
+      title: PANEL_REGISTRY.files.defaultTitle,
       contentComponent: 'files',
       params: { ariaLabel: PANEL_ACCESSIBILITY.files.ariaLabel },
     },
     projects: {
       id: 'projects',
-      title: PANEL_ACCESSIBILITY.projects.title,
+      title: PANEL_REGISTRY.projects.defaultTitle,
       contentComponent: 'projects',
       params: { ariaLabel: PANEL_ACCESSIBILITY.projects.ariaLabel },
     },
     editor: {
       id: 'editor',
-      title: PANEL_ACCESSIBILITY.editor.title,
+      title: PANEL_REGISTRY.editor.defaultTitle,
       contentComponent: 'editor',
       params: { ariaLabel: PANEL_ACCESSIBILITY.editor.ariaLabel },
     },
     preview: {
       id: 'preview',
-      title: PANEL_ACCESSIBILITY.preview.title,
+      title: PANEL_REGISTRY.preview.defaultTitle,
       contentComponent: 'preview',
       params: { ariaLabel: PANEL_ACCESSIBILITY.preview.ariaLabel },
     },
     chat: {
       id: 'chat',
-      title: PANEL_ACCESSIBILITY.chat.title,
+      title: PANEL_REGISTRY.chat.defaultTitle,
       contentComponent: 'chat',
       params: { ariaLabel: PANEL_ACCESSIBILITY.chat.ariaLabel },
     },
     logs: {
       id: 'logs',
-      title: PANEL_ACCESSIBILITY.logs.title,
+      title: PANEL_REGISTRY.logs.defaultTitle,
       contentComponent: 'logs',
       params: { ariaLabel: PANEL_ACCESSIBILITY.logs.ariaLabel },
     },
     plan: {
       id: 'plan',
-      title: PANEL_ACCESSIBILITY.plan.title,
+      title: PANEL_REGISTRY.plan.defaultTitle,
       contentComponent: 'plan',
       params: { ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel },
     },
@@ -352,6 +342,9 @@ function validateLayout(layout: unknown): LayoutValidationResult {
   const panelIds = new Set<string>();
   const groupIds = new Set<string>();
   const viewRefs = new Set<string>();
+
+  const panelIds = new Set<string>();
+  const panelTitles = new Set<string>();
 
   for (const [key, panel] of Object.entries(panelsObj)) {
     if (!panel || typeof panel !== 'object') {
@@ -472,6 +465,31 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const addLog = useAppStore((state) => state.addLog);
   const [layoutSaved, setLayoutSaved] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const {
+    currentProject,
+    workspacePresets,
+    activeWorkspacePresetId,
+    draftLayout,
+    createWorkspacePreset,
+    applyWorkspacePreset,
+    saveDraftLayout,
+  } = useAppStore((state) => ({
+    currentProject: state.currentProject,
+    workspacePresets: state.workspacePresets,
+    activeWorkspacePresetId: state.activeWorkspacePresetId,
+    draftLayout: state.draftLayout,
+    createWorkspacePreset: state.createWorkspacePreset,
+    applyWorkspacePreset: state.applyWorkspacePreset,
+    saveDraftLayout: state.saveDraftLayout,
+  }));
+
+  const applyLayout = useCallback((api: DockviewApi, layout: DockviewLayout) => {
+    const normalizedLayout: DockviewLayout = {
+      ...layout,
+      panels: normalizeUniqueTitles(layout.panels),
+    };
+    api.fromJSON(normalizedLayout as Parameters<DockviewApi['fromJSON']>[0]);
+  }, []);
 
   const panelOrder = useMemo(
     () => ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'],
@@ -532,7 +550,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     saveTimeoutRef.current = setTimeout(() => {
       try {
         const layout = apiRef.current!.toJSON();
-        localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+        saveDraftLayout(layout);
         setLayoutSaved(true);
         setUnsavedChanges(false);
         setTimeout(() => setLayoutSaved(false), 2000);
@@ -540,7 +558,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         console.error('[DockWorkspace] Failed to save layout:', error);
       }
     }, 500);
-  }, []);
+  }, [saveDraftLayout]);
 
   const loadLayout = useCallback((api: DockviewApi) => {
     try {
@@ -552,7 +570,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
 
         if (parsed && typeof parsed === 'object' && validationResult.valid) {
           try {
-            api.fromJSON(parsed as Parameters<DockviewApi['fromJSON']>[0]);
+            applyLayout(api, parsed as DockviewLayout);
             return;
           } catch (fromJsonError) {
             console.error(
@@ -577,33 +595,45 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
           localStorage.removeItem(LAYOUT_KEY);
         }
       }
-    } catch (error) {
-      console.error(
-        '[DockWorkspace] Failed to load/parse saved layout, clearing localStorage:',
-        error
-      );
-      localStorage.removeItem(LAYOUT_KEY);
     }
 
     try {
-      api.fromJSON(DEFAULT_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
+      applyLayout(api, DEFAULT_LAYOUT);
     } catch (defaultError) {
       console.error(
         '[DockWorkspace] CRITICAL: Failed to load DEFAULT_LAYOUT. The workspace will be empty. Error:',
         defaultError
       );
     }
-  }, [addLog]);
+    const hasReadonlyDefault = workspacePresets.some((preset) => preset.isReadonly);
+    if (!hasReadonlyDefault) {
+      const scope = currentProject ? 'project' : 'global';
+      const preset = createWorkspacePreset({
+        name: 'Default Workspace',
+        layout: DEFAULT_LAYOUT,
+        scope,
+        projectId: currentProject?.id,
+        isReadonly: true,
+      });
+      applyWorkspacePreset(preset.id);
+    }
+  }, [
+    activeWorkspacePresetId,
+    applyWorkspacePreset,
+    createWorkspacePreset,
+    currentProject,
+    draftLayout,
+    workspacePresets,
+  ]);
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
-    localStorage.removeItem(LAYOUT_KEY);
     try {
-      apiRef.current.fromJSON(DEFAULT_LAYOUT as Parameters<DockviewApi['fromJSON']>[0]);
+      applyLayout(apiRef.current, DEFAULT_LAYOUT);
     } catch (error) {
       console.error('[DockWorkspace] Failed to reset layout:', error);
     }
-  }, []);
+  }, [applyLayout]);
 
   useEffect(() => {
     return () => {
@@ -611,7 +641,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         clearTimeout(saveTimeoutRef.current);
         try {
           const layout = apiRef.current.toJSON();
-          localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+          saveDraftLayout(layout);
         } catch {
           // ignore
         }
@@ -619,11 +649,28 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [unsavedChanges]);
+  }, [saveDraftLayout, unsavedChanges]);
 
   useEffect(() => {
     onResetLayout?.(resetLayout);
   }, [resetLayout, onResetLayout]);
+
+  useEffect(() => {
+    if (!apiRef.current || !activeWorkspacePresetId) {
+      return;
+    }
+
+    const preset = workspacePresets.find((item) => item.id === activeWorkspacePresetId);
+    if (!preset || !validateLayout(preset.layout)) {
+      return;
+    }
+
+    try {
+      apiRef.current.fromJSON(preset.layout as Parameters<DockviewApi['fromJSON']>[0]);
+    } catch (error) {
+      console.error('[DockWorkspace] Failed to apply active preset:', error);
+    }
+  }, [activeWorkspacePresetId, workspacePresets]);
 
   const onReady = useCallback(
     (event: DockviewReadyEvent) => {
