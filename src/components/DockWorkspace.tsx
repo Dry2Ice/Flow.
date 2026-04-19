@@ -461,7 +461,7 @@ function validateLayout(layout: unknown): LayoutValidationResult {
 // ---------------------------------------------------------------------------
 
 interface DockWorkspaceProps {
-  onResetLayout?: (resetFn: () => void) => void;
+  workspaceLayout: WorkspaceLayoutState;
 }
 
 export function syncDockviewAriaAttributes(api: DockviewApi): void {
@@ -699,6 +699,19 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     }
   }, [applyLayout]);
 
+
+  useEffect(() => {
+    if (!apiRef.current) return;
+
+    if (workspaceLayout.presetId === 'default') {
+      resetLayout();
+      return;
+    }
+
+    console.warn(`[DockWorkspace] Unknown workspace preset: ${workspaceLayout.presetId}. Applying default.`);
+    resetLayout();
+  }, [workspaceLayout, resetLayout]);
+
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current && unsavedChanges && apiRef.current) {
@@ -715,9 +728,6 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     };
   }, [saveDraftLayout, unsavedChanges]);
 
-  useEffect(() => {
-    onResetLayout?.(resetLayout);
-  }, [resetLayout, onResetLayout]);
 
   useEffect(() => {
     if (!apiRef.current || !activeWorkspacePresetId) {

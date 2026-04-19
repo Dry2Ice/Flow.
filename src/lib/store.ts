@@ -26,6 +26,11 @@ export interface OpenFile {
   lastModifiedMs?: number;
 }
 
+export interface WorkspaceLayoutState {
+  presetId: string;
+  version: number;
+}
+
 const DEFAULT_SESSION_ID = 'default';
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
@@ -353,6 +358,7 @@ interface AppState {
     statsPanel: number;
     centerVertical: number;
   };
+  workspaceLayout: WorkspaceLayoutState;
 
   // Actions
   setCurrentProject: (project: Project | null) => void;
@@ -494,6 +500,10 @@ export const useAppStore = create<AppState>()(
       planPanel: 16, // percentage - Plan/Bugs panel
       statsPanel: 12, // percentage - Statistics panel
       centerVertical: 60, // percentage of code panel for code editor
+    },
+    workspaceLayout: {
+      presetId: 'default',
+      version: 0,
     },
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
