@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Settings, BarChart3, X } from 'lucide-react';
 
 import { SettingsModal } from '@/components/SettingsModal';
@@ -44,10 +44,11 @@ function TopControlButton({
 }
 
 export default function Home() {
-  const { diffViewerOpen, projects, currentProject, setCurrentProject, workspaceLayout } = useAppStore();
+  const { diffViewerOpen, projects, currentProject, setCurrentProject } = useAppStore();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
   const [statsOpen, setStatsOpen] = useState(true);
+  const resetDockLayoutRef = useRef<(() => void) | null>(null);
 
   // NIM config: configure client-side service and update UI status
   useEffect(() => {
@@ -108,6 +109,14 @@ export default function Home() {
     };
     initNimConfig();
   }, []);
+
+  // Listen for reset-dock-layout event from SettingsModal
+  useEffect(() => {
+    const handler = () => resetDockLayoutRef.current?.();
+    window.addEventListener('reset-dock-layout', handler);
+    return () => window.removeEventListener('reset-dock-layout', handler);
+  }, []);
+
   // Demo project creation on first visit
   useEffect(() => {
     if (projects.length === 0) {
@@ -191,7 +200,9 @@ export default function Home() {
       </header>
 
       <section className="h-[calc(100vh-74px)]">
-        <DockWorkspace workspaceLayout={workspaceLayout} />
+        <DockWorkspace onResetLayout={(fn) => {
+          resetDockLayoutRef.current = fn;
+        }} />
       </section>
 
       {diffViewerOpen && <DiffViewer />}
