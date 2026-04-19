@@ -2,7 +2,15 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
+import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset, WorkspacePreset, WorkspacePresetScope } from '@/types';
+import {
+  loadWorkspacePresets,
+  saveWorkspacePresets,
+  loadActiveWorkspacePresetId,
+  saveActiveWorkspacePresetId,
+  loadDraftLayout as loadWorkspaceDraftLayout,
+  saveDraftLayout as saveWorkspaceDraftLayout,
+} from '@/lib/workspace-presets';
 
 export interface SessionState {
   messages: AIMessage[];
@@ -145,6 +153,9 @@ const saveActivePresetId = (presetId: string | null) => {
 const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
 const initialActivePreset = initialPromptPresets.find((preset) => preset.id === initialActivePresetId) ?? null;
+const initialWorkspacePresets = loadWorkspacePresets();
+const initialActiveWorkspacePresetId = loadActiveWorkspacePresetId();
+const initialDraftLayout = loadWorkspaceDraftLayout();
 const WINDOWS_DRIVE_PATH_PATTERN = /^[a-zA-Z]:[\\/]/;
 
 const isAbsoluteProjectPath = (projectPath: string): boolean => {
@@ -238,6 +249,9 @@ interface AppState {
   generalPrompt: string;
 
   // Workspace layout
+  workspacePresets: WorkspacePreset[];
+  activeWorkspacePresetId: string | null;
+  draftLayout: unknown | null;
   panelSizes: {
     filesPanel: number;
     codePanel: number;
@@ -310,6 +324,17 @@ interface AppState {
 
   // Workspace actions
   setPanelSizes: (sizes: Partial<AppState['panelSizes']>) => void;
+  createWorkspacePreset: (payload: {
+    name: string;
+    layout: unknown;
+    scope?: WorkspacePresetScope;
+    projectId?: string;
+    isReadonly?: boolean;
+  }) => WorkspacePreset;
+  renameWorkspacePreset: (presetId: string, name: string) => void;
+  deleteWorkspacePreset: (presetId: string) => void;
+  applyWorkspacePreset: (presetId: string) => void;
+  saveDraftLayout: (layout: unknown | null) => void;
 
   // Logging and bug tracking
   addLog: (log: LogEntry) => void;
@@ -366,6 +391,9 @@ export const useAppStore = create<AppState>()(
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
     ultraModeCurrentStep: '',
+    workspacePresets: initialWorkspacePresets,
+    activeWorkspacePresetId: initialActiveWorkspacePresetId,
+    draftLayout: initialDraftLayout,
     panelSizes: {
       filesPanel: 17, // percentage - Files/Projects panel
       codePanel: 36, // percentage - Code+Preview panel
@@ -880,6 +908,76 @@ export const useAppStore = create<AppState>()(
     setPanelSizes: (sizes) => set((state) => ({
       panelSizes: { ...state.panelSizes, ...sizes }
     })),
+    createWorkspacePreset: ({
+      name,
+      layout,
+      scope = 'global',
+      projectId,
+      isReadonly = false,
+    }: {
+      name: string;
+      layout: unknown;
+      scope?: WorkspacePresetScope;
+      projectId?: string;
+      isReadonly?: boolean;
+    }) => {
+      const now = new Date();
+      const preset: WorkspacePreset = {
+        id: crypto.randomUUID(),
+        name: name.trim() || 'Workspace preset',
+        layout,
+        createdAt: now,
+        updatedAt: now,
+        isReadonly,
+        scope,
+        ...(scope === 'project' && projectId ? { projectId } : {}),
+      };
+
+      set((state) => ({
+        workspacePresets: [...state.workspacePresets, preset],
+        activeWorkspacePresetId: preset.id,
+        draftLayout: layout,
+      }));
+
+      return preset;
+    },
+    renameWorkspacePreset: (presetId, name) => set((state) => ({
+      workspacePresets: state.workspacePresets.map((preset) =>
+        preset.id === presetId && !preset.isReadonly
+          ? { ...preset, name: name.trim() || preset.name, updatedAt: new Date() }
+          : preset
+      ),
+    })),
+    deleteWorkspacePreset: (presetId) => set((state) => {
+      const target = state.workspacePresets.find((preset) => preset.id === presetId);
+      if (!target || target.isReadonly) {
+        return state;
+      }
+
+      const remaining = state.workspacePresets.filter((preset) => preset.id !== presetId);
+      const nextActiveId = state.activeWorkspacePresetId === presetId
+        ? remaining[0]?.id ?? null
+        : state.activeWorkspacePresetId;
+      const nextActivePreset = remaining.find((preset) => preset.id === nextActiveId);
+
+      return {
+        workspacePresets: remaining,
+        activeWorkspacePresetId: nextActiveId,
+        draftLayout: nextActivePreset?.layout ?? state.draftLayout,
+      };
+    }),
+    applyWorkspacePreset: (presetId) => set((state) => {
+      const preset = state.workspacePresets.find((item) => item.id === presetId);
+      if (!preset) {
+        return state;
+      }
+
+      return {
+        activeWorkspacePresetId: preset.id,
+        draftLayout: preset.layout,
+      };
+    }),
+    saveDraftLayout: (layout) => set({ draftLayout: layout }),
 
     // Logging and bug tracking
     addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
@@ -941,6 +1039,27 @@ if (isClient) {
     (state) => state.activePreset?.id ?? null,
     (activePresetId) => {
       saveActivePresetId(activePresetId);
+    }
+  );
+
+  useAppStore.subscribe(
+    (state) => state.workspacePresets,
+    (workspacePresets) => {
+      saveWorkspacePresets(workspacePresets);
+    }
+  );
+
+  useAppStore.subscribe(
+    (state) => state.activeWorkspacePresetId,
+    (activeWorkspacePresetId) => {
+      saveActiveWorkspacePresetId(activeWorkspacePresetId);
+    }
+  );
+
+  useAppStore.subscribe(
+    (state) => state.draftLayout,
+    (draftLayout) => {
+      saveWorkspaceDraftLayout(draftLayout);
     }
   );
 }
