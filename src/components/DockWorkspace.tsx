@@ -14,6 +14,7 @@ import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
+import { useAppStore } from '@/lib/store';
 
 // Lazy load heavy components
 const CodeEditor = lazy(() =>
@@ -316,119 +317,144 @@ const DEFAULT_LAYOUT: DockviewLayout = {
 // validateLayout — pure function outside the component
 // ---------------------------------------------------------------------------
 
-function validateLayout(layout: unknown): boolean {
+type LayoutValidationResult = {
+  valid: boolean;
+  reason?: string;
+};
+
+function validateLayout(layout: unknown): LayoutValidationResult {
+  const fail = (reason: string): LayoutValidationResult => {
+    console.warn(`[DockWorkspace] validate: ${reason}`);
+    return { valid: false, reason };
+  };
+
   if (!layout || typeof layout !== 'object') {
-    console.warn('[DockWorkspace] validate: layout is not an object');
-    return false;
+    return fail('layout is not an object');
   }
 
   const layoutObj = layout as Record<string, unknown>;
 
   if (!layoutObj.grid || typeof layoutObj.grid !== 'object') {
-    console.warn('[DockWorkspace] validate: missing or invalid "grid"');
-    return false;
+    return fail('missing or invalid "grid"');
   }
 
   const gridObj = layoutObj.grid as Record<string, unknown>;
 
   if (!gridObj.root || typeof gridObj.root !== 'object') {
-    console.warn('[DockWorkspace] validate: missing or invalid "grid.root"');
-    return false;
+    return fail('missing or invalid "grid.root"');
   }
 
   if (!layoutObj.panels || typeof layoutObj.panels !== 'object') {
-    console.warn('[DockWorkspace] validate: missing or invalid "panels"');
-    return false;
+    return fail('missing or invalid "panels"');
   }
 
   const panelsObj = layoutObj.panels as Record<string, unknown>;
+  const panelIds = new Set<string>();
+  const groupIds = new Set<string>();
+  const viewRefs = new Set<string>();
 
   for (const [key, panel] of Object.entries(panelsObj)) {
     if (!panel || typeof panel !== 'object') {
-      console.warn(`[DockWorkspace] validate: panel "${key}" is not an object`);
-      return false;
+      return fail(`panel "${key}" is not an object`);
     }
 
     const p = panel as Record<string, unknown>;
 
     if (typeof p.contentComponent !== 'string' || p.contentComponent.trim() === '') {
-      console.error(
-        `[DockWorkspace] validate: panel "${key}" has missing or invalid "contentComponent".`
-      );
-      return false;
+      return fail(`panel "${key}" has missing or invalid "contentComponent"`);
     }
 
     if (typeof p.id !== 'string' || p.id.trim() === '') {
-      console.error(`[DockWorkspace] validate: panel "${key}" has missing or invalid "id"`);
-      return false;
+      return fail(`panel "${key}" has missing or invalid "id"`);
     }
+
+    if (panelIds.has(p.id)) {
+      return fail(`duplicate panel id "${p.id}"`);
+    }
+
+    panelIds.add(p.id);
   }
 
-  const validateNode = (node: unknown, path: string): boolean => {
+  const validateNode = (node: unknown, path: string): LayoutValidationResult => {
     if (!node || typeof node !== 'object') {
-      console.warn(`[DockWorkspace] validate: node at ${path} is not an object`);
-      return false;
+      return fail(`node at ${path} is not an object`);
     }
 
     const n = node as Record<string, unknown>;
 
     if (n.type !== 'branch' && n.type !== 'leaf') {
-      console.error(`[DockWorkspace] validate: node at ${path} has invalid type: ${JSON.stringify(n.type)}`);
-      return false;
+      return fail(`node at ${path} has invalid type: ${JSON.stringify(n.type)}`);
     }
 
     if (n.type === 'branch') {
       if (n.orientation !== 'VERTICAL' && n.orientation !== 'HORIZONTAL') {
-        console.error(`[DockWorkspace] validate: branch at ${path} has invalid orientation`);
-        return false;
+        return fail(`branch at ${path} has invalid orientation`);
       }
 
       if (!Array.isArray(n.data) || n.data.length === 0) {
-        console.error(`[DockWorkspace] validate: branch at ${path} must have a non-empty "data" array`);
-        return false;
+        return fail(`branch at ${path} must have a non-empty "data" array`);
       }
 
       for (let i = 0; i < n.data.length; i++) {
-        if (!validateNode(n.data[i], `${path} > branch.data[${i}]`)) {
-          return false;
+        const childValidation = validateNode(n.data[i], `${path} > branch.data[${i}]`);
+        if (!childValidation.valid) {
+          return childValidation;
         }
       }
     }
 
     if (n.type === 'leaf') {
       if (!n.data || typeof n.data !== 'object' || Array.isArray(n.data)) {
-        console.error(`[DockWorkspace] validate: leaf at ${path} is missing "data" object`);
-        return false;
+        return fail(`leaf at ${path} is missing "data" object`);
       }
 
       const leafData = n.data as Record<string, unknown>;
 
       if (typeof leafData.id !== 'string' || (leafData.id as string).trim() === '') {
-        console.error(
-          `[DockWorkspace] validate: leaf at ${path} has missing or invalid "data.id". Without it, dockview generates a numeric group id causing "group id must be of type string".`
-        );
-        return false;
+        return fail(`leaf at ${path} has missing or invalid "data.id"`);
       }
 
+      if (groupIds.has(leafData.id)) {
+        return fail(`duplicate group id "${leafData.id}" at ${path}`);
+      }
+      groupIds.add(leafData.id);
+
       if (!Array.isArray(leafData.views)) {
-        console.error(`[DockWorkspace] validate: leaf at ${path} (group "${leafData.id}") missing "data.views" array`);
-        return false;
+        return fail(`leaf at ${path} (group "${leafData.id}") missing "data.views" array`);
       }
 
       if (!leafData.views.every((v: unknown) => typeof v === 'string')) {
-        console.error(`[DockWorkspace] validate: leaf at ${path} (group "${leafData.id}") has non-string entries in "data.views"`);
-        return false;
+        return fail(`leaf at ${path} (group "${leafData.id}") has non-string entries in "data.views"`);
+      }
+
+      for (const view of leafData.views) {
+        if (!panelIds.has(view)) {
+          return fail(`leaf at ${path} (group "${leafData.id}") references unknown view "${view}"`);
+        }
+        viewRefs.add(view);
+      }
+
+      if (
+        typeof leafData.activeView === 'string' &&
+        !leafData.views.includes(leafData.activeView)
+      ) {
+        return fail(
+          `leaf at ${path} (group "${leafData.id}") has activeView "${leafData.activeView}" not present in views`
+        );
       }
     }
 
-    return true;
+    return { valid: true };
   };
 
   try {
     return validateNode(gridObj.root, 'grid.root');
   } catch (error) {
     console.error('[DockWorkspace] validate: exception during validation:', error);
-    return false;
+    return {
+      valid: false,
+      reason: `exception during validation: ${error instanceof Error ? error.message : String(error)}`,
+    };
   }
 }
 
@@ -443,6 +469,7 @@ interface DockWorkspaceProps {
 export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const apiRef = useRef<DockviewApi | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const addLog = useAppStore((state) => state.addLog);
   const [layoutSaved, setLayoutSaved] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
 
@@ -521,7 +548,9 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
       if (saved) {
         const parsed: unknown = JSON.parse(saved);
 
-        if (parsed && typeof parsed === 'object' && validateLayout(parsed)) {
+        const validationResult = validateLayout(parsed);
+
+        if (parsed && typeof parsed === 'object' && validationResult.valid) {
           try {
             api.fromJSON(parsed as Parameters<DockviewApi['fromJSON']>[0]);
             return;
@@ -533,9 +562,18 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
             localStorage.removeItem(LAYOUT_KEY);
           }
         } else {
+          const reason = validationResult.reason ?? 'unknown reason';
           console.warn(
-            '[DockWorkspace] Saved layout failed validation, clearing localStorage'
+            `[DockWorkspace] Saved layout failed validation (${reason}), clearing localStorage`
           );
+          addLog({
+            id: crypto.randomUUID(),
+            timestamp: new Date(),
+            type: 'warning',
+            message: '[DockWorkspace] Saved layout rejected by validation',
+            details: reason,
+            source: 'user_action',
+          });
           localStorage.removeItem(LAYOUT_KEY);
         }
       }
@@ -555,7 +593,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         defaultError
       );
     }
-  }, []);
+  }, [addLog]);
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
