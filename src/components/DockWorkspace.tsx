@@ -464,6 +464,94 @@ interface DockWorkspaceProps {
   onResetLayout?: (resetFn: () => void) => void;
 }
 
+export function syncDockviewAriaAttributes(api: DockviewApi): void {
+  if (typeof document === 'undefined') return;
+
+  const groups = Array.from(document.querySelectorAll<HTMLElement>('.dockview-accessible .dv-groupview'));
+
+  for (const groupElement of groups) {
+    const tabList = groupElement.querySelector<HTMLElement>('.dv-tabs-container');
+    if (!tabList) continue;
+
+    tabList.setAttribute('role', 'tablist');
+
+    const tabs = Array.from(tabList.querySelectorAll<HTMLElement>('.dv-tab'));
+    const group = api.groups.find((candidate) => {
+      const groupEl = (candidate as unknown as { model?: { element?: HTMLElement } }).model?.element;
+      return groupEl === groupElement;
+    });
+
+    if (!group) continue;
+
+    tabs.forEach((tab, index) => {
+      const panel = group.panels[index];
+      if (!panel) return;
+
+      const tabId = `${panel.id}-tab`;
+      const panelId = `${panel.id}-panel`;
+      const isActive = panel.api.isActive;
+
+      tab.id = tabId;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', panelId);
+      tab.setAttribute('aria-selected', String(isActive));
+      tab.setAttribute('tabindex', isActive ? '0' : '-1');
+
+      const panelElement = document.getElementById(panelId)
+        ?? document.querySelector<HTMLElement>(`[aria-labelledby="${tabId}"]`);
+
+      if (panelElement) {
+        panelElement.id = panelId;
+        panelElement.setAttribute('role', 'tabpanel');
+        panelElement.setAttribute('aria-labelledby', tabId);
+      }
+    });
+  }
+}
+
+export function handleDockviewKeyboardNavigation(
+  event: KeyboardEvent,
+  api: DockviewApi,
+  panelOrder: readonly string[]
+): void {
+  const activePanel = api.activePanel;
+
+  if (!activePanel) return;
+
+  if (event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+    event.preventDefault();
+
+    if (event.key === 'ArrowUp') {
+      api.moveToPrevious({ includePanel: false });
+      return;
+    }
+
+    api.moveToNext({ includePanel: false });
+    return;
+  }
+
+  const currentIndex = panelOrder.findIndex((id) => id === activePanel.id);
+  if (currentIndex === -1) return;
+
+  let targetIndex = currentIndex;
+
+  if (event.ctrlKey && event.key === 'ArrowLeft') {
+    event.preventDefault();
+    targetIndex = Math.max(0, currentIndex - 1);
+  } else if (event.ctrlKey && event.key === 'ArrowRight') {
+    event.preventDefault();
+    targetIndex = Math.min(panelOrder.length - 1, currentIndex + 1);
+  }
+
+  if (targetIndex === currentIndex) return;
+
+  const targetPanelId = panelOrder[targetIndex];
+  const targetPanel = api.getPanel(targetPanelId);
+  if (targetPanel) {
+    targetPanel.api.setActive();
+  }
+}
+
 export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const apiRef = useRef<DockviewApi | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -504,35 +592,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const handleKeyboardNavigation = useCallback(
     (event: KeyboardEvent) => {
       if (!apiRef.current) return;
-
-      const activeGroup = apiRef.current.activeGroup;
-      if (!activeGroup) return;
-
-      const currentIndex = panelOrder.findIndex((id) =>
-        activeGroup.panels.some((panel) => panel.id === id)
-      );
-
-      if (currentIndex === -1) return;
-
-      let targetIndex = currentIndex;
-
-      if (event.ctrlKey && event.key === 'ArrowLeft') {
-        event.preventDefault();
-        targetIndex = Math.max(0, currentIndex - 1);
-      } else if (event.ctrlKey && event.key === 'ArrowRight') {
-        event.preventDefault();
-        targetIndex = Math.min(panelOrder.length - 1, currentIndex + 1);
-      }
-
-      if (targetIndex !== currentIndex) {
-        const targetPanelId = panelOrder[targetIndex];
-        const targetPanel = activeGroup.panels.find(
-          (p) => p.id === targetPanelId
-        );
-        if (targetPanel) {
-          activeGroup.focus();
-        }
-      }
+      handleDockviewKeyboardNavigation(event, apiRef.current, panelOrder);
     },
     [panelOrder]
   );
@@ -679,8 +739,13 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const onReady = useCallback(
     (event: DockviewReadyEvent) => {
       apiRef.current = event.api;
-      event.api.onDidLayoutChange(() => saveLayout());
+      event.api.onDidLayoutChange(() => {
+        saveLayout();
+        syncDockviewAriaAttributes(event.api);
+      });
+      event.api.onDidActivePanelChange(() => syncDockviewAriaAttributes(event.api));
       loadLayout(event.api);
+      syncDockviewAriaAttributes(event.api);
     },
     [loadLayout, saveLayout]
   );
