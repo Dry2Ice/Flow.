@@ -13,6 +13,8 @@ import { codeExecutor } from '@/lib/code-executor';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
+  const [streamingContent, setStreamingContent] = useState('');
+  const [activeStreamingJobId, setActiveStreamingJobId] = useState<string | null>(null);
   const ultraSteps = useMemo(() => ([
     {
       name: 'Code Analysis & Planning',
@@ -74,6 +76,7 @@ export function PromptInput() {
   const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
     const jobId = crypto.randomUUID();
     const requestId = crypto.randomUUID();
+    const streamingMessageId = crypto.randomUUID();
 
     const aiRequest: AIRequest = {
       id: requestId,
@@ -107,6 +110,8 @@ export function PromptInput() {
 
     incrementSessionRequests(activeSessionId);
     setGenerating(activeSessionId, true);
+    setStreamingContent('');
+    setActiveStreamingJobId(jobId);
     const controller = executionManager.createController(jobId);
 
     try {
@@ -157,9 +162,42 @@ export function PromptInput() {
         },
       };
 
-      const response = await nvidiaNimService.generateCode({
+      addMessage(activeSessionId, {
+        id: streamingMessageId,
+        sessionId: activeSessionId,
+        jobId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+      });
+
+      const response = await nvidiaNimService.generateCodeStream({
         ...request,
         signal: controller.signal,
+        onChunk: (chunk) => {
+          setStreamingContent((previous) => {
+            const nextContent = previous + chunk;
+            useAppStore.setState((state) => {
+              const session = state.sessions[activeSessionId];
+              if (!session) return state;
+
+              return {
+                sessions: {
+                  ...state.sessions,
+                  [activeSessionId]: {
+                    ...session,
+                    messages: session.messages.map((message) =>
+                      message.id === streamingMessageId
+                        ? { ...message, content: nextContent }
+                        : message
+                    ),
+                  },
+                },
+              };
+            });
+            return nextContent;
+          });
+        },
       });
 
       updateAIRequest(requestId, {
@@ -179,14 +217,23 @@ export function PromptInput() {
         source: 'ai_execution',
       });
 
-      addMessage(activeSessionId, {
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        jobId,
-        role: 'assistant',
-        content: response.explanation,
-        timestamp: new Date(),
-        changes: response.changes,
+      useAppStore.setState((state) => {
+        const session = state.sessions[activeSessionId];
+        if (!session) return state;
+
+        return {
+          sessions: {
+            ...state.sessions,
+            [activeSessionId]: {
+              ...session,
+              messages: session.messages.map((message) =>
+                message.id === streamingMessageId
+                  ? { ...message, content: response.explanation, changes: response.changes }
+                  : message
+              ),
+            },
+          },
+        };
       });
 
       if (response.tasks) {
@@ -205,7 +252,21 @@ export function PromptInput() {
         });
       }
     } catch (error) {
-      const isAbort = error instanceof Error && error.name === 'CanceledError';
+      const isAbort = error instanceof Error && (error.name === 'CanceledError' || error.name === 'AbortError');
+
+      useAppStore.setState((state) => {
+        const session = state.sessions[activeSessionId];
+        if (!session) return state;
+        return {
+          sessions: {
+            ...state.sessions,
+            [activeSessionId]: {
+              ...session,
+              messages: session.messages.filter((message) => message.id !== streamingMessageId),
+            },
+          },
+        };
+      });
 
       updateAIRequest(requestId, {
         status: 'failed',
@@ -253,6 +314,8 @@ export function PromptInput() {
       });
     } finally {
       executionManager.clear(jobId);
+      setStreamingContent('');
+      setActiveStreamingJobId((current) => (current === jobId ? null : current));
       decrementSessionRequests(activeSessionId);
     }
   };
@@ -548,7 +611,35 @@ export function PromptInput() {
         >
           <Send className="h-4 w-4" />
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (activeStreamingJobId) {
+              executionManager.cancel(activeStreamingJobId);
+            }
+          }}
+          disabled={!activeStreamingJobId}
+          aria-label="Stop current AI generation"
+          className={`h-9 rounded-lg px-2.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+            activeStreamingJobId
+              ? 'border border-rose-500/70 bg-rose-500/15 text-rose-200 hover:bg-rose-500/25'
+              : 'cursor-not-allowed border border-neutral-700 bg-neutral-800 text-neutral-500'
+          }`}
+        >
+          Stop
+        </button>
       </form>
+      {activeStreamingJobId && (
+        <div className="mt-2 flex items-center justify-between rounded-md border border-blue-500/20 bg-blue-500/5 px-2 py-1 text-[11px] text-blue-200">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-300" />
+            Streaming response…
+          </span>
+          <span>
+            ~{Math.ceil(streamingContent.length / 4)} tokens / {streamingContent.length} chars
+          </span>
+        </div>
+      )}
     </div>
   );
 }

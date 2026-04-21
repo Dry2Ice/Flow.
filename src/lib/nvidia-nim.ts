@@ -20,6 +20,7 @@ export interface NvidiaNimConfig {
 export interface GenerateCodeRequest extends PromptRequest {
   generalPrompt?: string;
   signal?: AbortSignal;
+  onChunk?: (text: string) => void;
 }
 
 export interface GenerateCodeResponse {
@@ -465,6 +466,7 @@ class NvidiaNimService {
               if (typeof delta === 'string' && delta) {
                 fullContent += delta;
                 onChunk(delta);
+                request.onChunk?.(delta);
               }
             } catch {
               // Skip malformed SSE lines
