@@ -5,20 +5,7 @@ import { useAppStore } from './store';
 import { ProjectContext, AIRequest, FileWithMetadata } from '@/types';
 
 class AIService {
-  private contextUpdateInterval: NodeJS.Timeout | null = null;
   private readonly defaultContextRefreshMs = 5 * 60 * 1000;
-
-  constructor() {
-    this.startPeriodicContextUpdates();
-  }
-
-  // Periodic context updates and summarization
-  private startPeriodicContextUpdates() {
-    // Update context every 5 minutes
-    this.contextUpdateInterval = setInterval(() => {
-      this.updateAllProjectContexts();
-    }, this.defaultContextRefreshMs);
-  }
 
   // Intelligent context building
   async buildProjectContext(projectId: string): Promise<ProjectContext> {
@@ -491,9 +478,7 @@ class AIService {
 
   // Cleanup
   destroy() {
-    if (this.contextUpdateInterval) {
-      clearInterval(this.contextUpdateInterval);
-    }
+    // No-op: periodic updates are intentionally not auto-started to avoid serverless interval leaks.
   }
 }
 

@@ -16,9 +16,78 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
   const UNTRUSTED_PATH_MESSAGE = "Путь не в списке доверенных. Нажмите 'Доверять этому пути' для разрешения доступа";
   const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [model, setModel] = useState('');
+  const [temperature, setTemperature] = useState(0.7);
+  const [topP, setTopP] = useState(1.0);
+  const [topK, setTopK] = useState(50);
+  const [maxTokens, setMaxTokens] = useState(4000);
+  const [contextTokens, setContextTokens] = useState(0); // 0 = unlimited
+  const [presencePenalty, setPresencePenalty] = useState(0);
+  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
+  const [stopSequences, setStopSequences] = useState('');
+
+  // Model management
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+  const [testMessageStatus, setTestMessageStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [projectPath, setProjectPathLocal] = useState('');
+  const [isTrustingPath, setIsTrustingPath] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [editingPreset, setEditingPreset] = useState<string | null>(null);
+  const [editedPrompt, setEditedPrompt] = useState('');
+  const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
+  const [generalPromptText, setGeneralPromptText] = useState('');
+  const {
+    activePreset,
+    promptPresets,
+    setActivePreset,
+    updatePromptPreset,
+    setProjectPath,
+    generalPrompt,
+    setGeneralPrompt,
+  } = useAppStore();
 
   // Use external state if provided, otherwise use internal
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('nim-settings');
+    if (saved) {
+      try {
+        const settings = JSON.parse(saved);
+        setApiKey(settings.apiKey || '');
+        setBaseUrl(settings.baseUrl || '');
+        setModel(settings.model || '');
+        setTemperature(settings.temperature ?? 0.7);
+        setTopP(settings.topP ?? 1.0);
+        setTopK(settings.topK ?? 50);
+        setMaxTokens(settings.maxTokens ?? 4000);
+        setContextTokens(settings.contextTokens ?? 0);
+        setPresencePenalty(settings.presencePenalty ?? 0.0);
+        setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
+        setStopSequences(settings.stopSequences?.join(', ') || '');
+        setProjectPath(settings.projectPath || '');
+        if (settings.generalPrompt) {
+          setGeneralPrompt(settings.generalPrompt);
+        }
+
+        // Load active preset
+        if (settings.activePresetId) {
+          const preset = promptPresets.find(p => p.id === settings.activePresetId);
+          if (preset) {
+            setActivePreset(preset);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    }
+  }, []);
 
   const handleClose = () => {
     if (externalOnClose) {
@@ -173,75 +242,6 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       setTimeout(() => setTestMessageStatus('idle'), 3000);
     }
   };
-  const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState('');
-  const [model, setModel] = useState('');
-  const [temperature, setTemperature] = useState(0.7);
-  const [topP, setTopP] = useState(1.0);
-  const [topK, setTopK] = useState(50);
-  const [maxTokens, setMaxTokens] = useState(4000);
-  const [contextTokens, setContextTokens] = useState(0); // 0 = unlimited
-  const [presencePenalty, setPresencePenalty] = useState(0);
-  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
-  const [stopSequences, setStopSequences] = useState('');
-
-  // Model management
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
-  const [testMessageStatus, setTestMessageStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [projectPath, setProjectPathLocal] = useState('');
-  const [isTrustingPath, setIsTrustingPath] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [editingPreset, setEditingPreset] = useState<string | null>(null);
-  const [editedPrompt, setEditedPrompt] = useState('');
-  const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
-  const [generalPromptText, setGeneralPromptText] = useState('');
-  const {
-    activePreset,
-    promptPresets,
-    setActivePreset,
-    updatePromptPreset,
-    setProjectPath,
-    generalPrompt,
-    setGeneralPrompt,
-  } = useAppStore();
-
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('nim-settings');
-    if (saved) {
-      try {
-        const settings = JSON.parse(saved);
-        setApiKey(settings.apiKey || '');
-        setBaseUrl(settings.baseUrl || '');
-        setModel(settings.model || '');
-        setTemperature(settings.temperature ?? 0.7);
-        setTopP(settings.topP ?? 1.0);
-        setTopK(settings.topK ?? 50);
-        setMaxTokens(settings.maxTokens ?? 4000);
-        setContextTokens(settings.contextTokens ?? 0);
-        setPresencePenalty(settings.presencePenalty ?? 0.0);
-        setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
-        setStopSequences(settings.stopSequences?.join(', ') || '');
-        setProjectPath(settings.projectPath || '');
-        if (settings.generalPrompt) {
-          setGeneralPrompt(settings.generalPrompt);
-        }
-
-        // Load active preset
-        if (settings.activePresetId) {
-          const preset = promptPresets.find(p => p.id === settings.activePresetId);
-          if (preset) {
-            setActivePreset(preset);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load settings:', error);
-      }
-    }
-  }, []);
 
   const handleEditPreset = (presetId: string) => {
     const preset = promptPresets.find(p => p.id === presetId);
