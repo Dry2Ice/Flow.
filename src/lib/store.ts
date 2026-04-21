@@ -266,6 +266,7 @@ interface AppState {
   // Tasks
   addTask: (task: DevelopmentTask) => void;
   updateTask: (taskId: string, updates: Partial<DevelopmentTask>) => void;
+  deleteTask: (taskId: string) => void;
   setCurrentTask: (task: DevelopmentTask | null) => void;
 
   addMessage: (sessionId: string, message: AIMessage) => void;
@@ -489,6 +490,10 @@ export const useAppStore = create<AppState>()(
     addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
     updateTask: (taskId, updates) => set((state) => ({
       tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...updates, updatedAt: new Date() } : t)
+    })),
+    deleteTask: (taskId) => set((state) => ({
+      tasks: state.tasks.filter((task) => task.id !== taskId),
+      currentTask: state.currentTask?.id === taskId ? null : state.currentTask,
     })),
     setCurrentTask: (task) => set({ currentTask: task }),
 
