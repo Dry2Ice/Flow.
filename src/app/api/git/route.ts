@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { gitService } from '@/lib/git';
 import {
+  getConfiguredTrustedRoots,
   getWorkspaceRoot,
   logSecurityWarning,
   resolveWorkspacePath,
@@ -28,7 +29,9 @@ export async function POST(request: NextRequest) {
   try {
     const { action, projectPath, filePath, content, commitMessage, commitHash, limit } = await request.json();
     const workspaceRoot = getWorkspaceRoot();
-    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot);
+    const resolvedProjectPath = resolveWorkspacePath(projectPath, workspaceRoot, {
+      trustedRoots: getConfiguredTrustedRoots(workspaceRoot),
+    });
 
     if (action === 'init') {
       const initialized = await gitService.initRepo(resolvedProjectPath);

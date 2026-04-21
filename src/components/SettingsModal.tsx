@@ -14,6 +14,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
+  const UNTRUSTED_PATH_MESSAGE = "Путь не в списке доверенных. Нажмите 'Доверять этому пути' для разрешения доступа";
   const [internalIsOpen, setInternalIsOpen] = useState(false);
 
   // Use external state if provided, otherwise use internal
@@ -190,6 +191,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [testMessageStatus, setTestMessageStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [projectPath, setProjectPathLocal] = useState('');
+  const [isTrustingPath, setIsTrustingPath] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [editingPreset, setEditingPreset] = useState<string | null>(null);
@@ -371,6 +373,28 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         // Update store
         setProjectPath(projectPath);
 
+        if (projectPath.trim()) {
+          try {
+            await axios.post('/api/workspace/trust', {
+              projectPath: projectPath.trim(),
+              confirm: true,
+            });
+          } catch (trustError: any) {
+            const trustReason = trustError?.response?.data?.reason;
+            if (
+              trustReason === 'outside_trusted_roots' ||
+              trustReason === 'untrusted_absolute_path' ||
+              trustReason === 'trusted_root_must_be_absolute'
+            ) {
+              setMessage(UNTRUSTED_PATH_MESSAGE);
+              return;
+            }
+
+            setMessage(trustError?.response?.data?.error || 'Не удалось добавить путь в доверенные');
+            return;
+          }
+        }
+
         // Save settings to localStorage with active preset
         const settingsToSave = {
           ...config,
@@ -386,9 +410,34 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         }, 2000);
       }
     } catch (error: any) {
+      const reason = error?.response?.data?.reason;
+      if (reason === 'outside_trusted_roots' || reason === 'untrusted_absolute_path') {
+        setMessage(UNTRUSTED_PATH_MESSAGE);
+        return;
+      }
       setMessage(error.response?.data?.error || 'Failed to configure AI service');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTrustPath = async () => {
+    if (!projectPath.trim()) {
+      setMessage('Укажите путь проекта перед подтверждением доверия');
+      return;
+    }
+
+    setIsTrustingPath(true);
+    try {
+      await axios.post('/api/workspace/trust', {
+        projectPath: projectPath.trim(),
+        confirm: true,
+      });
+      setMessage('Путь добавлен в доверенные');
+    } catch (error: any) {
+      setMessage(error?.response?.data?.error || 'Не удалось добавить путь в доверенные');
+    } finally {
+      setIsTrustingPath(false);
     }
   };
 
@@ -512,6 +561,16 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       placeholder="/path/to/your/project"
                     />
                     <div className="text-xs text-neutral-400 mt-1">Path to your local project directory for file operations</div>
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        onClick={handleTrustPath}
+                        disabled={isTrustingPath || !projectPath.trim()}
+                        className="px-3 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-neutral-600 rounded text-xs font-medium transition-colors"
+                      >
+                        {isTrustingPath ? 'Подтверждаем доверие...' : 'Доверять этому пути'}
+                      </button>
+                    </div>
                   </div>
                 </div>
                </div>
