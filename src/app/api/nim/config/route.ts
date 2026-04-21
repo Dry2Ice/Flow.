@@ -1,7 +1,7 @@
 // src/app/api/nim/config/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { nvidiaNimService } from '@/lib/nvidia-nim';
+import type { NvidiaNimConfig } from '@/lib/nvidia-nim';
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config: Parameters<typeof nvidiaNimService.setConfig>[0] = {
+    const config: NvidiaNimConfig = {
       apiKey,
       baseUrl,
       model,
@@ -93,8 +93,6 @@ export async function POST(request: NextRequest) {
 
       config.stopSequences = normalizedStopSequences;
     }
-
-    nvidiaNimService.setConfig(config);
 
     return NextResponse.json({ success: true });
   } catch (error) {

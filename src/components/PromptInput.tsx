@@ -410,20 +410,6 @@ export function PromptInput() {
       source: 'ai_execution',
     });
 
-    await runRequest({
-      prompt: `User Request: ${promptToUse}\n\nAfter implementing the changes above, ${ultraSteps[2].prompt}`,
-      requestType: 'debugging',
-      presetId: ultraSteps[2].presetId,
-    });
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'success',
-      message: `[Ultra] Step 3/3 completed: ${ultraSteps[2].name}`,
-      source: 'ai_execution',
-    });
-
     const lastStepPresetId = ultraSteps[ultraSteps.length - 1]?.presetId;
     if (lastStepPresetId) {
       const lastPreset = promptPresets.find((item) => item.id === lastStepPresetId);
