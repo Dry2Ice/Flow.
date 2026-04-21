@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: message }],
@@ -23,16 +24,46 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
+      const upstreamBody = await response.text();
       return NextResponse.json(
-        { error: `Upstream error: ${response.status} ${response.statusText}`, status: response.status },
+        {
+          error: `Upstream error: ${response.status} ${response.statusText}`,
+          cause: upstreamBody || response.statusText,
+          status: response.status,
+        },
         { status: response.status }
       );
     }
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Probe request failed:', error);
-    return NextResponse.json({ error: 'Failed to reach the API endpoint' }, { status: 502 });
+
+    const causeRaw = String(
+      error?.cause?.code ||
+      error?.cause?.errno ||
+      error?.code ||
+      error?.cause?.message ||
+      error?.message ||
+      'UNKNOWN_ERROR'
+    );
+    const cause = causeRaw.toUpperCase();
+
+    let friendlyError = 'Failed to reach the API endpoint';
+    if (cause.includes('ECONNREFUSED')) {
+      friendlyError = 'Сервер недоступен';
+    } else if (cause.includes('ENOTFOUND')) {
+      friendlyError = 'Неверный хост';
+    } else if (cause.includes('CERT_') || cause.includes('SELF_SIGNED_CERT') || cause.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
+      friendlyError = 'Ошибка SSL';
+    } else if (cause.includes('TIMEOUT') || cause.includes('ABORT')) {
+      friendlyError = 'Превышено время ожидания (15 секунд)';
+    }
+
+    return NextResponse.json(
+      { error: friendlyError, cause: causeRaw, status: 502 },
+      { status: 502 }
+    );
   }
 }
