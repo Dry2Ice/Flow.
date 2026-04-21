@@ -35,7 +35,11 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
     logs,
     aiRequests,
     updatePlan,
+    addPlan,
+    deletePlan,
+    addTask,
     updateTask,
+    deleteTask,
     addBug,
     updateBug,
     deleteBug,
@@ -52,6 +56,14 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
   const [manualErrorTitle, setManualErrorTitle] = useState('');
   const [manualErrorDescription, setManualErrorDescription] = useState('');
   const [manualErrorSeverity, setManualErrorSeverity] = useState<BugReport['severity']>('medium');
+  const [isNewPlanFormOpen, setIsNewPlanFormOpen] = useState(false);
+  const [isNewTaskFormOpen, setIsNewTaskFormOpen] = useState(false);
+  const [newPlanTitle, setNewPlanTitle] = useState('');
+  const [newPlanDescription, setNewPlanDescription] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<DevelopmentTask['priority']>('medium');
+  const [taskFormError, setTaskFormError] = useState('');
 
   const activePlan = useMemo(() => {
     if (plans.length === 0) return null;
@@ -372,6 +384,72 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
     setManualErrorSeverity('medium');
   };
 
+  const handleCreatePlan = () => {
+    const title = newPlanTitle.trim();
+    if (!title) return;
+
+    const now = new Date();
+    const plan: DevelopmentPlan = {
+      id: crypto.randomUUID(),
+      title,
+      description: newPlanDescription.trim(),
+      status: 'pending',
+      tasks: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    addPlan(plan);
+    setActivePlanId(plan.id);
+    setNewPlanTitle('');
+    setNewPlanDescription('');
+    setIsNewPlanFormOpen(false);
+  };
+
+  const handleAddTask = () => {
+    if (!activePlan) return;
+
+    const title = newTaskTitle.trim();
+    if (!title) {
+      setTaskFormError('Title is required');
+      return;
+    }
+
+    const now = new Date();
+    const task: DevelopmentTask = {
+      id: crypto.randomUUID(),
+      title,
+      description: newTaskDescription.trim(),
+      priority: newTaskPriority,
+      status: 'pending',
+      items: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    addTask(task);
+    updatePlan(activePlan.id, {
+      tasks: [...activePlan.tasks, task],
+      updatedAt: now,
+    });
+
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setNewTaskPriority('medium');
+    setTaskFormError('');
+    setIsNewTaskFormOpen(false);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    if (!activePlan) return;
+
+    deleteTask(taskId);
+    updatePlan(activePlan.id, {
+      tasks: activePlan.tasks.filter((task) => task.id !== taskId),
+      updatedAt: new Date(),
+    });
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-neutral-700/80">
@@ -398,6 +476,43 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'plan' ? (
           <div className="space-y-4">
+            <section className="space-y-2 rounded-xl border border-neutral-700 bg-neutral-900/60 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-neutral-100">Планы</h3>
+                <button
+                  onClick={() => setIsNewPlanFormOpen((value) => !value)}
+                  className="rounded-md border border-neutral-700 bg-neutral-950 px-2.5 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-900"
+                >
+                  {isNewPlanFormOpen ? 'Свернуть форму плана' : 'Новый план'}
+                </button>
+              </div>
+
+              {isNewPlanFormOpen && (
+                <div className="space-y-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">Новый план</h4>
+                  <input
+                    value={newPlanTitle}
+                    onChange={(event) => setNewPlanTitle(event.target.value)}
+                    placeholder="Title"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                  />
+                  <textarea
+                    value={newPlanDescription}
+                    onChange={(event) => setNewPlanDescription(event.target.value)}
+                    placeholder="Description"
+                    className="min-h-20 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                  />
+                  <button
+                    onClick={handleCreatePlan}
+                    className="inline-flex items-center gap-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    + Создать план
+                  </button>
+                </div>
+              )}
+            </section>
+
             {plans.length === 0 ? (
               <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400">
                 No development plans yet.
@@ -426,6 +541,18 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                         <h3 className="text-base font-semibold text-neutral-100">{activePlan.title}</h3>
                         <p className="text-xs text-neutral-400">Status: {getStatusText(activePlan.status)}</p>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            deletePlan(activePlan.id);
+                            setActivePlanId(null);
+                          }}
+                          className="rounded-md border border-rose-500/40 bg-rose-500/10 p-1.5 text-rose-300 hover:bg-rose-500/20"
+                          title="Delete plan"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                       {executingPlanId === activePlan.id && planExecutionProgress.total > 0 && (
                         <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-300">
                           {planExecutionProgress.current}/{planExecutionProgress.total}
@@ -447,6 +574,55 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                       >
                         Execute plan
                       </button>
+                    </div>
+
+                    <div className="space-y-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">Новая задача</h4>
+                        <button
+                          onClick={() => setIsNewTaskFormOpen((value) => !value)}
+                          className="rounded-md border border-neutral-700 bg-neutral-950 px-2.5 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-900"
+                        >
+                          {isNewTaskFormOpen ? 'Свернуть' : 'Раскрыть'}
+                        </button>
+                      </div>
+
+                      {isNewTaskFormOpen && (
+                        <div className="space-y-2">
+                          <input
+                            value={newTaskTitle}
+                            onChange={(event) => {
+                              setNewTaskTitle(event.target.value);
+                              if (taskFormError) setTaskFormError('');
+                            }}
+                            placeholder="Title (required)"
+                            className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                          />
+                          <textarea
+                            value={newTaskDescription}
+                            onChange={(event) => setNewTaskDescription(event.target.value)}
+                            placeholder="Description"
+                            className="min-h-20 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                          />
+                          <select
+                            value={newTaskPriority}
+                            onChange={(event) => setNewTaskPriority(event.target.value as DevelopmentTask['priority'])}
+                            className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
+                          >
+                            <option value="high">high</option>
+                            <option value="medium">medium</option>
+                            <option value="low">low</option>
+                          </select>
+                          {taskFormError && <p className="text-xs text-rose-300">{taskFormError}</p>}
+                          <button
+                            onClick={handleAddTask}
+                            className="inline-flex items-center gap-2 rounded-md border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20"
+                          >
+                            <PlusCircle className="h-4 w-4" />
+                            + Добавить задачу
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-3">
@@ -483,6 +659,13 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                                   title="Edit task description"
                                 >
                                   <Edit3 className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="rounded p-1 text-neutral-400 hover:bg-rose-500/10 hover:text-rose-300"
+                                  title="Delete task"
+                                >
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
                             </div>
