@@ -1,6 +1,5 @@
 // src/lib/nvidia-nim.ts
 
-import axios from 'axios';
 import { DevelopmentTask, CodeChange, PromptRequest } from '@/types';
 import { useAppStore } from '@/lib/store';
 
@@ -330,20 +329,26 @@ class NvidiaNimService {
 
     try {
       const { requestBody } = this.buildRequestPayload(request);
+      const response = await fetch('/api/nim/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-NIM-Key': this.config.apiKey,
+          'X-NIM-BaseUrl': this.config.baseUrl,
+        },
+        body: JSON.stringify(requestBody),
+        signal: request.signal,
+      });
 
-      const response = await axios.post(
-        `${this.config.baseUrl}/chat/completions`,
-        requestBody,
-        {
-          signal: request.signal,
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
-      const content = response.data.choices[0].message.content;
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (typeof content !== 'string') {
+        throw new Error('Invalid response format from NIM API');
+      }
       return this.parseResponse(content);
     } catch (error) {
       console.error('Nvidia NIM API error:', error);
@@ -400,11 +405,12 @@ class NvidiaNimService {
           delay = Math.min(delay * 2, MAX_RETRY_DELAY);
         }
 
-        const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+        const response = await fetch('/api/nim/generate?stream=true', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
+            'X-NIM-Key': this.config.apiKey,
+            'X-NIM-BaseUrl': this.config.baseUrl,
           },
           body: JSON.stringify({ ...requestBody, stream: true }),
           signal,
