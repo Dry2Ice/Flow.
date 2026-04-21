@@ -38,6 +38,7 @@ export function AIChat() {
         description: change.description || 'File updated by AI',
       }))
     );
+  const lastAssistantMessageId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -244,6 +245,9 @@ export function AIChat() {
                           }}
                         >
                           {message.content}
+                          {isGenerating && message.id === lastAssistantMessageId && (
+                            <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-300 align-middle" aria-hidden="true" />
+                          )}
                         </ReactMarkdown>
                       </div>
                     ) : (
