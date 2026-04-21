@@ -27,6 +27,28 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     }
   };
 
+  const validateBaseUrl = (value: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return 'Укажите Base URL';
+    }
+
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return 'Base URL должен начинаться с http:// или https://';
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      if (!parsed.pathname || parsed.pathname === '/' || !parsed.pathname.endsWith('/v1')) {
+        return 'Base URL должен заканчиваться на /v1';
+      }
+    } catch {
+      return 'Некорректный URL';
+    }
+
+    return null;
+  };
+
   const loadAvailableModels = async () => {
     if (!apiKey || !baseUrl) {
       alert('Please enter API Key and Base URL first');
@@ -59,43 +81,65 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
   const testConnection = async () => {
     if (!apiKey || !baseUrl || !model) {
-      alert('Please fill in API Key, Base URL, and Model');
+      setMessage('Please fill in API Key, Base URL, and Model');
+      return;
+    }
+
+    const baseUrlError = validateBaseUrl(baseUrl);
+    if (baseUrlError) {
+      setMessage(baseUrlError);
       return;
     }
 
     setConnectionStatus('connecting');
+    setMessage('Testing connection (timeout: 15 seconds)...');
     try {
       const response = await fetch('/api/nim/probe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15_000),
         body: JSON.stringify({ apiKey, baseUrl, model, message: 'Hello' }),
       });
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         setConnectionStatus('connected');
+        setMessage('Connection successful.');
         setTimeout(() => setConnectionStatus('idle'), 3000);
       } else {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = data?.error || response.statusText || 'Unknown error';
+        const causeText = data?.cause ? ` | Cause: ${data.cause}` : '';
+        setConnectionStatus('error');
+        setMessage(`HTTP ${response.status}: ${errorText}${causeText}`);
+        setTimeout(() => setConnectionStatus('idle'), 3000);
       }
     } catch (error) {
       console.error('Connection test failed:', error);
       setConnectionStatus('error');
+      setMessage('Connection failed: timeout after 15 seconds or network error.');
       setTimeout(() => setConnectionStatus('idle'), 3000);
-      alert('Connection failed. Please check your settings.');
     }
   };
 
   const sendTestMessage = async () => {
     if (!apiKey || !baseUrl || !model) {
-      alert('Please fill in API Key, Base URL, and Model');
+      setMessage('Please fill in API Key, Base URL, and Model');
+      return;
+    }
+
+    const baseUrlError = validateBaseUrl(baseUrl);
+    if (baseUrlError) {
+      setMessage(baseUrlError);
       return;
     }
 
     setTestMessageStatus('sending');
+    setMessage('Sending test message (timeout: 15 seconds)...');
     try {
       const response = await fetch('/api/nim/probe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15_000),
         body: JSON.stringify({
           apiKey,
           baseUrl,
@@ -103,23 +147,27 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           message: 'Say "Hello from Flow!" and nothing else.',
         }),
       });
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
-        const data = await response.json();
         const reply = data.choices?.[0]?.message?.content;
         if (reply) {
           setTestMessageStatus('success');
-          alert(`Test successful! AI replied: "${reply}"`);
+          setMessage(`Test successful! AI replied: "${reply}"`);
         } else {
-          throw new Error('No response content');
+          setTestMessageStatus('error');
+          setMessage('Test message succeeded but no response content was returned.');
         }
       } else {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = data?.error || response.statusText || 'Unknown error';
+        const causeText = data?.cause ? ` | Cause: ${data.cause}` : '';
+        setTestMessageStatus('error');
+        setMessage(`HTTP ${response.status}: ${errorText}${causeText}`);
       }
     } catch (error) {
       console.error('Test message failed:', error);
       setTestMessageStatus('error');
-      alert('Test message failed. Please check your settings.');
+      setMessage('Test message failed: timeout after 15 seconds or network error.');
     } finally {
       setTimeout(() => setTestMessageStatus('idle'), 3000);
     }
@@ -409,6 +457,9 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       placeholder="https://api.nvidia.com/v1"
                       required
                     />
+                    <div className="text-xs text-neutral-400 mt-1">
+                      Обычно https://api.nvidia.com/v1 или http://localhost:8000/v1
+                    </div>
                   </div>
 
                    <div className="md:col-span-2">
@@ -520,6 +571,16 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                  <div className="text-xs text-neutral-400 mt-2">
                    Test your API connection and send a simple test message to verify everything works
                  </div>
+                 {(connectionStatus === 'connecting' || testMessageStatus === 'sending') && (
+                   <div className="text-xs text-amber-300 mt-2">
+                     Timeout: 15 seconds
+                   </div>
+                 )}
+                 {message && (
+                   <div className="mt-2 text-sm text-neutral-200 bg-neutral-700/60 border border-neutral-600 rounded px-3 py-2">
+                     {message}
+                   </div>
+                 )}
                </div>
 
                {/* Generation Parameters Section */}
