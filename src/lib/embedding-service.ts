@@ -82,7 +82,9 @@ export function chunkFile(filePath: string, content: string): CodeChunk[] {
 
 export async function getEmbedding(texts: string[]): Promise<number[][]> {
   if (!activeEmbeddingConfig) {
-    throw new Error('Embedding config is not set');
+    throw new Error(
+      'Embedding config is not set. Call embeddingService.setConfig(config) before use.'
+    );
   }
 
   if (!Array.isArray(texts) || texts.length === 0) {
