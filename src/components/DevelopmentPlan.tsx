@@ -250,13 +250,13 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
   const getBugSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'text-red-400 bg-red-500/10 border-red-500/30';
+        return 'text-red-700 dark:text-red-400 bg-red-500/10 border-red-500/30';
       case 'high':
-        return 'text-orange-400 bg-orange-500/10 border-orange-500/30';
+        return 'text-amber-700 dark:text-amber-300 bg-orange-500/10 border-orange-500/30';
       case 'medium':
-        return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
+        return 'text-yellow-800 dark:text-yellow-200 bg-yellow-500/10 border-yellow-500/30';
       case 'low':
-        return 'text-green-400 bg-green-500/10 border-green-500/30';
+        return 'text-emerald-700 dark:text-emerald-300 bg-green-500/10 border-green-500/30';
       default:
         return 'text-neutral-400 bg-neutral-500/10 border-neutral-500/30';
     }
@@ -457,7 +457,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
           <button
             onClick={() => setActiveTab('plan')}
             className={`px-4 py-3 text-sm font-semibold transition ${
-              activeTab === 'plan' ? 'bg-blue-500/10 text-blue-400' : 'text-neutral-400 hover:text-neutral-200'
+              activeTab === 'plan' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400' : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
             Plan
@@ -465,7 +465,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
           <button
             onClick={() => setActiveTab('errors')}
             className={`px-4 py-3 text-sm font-semibold transition ${
-              activeTab === 'errors' ? 'bg-red-500/10 text-red-400' : 'text-neutral-400 hover:text-neutral-200'
+              activeTab === 'errors' ? 'bg-red-500/10 text-red-700 dark:text-red-400' : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
             Errors ({bugs.length})
@@ -504,7 +504,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                   />
                   <button
                     onClick={handleCreatePlan}
-                    className="inline-flex items-center gap-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20"
+                    className="inline-flex items-center gap-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
                   >
                     <PlusCircle className="h-4 w-4" />
                     + Создать план
@@ -554,7 +554,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                         </button>
                       </div>
                       {executingPlanId === activePlan.id && planExecutionProgress.total > 0 && (
-                        <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-300">
+                        <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-700 dark:text-blue-300">
                           {planExecutionProgress.current}/{planExecutionProgress.total}
                         </span>
                       )}
@@ -563,14 +563,14 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => handleCheckAllTasks(activePlan)}
-                        className="rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20"
+                        className="rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20"
                       >
                         Check all tasks
                       </button>
                       <button
                         onClick={() => handleExecutePlan(activePlan)}
                         disabled={executingPlanId === activePlan.id}
-                        className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                        className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
                       >
                         Execute plan
                       </button>
@@ -616,7 +616,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                           {taskFormError && <p className="text-xs text-rose-300">{taskFormError}</p>}
                           <button
                             onClick={handleAddTask}
-                            className="inline-flex items-center gap-2 rounded-md border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20"
+                            className="inline-flex items-center gap-2 rounded-md border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20"
                           >
                             <PlusCircle className="h-4 w-4" />
                             + Добавить задачу
@@ -641,21 +641,21 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleCheckTask(task)}
-                                  className="rounded p-1 text-neutral-400 hover:bg-blue-500/10 hover:text-blue-300"
+                                  className="rounded p-1 text-neutral-400 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-300"
                                   title="Check task status"
                                 >
                                   <Search className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleExecuteTask(task)}
-                                  className="rounded p-1 text-neutral-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                                  className="rounded p-1 text-neutral-400 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300"
                                   title={task.status === 'partially_completed' || task.status === 'in_progress' ? 'Continue task' : 'Execute task'}
                                 >
                                   <Play className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => startEditDescription(task)}
-                                  className="rounded p-1 text-neutral-400 hover:bg-violet-500/10 hover:text-violet-300"
+                                  className="rounded p-1 text-neutral-400 hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-300"
                                   title="Edit task description"
                                 >
                                   <Edit3 className="h-4 w-4" />
@@ -738,7 +738,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                 <h3 className="text-sm font-semibold text-neutral-100">Error intake</h3>
                 <button
                   onClick={handleAutoAddErrors}
-                  className="rounded-md border border-blue-500/40 bg-blue-500/10 px-2.5 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-500/20"
+                  className="rounded-md border border-blue-500/40 bg-blue-500/10 px-2.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/20"
                 >
                   Auto-add from logs + AI actions
                 </button>
@@ -772,7 +772,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
 
               <button
                 onClick={handleManualAdd}
-                className="mt-2 inline-flex items-center gap-2 rounded-md border border-violet-500/50 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-300 hover:bg-violet-500/20"
+                className="mt-2 inline-flex items-center gap-2 rounded-md border border-violet-500/50 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-700 dark:text-violet-300 hover:bg-violet-500/20"
               >
                 <PlusCircle className="h-4 w-4" />
                 Add error manually

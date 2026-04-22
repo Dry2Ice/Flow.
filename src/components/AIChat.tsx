@@ -178,7 +178,7 @@ export function AIChat() {
             {connectionStatus === 'connected' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400">Connected</span>
+                <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-700">Connected</span>
               </>
             )}
             {connectionStatus === 'reconnecting' && (
@@ -190,7 +190,7 @@ export function AIChat() {
             {connectionStatus === 'failed' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-red-400" />
-                <span className="text-red-400">Connection Failed</span>
+                <span className="text-red-400 dark:text-red-400 light:text-red-700">Connection Failed</span>
               </>
             )}
             {!connectionStatus && (
@@ -222,7 +222,7 @@ export function AIChat() {
             type="button"
             onClick={handleClearChat}
             disabled={messages.length === 0}
-            className="flex items-center gap-1 rounded-md border border-red-800/80 bg-red-950/50 px-2 py-1 text-xs text-red-200 hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100 dark:border-red-800/80 dark:bg-red-950/50 dark:text-red-200 dark:hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50"
             title="Clear chat"
           >
             <Trash2 className="w-3 h-3" />
@@ -253,7 +253,7 @@ export function AIChat() {
                     className={`max-w-[80%] rounded-lg p-2 ${
                       message.role === 'user'
                         ? 'bg-blue-600 text-white'
-                        : 'bg-neutral-700 text-neutral-200'
+                        : 'bg-neutral-800 text-neutral-200'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -271,7 +271,7 @@ export function AIChat() {
                     </div>
 
                     {message.role === 'assistant' ? (
-                      <div className="prose prose-sm prose-invert max-w-none text-sm">
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
@@ -284,29 +284,29 @@ export function AIChat() {
                                   </code>
                                 </pre>
                               ) : (
-                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-blue-300" {...props}>
+                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-indigo-600 dark:text-blue-300" {...props}>
                                   {children}
                                 </code>
                               );
                             },
                             p({ children }: any) {
-                              return <p className="mb-2 last:mb-0 text-neutral-200">{children}</p>;
+                              return <p className="mb-2 last:mb-0">{children}</p>;
                             },
                             ul({ children }: any) {
-                              return <ul className="mb-2 ml-4 list-disc space-y-1 text-neutral-200">{children}</ul>;
+                              return <ul className="mb-2 ml-4 list-disc space-y-1">{children}</ul>;
                             },
                             ol({ children }: any) {
-                              return <ol className="mb-2 ml-4 list-decimal space-y-1 text-neutral-200">{children}</ol>;
+                              return <ol className="mb-2 ml-4 list-decimal space-y-1">{children}</ol>;
                             },
-                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold text-neutral-100">{children}</h1>; },
-                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold text-neutral-100">{children}</h2>; },
-                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium text-neutral-200">{children}</h3>; },
-                            strong({ children }: any) { return <strong className="font-semibold text-neutral-100">{children}</strong>; },
+                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold">{children}</h1>; },
+                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold">{children}</h2>; },
+                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium">{children}</h3>; },
+                            strong({ children }: any) { return <strong className="font-semibold">{children}</strong>; },
                             a({ href, children }: any) {
-                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">{children}</a>;
+                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 dark:hover:text-blue-300 underline">{children}</a>;
                             },
                             blockquote({ children }: any) {
-                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic text-neutral-400">{children}</blockquote>;
+                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic">{children}</blockquote>;
                             },
                           }}
                         >
@@ -401,10 +401,10 @@ export function AIChat() {
                           {getLogIcon(log.type)}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium text-blue-300">{log.source || 'ai_execution'}</span>
+                              <span className="text-xs font-medium text-blue-600 dark:text-blue-300">{log.source || 'ai_execution'}</span>
                               <span className="text-xs text-neutral-500">{log.timestamp.toLocaleTimeString()}</span>
                             </div>
-                            <p className="text-sm text-neutral-200">{log.message}</p>
+                            <p className="text-sm">{log.message}</p>
                           </div>
                         </div>
                       </div>
@@ -443,7 +443,7 @@ export function AIChat() {
                               <span className="text-xs font-medium text-red-300">ERROR</span>
                               <span className="text-xs text-neutral-500">{log.timestamp.toLocaleTimeString()}</span>
                             </div>
-                            <p className="text-sm text-neutral-200">{log.message}</p>
+                            <p className="text-sm">{log.message}</p>
                             {log.details && <p className="text-xs text-neutral-400 mt-1">{log.details}</p>}
                           </div>
                         </div>
