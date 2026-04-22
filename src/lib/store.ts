@@ -219,6 +219,7 @@ interface AppState {
   sidebarOpen: boolean;
   diffViewerOpen: boolean;
   currentDiff: CodeChange | null;
+  pendingChanges: CodeChange[];
 
   // Git state
   gitInitialized: boolean;
@@ -289,6 +290,9 @@ interface AppState {
   setSidebarOpen: (open: boolean) => void;
   setDiffViewerOpen: (open: boolean) => void;
   setCurrentDiff: (diff: CodeChange | null) => void;
+  setPendingChanges: (changes: CodeChange[]) => void;
+  clearPendingChanges: () => void;
+  applyPendingChange: (changeId: string) => void;
 
   // Git actions
   setGitInitialized: (initialized: boolean) => void;
@@ -370,6 +374,7 @@ export const useAppStore = create<AppState>()(
     sidebarOpen: true,
     diffViewerOpen: false,
     currentDiff: null,
+    pendingChanges: [],
     gitInitialized: false,
     commits: [],
     promptPresets: initialPromptPresets,
@@ -644,6 +649,11 @@ export const useAppStore = create<AppState>()(
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setDiffViewerOpen: (open) => set({ diffViewerOpen: open }),
     setCurrentDiff: (diff) => set({ currentDiff: diff }),
+    setPendingChanges: (changes) => set({ pendingChanges: changes }),
+    clearPendingChanges: () => set({ pendingChanges: [] }),
+    applyPendingChange: (changeId) => set((state) => ({
+      pendingChanges: state.pendingChanges.filter((change) => change.id !== changeId),
+    })),
 
     // Ultra mode actions
     startUltraMode: (totalSteps: number) => set({
