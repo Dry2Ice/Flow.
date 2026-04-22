@@ -95,6 +95,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success, content: restoredContent });
     }
 
+    if (action === 'status') {
+      const status = await gitService.getStatus(resolvedProjectPath);
+      if (!status) {
+        return NextResponse.json({ error: 'Failed to get git status' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        modified: status.modified,
+        not_added: status.not_added,
+        deleted: status.deleted,
+        staged: status.staged,
+        ahead: status.ahead,
+        behind: status.behind,
+      });
+    }
+
     return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
   } catch (error) {
     if (error instanceof WorkspaceSecurityError) {
