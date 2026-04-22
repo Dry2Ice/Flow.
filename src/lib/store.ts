@@ -842,6 +842,7 @@ export const useAppStore = create<AppState>()(
         const projectData = await projectResponse.json();
         const projectFiles = Array.isArray(projectData?.files) ? projectData.files : [];
 
+        embeddingService.setConfig(state.embeddingConfig);
         const chunks = await embeddingService.indexProject(projectFiles);
         set({ projectChunks: chunks, indexedAt: new Date() });
       } catch (error) {

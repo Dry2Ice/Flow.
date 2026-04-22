@@ -381,7 +381,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'info',
-      message: `[Ultra] Step 1/3 started: ${ultraSteps[0].name}`,
+      message: `[Ultra] Step 1/4 started: ${ultraSteps[0].name}`,
       source: 'ai_execution',
     });
 
@@ -395,7 +395,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'success',
-      message: `[Ultra] Step 1/3 completed: ${ultraSteps[0].name}`,
+      message: `[Ultra] Step 1/4 completed: ${ultraSteps[0].name}`,
       source: 'ai_execution',
     });
     await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -407,7 +407,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'info',
-      message: `[Ultra] Step 2/3 started: ${ultraSteps[1].name}`,
+      message: `[Ultra] Step 2/4 started: ${ultraSteps[1].name}`,
       source: 'ai_execution',
     });
 
@@ -421,7 +421,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'success',
-      message: `[Ultra] Step 2/3 completed: ${ultraSteps[1].name}`,
+      message: `[Ultra] Step 2/4 completed: ${ultraSteps[1].name}`,
       source: 'ai_execution',
     });
     await new Promise((resolve) => setTimeout(resolve, 1200));
