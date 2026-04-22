@@ -29,6 +29,10 @@ class ExecutionManager {
     return true;
   }
 
+  abort(jobId: string): boolean {
+    return this.cancel(jobId);
+  }
+
   clear(jobId: string) {
     this.controllers.delete(jobId);
   }
