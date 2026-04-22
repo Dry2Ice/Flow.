@@ -13,12 +13,14 @@ import {
   PlusCircle,
   Play,
   Search,
+  Sparkles,
   Square,
   Trash2,
   User,
   XCircle,
 } from 'lucide-react';
 import { executeAIRequest } from '@/lib/ai-executor';
+import { aiService } from '@/lib/ai-service';
 import { useAppStore } from '@/lib/store';
 import { BugReport, DevelopmentTask } from '@/types';
 import type { DevelopmentPlan, TaskItem } from '@/types';
@@ -45,6 +47,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
     deleteBug,
     addLog,
     activeSessionId,
+    currentProject,
   } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<'plan' | 'errors'>(initialTab);
@@ -542,6 +545,35 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                         <p className="text-xs text-neutral-400">Status: {getStatusText(activePlan.status)}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            if (!currentProject) return;
+
+                            addLog({
+                              id: crypto.randomUUID(),
+                              sessionId: activeSessionId,
+                              timestamp: new Date(),
+                              type: 'info',
+                              message: 'Running AI project analysis...',
+                              source: 'ai_execution',
+                            });
+
+                            await aiService.buildProjectContext(currentProject.id);
+
+                            addLog({
+                              id: crypto.randomUUID(),
+                              sessionId: activeSessionId,
+                              timestamp: new Date(),
+                              type: 'success',
+                              message: 'Analysis complete — tasks updated',
+                              source: 'ai_execution',
+                            });
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg border border-indigo-500/50 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-400 transition-colors hover:bg-indigo-500/20"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Analyze Project
+                        </button>
                         <button
                           onClick={() => {
                             deletePlan(activePlan.id);
