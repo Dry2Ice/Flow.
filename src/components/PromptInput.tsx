@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Send, Zap, CheckCircle2, LoaderCircle, Circle } from 'lucide-react';
+import { Send, Zap, CheckCircle2, LoaderCircle, Circle, BookOpen } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { AIRequest, PromptRequest } from '@/types';
@@ -12,8 +12,19 @@ import { aiService } from '@/lib/ai-service';
 import { codeExecutor } from '@/lib/code-executor';
 import { embeddingService } from '@/lib/embedding-service';
 
+const PROMPT_TEMPLATES = [
+  { label: 'Add error handling', text: 'Add proper error handling to this file. Use try/catch for async operations and provide meaningful error messages.' },
+  { label: 'Write unit tests', text: 'Write comprehensive unit tests for this file using the project\'s testing framework. Cover edge cases and error paths.' },
+  { label: 'Refactor for readability', text: 'Refactor this file to improve readability. Extract complex logic into well-named functions, add JSDoc comments to public APIs.' },
+  { label: 'Add TypeScript types', text: 'Add explicit TypeScript types to all functions, parameters, and variables in this file. Remove all `any` types.' },
+  { label: 'Optimize performance', text: 'Analyze this file for performance issues and optimize it. Consider memoization, lazy loading, and reducing re-renders.' },
+  { label: 'Security review', text: 'Review this code for security vulnerabilities. Check for XSS, injection attacks, insecure data handling, and exposed secrets.' },
+  { label: 'Add documentation', text: 'Add comprehensive JSDoc/TSDoc comments to all exported functions, classes, and interfaces in this file.' },
+];
+
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const [savedDraft, setSavedDraft] = useState('');
@@ -21,6 +32,7 @@ export function PromptInput() {
   const [activeStreamingJobId, setActiveStreamingJobId] = useState<string | null>(null);
   const [contextStats, setContextStats] = useState<{ totalFiles: number; relevantChunks: number } | null>(null);
   const presetSelectRef = useRef<HTMLSelectElement | null>(null);
+  const templatesRef = useRef<HTMLDivElement | null>(null);
   const ultraSteps = useMemo(() => ([
     {
       name: 'Code Analysis & Planning',
@@ -108,6 +120,17 @@ export function PromptInput() {
 
     window.addEventListener('flow:focus-preset-selector', handleFocusPresetSelector);
     return () => window.removeEventListener('flow:focus-preset-selector', handleFocusPresetSelector);
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (templatesRef.current && !templatesRef.current.contains(event.target as Node)) {
+        setShowTemplates(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
   const navigateHistory = (direction: 'up' | 'down') => {
@@ -724,6 +747,34 @@ export function PromptInput() {
                 </option>
               ))}
             </select>
+            <div className="relative" ref={templatesRef}>
+              <button
+                type="button"
+                onClick={() => setShowTemplates((v) => !v)}
+                title="Insert prompt template"
+                className="flex items-center gap-1 rounded px-1.5 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Templates</span>
+              </button>
+              {showTemplates && (
+                <div className="absolute bottom-full left-0 z-50 mb-1 w-64 rounded-lg border border-neutral-700 bg-neutral-900/95 py-1 shadow-xl backdrop-blur-sm">
+                  {PROMPT_TEMPLATES.map((template) => (
+                    <button
+                      key={template.label}
+                      type="button"
+                      onClick={() => {
+                        setPrompt((previous) => (previous ? `${previous}\n\n${template.text}` : template.text));
+                        setShowTemplates(false);
+                      }}
+                      className="w-full px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                    >
+                      {template.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <textarea
             value={prompt}
@@ -759,6 +810,11 @@ export function PromptInput() {
             rows={2}
             disabled={ultraModeActive}
           />
+          {prompt.includes('@') && (
+            <div className="px-3 pb-1 text-[11px] text-neutral-500">
+              Tip: use <span className="font-mono text-blue-400">@filename.ts</span> to include a specific file in context
+            </div>
+          )}
           <div className="border-t border-neutral-800 px-3 py-1.5 text-[11px] text-neutral-500">
             {prompt.length} chars / ~{Math.ceil(prompt.length / 4)} tokens
           </div>

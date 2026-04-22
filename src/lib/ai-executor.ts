@@ -142,6 +142,33 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       }
     }
 
+    // Parse @mentions to explicitly include specific files in context
+    const mentionRegex = /@([\w./-]+\.\w+)/g;
+    const mentions = [...input.prompt.matchAll(mentionRegex)].map((match) => match[1]);
+
+    if (mentions.length > 0 && projectPath) {
+      for (const mention of mentions) {
+        const alreadyIncluded = projectFiles.some((file) =>
+          file.path === mention || file.path.endsWith(`/${mention}`)
+        );
+        if (!alreadyIncluded) {
+          try {
+            const res = await fetch('/api/project/file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ projectPath, filePath: mention }),
+            });
+            const data = await res.json();
+            if (data.content) {
+              projectFiles.push({ path: mention, content: data.content });
+            }
+          } catch {
+            // file not found — ignore
+          }
+        }
+      }
+    }
+
     const projectContext = currentProject
       ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
       : undefined;

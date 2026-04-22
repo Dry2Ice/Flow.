@@ -14,7 +14,6 @@ export function AIChat() {
     sessions,
     activeSessionId,
     setActiveSession,
-    createSession,
     logs,
   } = useAppStore();
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -203,20 +202,25 @@ export function AIChat() {
 
           <button
             type="button"
-            onClick={() => createSession()}
-            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500"
-            title="New Session"
-          >
-            <Plus className="w-3 h-3" />
-          </button>
-          <button
-            type="button"
             onClick={handleExportChat}
             disabled={messages.length === 0}
             className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
             title="Export chat as markdown"
           >
             <Download className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => {
+              const newId = crypto.randomUUID();
+              useAppStore.setState((state) => ({
+                sessions: { ...state.sessions, [newId]: { messages: [], isGenerating: false, activeRequests: 0 } },
+                activeSessionId: newId,
+              }));
+            }}
+            title="New session"
+            className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
+          >
+            <Plus className="h-3 w-3" /> New
           </button>
           <button
             type="button"
