@@ -232,6 +232,7 @@ interface AppState {
   // Project settings
   projectPath: string;
   embeddingConfig: EmbeddingConfig | null;
+  autoValidateAfterAI: boolean;
   projectChunks: CodeChunk[];
   isIndexingProject: boolean;
   indexedAt: Date | null;
@@ -310,6 +311,7 @@ interface AppState {
   // Project actions
   setProjectPath: (path: string) => void;
   setEmbeddingConfig: (config: EmbeddingConfig | null) => void;
+  setAutoValidateAfterAI: (enabled: boolean) => void;
   setIndexStale: (stale: boolean) => void;
   indexProjectForEmbedding: () => Promise<void>;
   createProject: (name: string, path: string) => Promise<Project>;
@@ -381,6 +383,7 @@ export const useAppStore = create<AppState>()(
     activePreset: initialActivePreset,
     projectPath: '',
     embeddingConfig: null,
+    autoValidateAfterAI: true,
     projectChunks: [],
     isIndexingProject: false,
     indexedAt: null,
@@ -885,6 +888,7 @@ export const useAppStore = create<AppState>()(
       }
       set({ embeddingConfig: config });
     },
+    setAutoValidateAfterAI: (enabled) => set({ autoValidateAfterAI: enabled }),
     setIndexStale: (stale) => set({ isIndexStale: stale }),
     indexProjectForEmbedding: async () => {
       const state = get();
