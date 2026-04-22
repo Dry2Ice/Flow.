@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Check, RotateCcw } from 'lucide-react';
+import { X, Check, RotateCcw, Download, Upload, Info } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
@@ -12,6 +12,28 @@ interface SettingsModalProps {
   isOpen?: boolean;
   onClose?: () => void;
 }
+
+const SETTINGS_STORAGE_KEY = 'nim-settings';
+const SETTINGS_VERSION = 2;
+
+const DEFAULT_SETTINGS = {
+  apiKey: '',
+  baseUrl: '',
+  model: '',
+  temperature: 0.7,
+  topP: 1.0,
+  topK: 50,
+  maxTokens: 4000,
+  contextTokens: 0,
+  presencePenalty: 0,
+  frequencyPenalty: 0,
+  stopSequences: [] as string[],
+  projectPath: '',
+  embedUseSameApiKey: true,
+  embedApiKey: '',
+  embedBaseUrl: '',
+  embedModel: '',
+};
 
 export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
   const UNTRUSTED_PATH_MESSAGE = "Путь не в списке доверенных. Нажмите 'Доверять этому пути' для разрешения доступа";
@@ -44,6 +66,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [isTrustingPath, setIsTrustingPath] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
   const [editingPreset, setEditingPreset] = useState<string | null>(null);
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
@@ -67,44 +90,61 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   // Use external state if provided, otherwise use internal
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
 
+  const applySettings = (settings: typeof DEFAULT_SETTINGS & { generalPrompt?: string; embeddingConfig?: any; activePresetId?: string | null }) => {
+    setApiKey(settings.apiKey || DEFAULT_SETTINGS.apiKey);
+    setBaseUrl(settings.baseUrl || DEFAULT_SETTINGS.baseUrl);
+    setModel(settings.model || DEFAULT_SETTINGS.model);
+    setTemperature(settings.temperature ?? DEFAULT_SETTINGS.temperature);
+    setTopP(settings.topP ?? DEFAULT_SETTINGS.topP);
+    setTopK(settings.topK ?? DEFAULT_SETTINGS.topK);
+    setMaxTokens(settings.maxTokens ?? DEFAULT_SETTINGS.maxTokens);
+    setContextTokens(settings.contextTokens ?? DEFAULT_SETTINGS.contextTokens);
+    setPresencePenalty(settings.presencePenalty ?? DEFAULT_SETTINGS.presencePenalty);
+    setFrequencyPenalty(settings.frequencyPenalty ?? DEFAULT_SETTINGS.frequencyPenalty);
+    setStopSequences(Array.isArray(settings.stopSequences) ? settings.stopSequences.join(', ') : '');
+    setProjectPathLocal(settings.projectPath || DEFAULT_SETTINGS.projectPath);
+    setEmbedUseSameApiKey(settings.embedUseSameApiKey ?? DEFAULT_SETTINGS.embedUseSameApiKey);
+    setEmbedApiKey(settings.embedApiKey || settings.apiKey || DEFAULT_SETTINGS.embedApiKey);
+    setEmbedBaseUrl(settings.embedBaseUrl || settings.baseUrl || DEFAULT_SETTINGS.embedBaseUrl);
+    setEmbedModel(settings.embedModel || DEFAULT_SETTINGS.embedModel);
+    setEmbeddingConfig(settings.embeddingConfig ?? null);
+
+    if (typeof settings.generalPrompt === 'string') {
+      setGeneralPrompt(settings.generalPrompt);
+    }
+
+    if (settings.activePresetId) {
+      const preset = promptPresets.find((p) => p.id === settings.activePresetId);
+      if (preset) {
+        setActivePreset(preset);
+      }
+    }
+  };
+
+  const resetSettingsToDefault = (notify = true) => {
+    applySettings(DEFAULT_SETTINGS);
+    setEmbeddingConfig(null);
+    localStorage.removeItem(SETTINGS_STORAGE_KEY);
+    if (notify) {
+      setMessage('Настройки сброшены к значениям по умолчанию.');
+      setTimeout(() => setMessage(''), 2500);
+    }
+  };
+
   // Load settings from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('nim-settings');
+    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (saved) {
       try {
-        const settings = JSON.parse(saved);
-        setApiKey(settings.apiKey || '');
-        setBaseUrl(settings.baseUrl || '');
-        setModel(settings.model || '');
-        setTemperature(settings.temperature ?? 0.7);
-        setTopP(settings.topP ?? 1.0);
-        setTopK(settings.topK ?? 50);
-        setMaxTokens(settings.maxTokens ?? 4000);
-        setContextTokens(settings.contextTokens ?? 0);
-        setPresencePenalty(settings.presencePenalty ?? 0.0);
-        setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
-        setStopSequences(settings.stopSequences?.join(', ') || '');
-        setProjectPath(settings.projectPath || '');
-        setEmbedUseSameApiKey(settings.embedUseSameApiKey ?? true);
-        setEmbedApiKey(settings.embedApiKey || settings.apiKey || '');
-        setEmbedBaseUrl(settings.embedBaseUrl || settings.baseUrl || '');
-        setEmbedModel(settings.embedModel || '');
-        if (settings.embeddingConfig) {
-          setEmbeddingConfig(settings.embeddingConfig);
+        const parsed = JSON.parse(saved);
+        if (parsed.version !== SETTINGS_VERSION) {
+          resetSettingsToDefault(false);
+          return;
         }
-        if (settings.generalPrompt) {
-          setGeneralPrompt(settings.generalPrompt);
-        }
-
-        // Load active preset
-        if (settings.activePresetId) {
-          const preset = promptPresets.find(p => p.id === settings.activePresetId);
-          if (preset) {
-            setActivePreset(preset);
-          }
-        }
+        applySettings(parsed);
       } catch (error) {
         console.error('Failed to load settings:', error);
+        resetSettingsToDefault(false);
       }
     }
   }, []);
@@ -378,6 +418,63 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setTimeout(() => setMessage(''), 2000);
   };
 
+  const handleExportSettings = () => {
+    const payload = {
+      version: SETTINGS_VERSION,
+      apiKey,
+      baseUrl,
+      model,
+      temperature,
+      topP,
+      topK,
+      maxTokens,
+      contextTokens,
+      presencePenalty,
+      frequencyPenalty,
+      stopSequences: stopSequences ? stopSequences.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      projectPath,
+      activePresetId: activePreset?.id || null,
+      generalPrompt,
+      embedUseSameApiKey,
+      embedApiKey,
+      embedBaseUrl,
+      embedModel,
+      embeddingConfig,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'flow-settings.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('Настройки экспортированы в JSON.');
+    setTimeout(() => setMessage(''), 2500);
+  };
+
+  const handleImportSettings: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (parsed.version !== SETTINGS_VERSION) {
+        setMessage(`Версия настроек не поддерживается. Ожидалась ${SETTINGS_VERSION}.`);
+        return;
+      }
+      applySettings(parsed);
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(parsed));
+      setMessage('Настройки успешно импортированы.');
+    } catch (error) {
+      console.error('Import settings failed:', error);
+      setMessage('Не удалось импортировать настройки: проверьте JSON файл.');
+    } finally {
+      event.target.value = '';
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
   const handleIntegerFieldChange = (
     value: string,
     onValidValue: (nextValue: number) => void,
@@ -492,6 +589,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
         // Save settings to localStorage with active preset
         const settingsToSave = {
+          version: SETTINGS_VERSION,
           ...config,
           activePresetId: activePreset?.id || null,
           generalPrompt,
@@ -501,9 +599,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           embedModel,
           embeddingConfig: embeddingPayload,
         };
-        localStorage.setItem('nim-settings', JSON.stringify(settingsToSave));
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
         window.dispatchEvent(new CustomEvent('settings-saved'));
         setMessage('AI configured successfully!');
+        setShowSavedIndicator(true);
+        setTimeout(() => setShowSavedIndicator(false), 2500);
         setTimeout(() => {
           handleClose();
           setMessage('');
@@ -563,14 +663,42 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               {/* Quick Actions */}
               <div className="border-b border-neutral-600 pb-4">
                 <h4 className="text-md font-medium text-neutral-200 mb-3">Quick Actions</h4>
-                <button
-                  type="button"
-                  onClick={handleResetLayout}
-                  className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset Workspace Layout
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetLayout}
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset Workspace Layout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetSettingsToDefault}
+                    className="flex items-center gap-2 px-4 py-2 bg-rose-700/80 hover:bg-rose-600 rounded text-sm transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Сбросить настройки
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportSettings}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-700/80 hover:bg-blue-600 rounded text-sm transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Экспорт настроек
+                  </button>
+                  <label className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-emerald-700/80 hover:bg-emerald-600 rounded text-sm transition-colors">
+                    <Upload className="w-4 h-4" />
+                    Импорт настроек
+                    <input
+                      type="file"
+                      accept="application/json"
+                      onChange={handleImportSettings}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
               </div>
 
@@ -849,7 +977,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Temperature
+                      <span className="inline-flex items-center gap-1">
+                        Temperature
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Управляет креативностью: ниже — стабильнее, выше — разнообразнее." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -863,7 +994,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Top-p
+                      <span className="inline-flex items-center gap-1">
+                        Top-p
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Nucleus sampling: ограничивает выбор токенов по суммарной вероятности." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -877,7 +1011,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Top-k
+                      <span className="inline-flex items-center gap-1">
+                        Top-k
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Разрешает выбор только из K самых вероятных токенов." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -891,7 +1028,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Frequency penalty
+                      <span className="inline-flex items-center gap-1">
+                        Frequency penalty
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Снижает повторения уже часто встречавшихся токенов." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -905,7 +1045,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Presence penalty
+                      <span className="inline-flex items-center gap-1">
+                        Presence penalty
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Поощряет появление новых тем, штрафуя уже встреченные токены." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -919,7 +1062,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens.toLocaleString()})
+                      <span className="inline-flex items-center gap-1">
+                        Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens.toLocaleString()})
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Ограничение размера входного контекста; 0 означает без лимита." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -933,7 +1079,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Max Response Tokens ({maxTokens.toLocaleString()})
+                      <span className="inline-flex items-center gap-1">
+                        Max Response Tokens ({maxTokens.toLocaleString()})
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Максимальная длина ответа модели в токенах." />
+                      </span>
                     </label>
                     <input
                       type="number"
@@ -947,7 +1096,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Stop Sequences
+                      <span className="inline-flex items-center gap-1">
+                        Stop Sequences
+                        <Info className="w-3.5 h-3.5 text-neutral-500" title="Последовательности, при появлении которых генерация будет остановлена." />
+                      </span>
                     </label>
                     <input
                       type="text"
@@ -1109,6 +1261,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               {message && (
                 <div className={`text-sm ${message.includes('successfully') ? 'text-green-400' : 'text-red-400'}`}>
                   {message}
+                </div>
+              )}
+              {showSavedIndicator && (
+                <div className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2">
+                  Настройки сохранены.
                 </div>
               )}
 

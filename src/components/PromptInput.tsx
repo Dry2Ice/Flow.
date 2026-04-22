@@ -618,7 +618,6 @@ export function PromptInput() {
                 </option>
               ))}
             </select>
-            <span className="ml-auto text-[11px] text-neutral-500">{prompt.length}/1000</span>
           </div>
           <textarea
             value={prompt}
@@ -628,6 +627,9 @@ export function PromptInput() {
             rows={2}
             disabled={ultraModeActive}
           />
+          <div className="border-t border-neutral-800 px-3 py-1.5 text-[11px] text-neutral-500">
+            {prompt.length} chars / ~{Math.ceil(prompt.length / 4)} tokens
+          </div>
         </div>
 
         <button
@@ -652,23 +654,16 @@ export function PromptInput() {
         >
           <Send className="h-4 w-4" />
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (activeStreamingJobId) {
-              executionManager.cancel(activeStreamingJobId);
-            }
-          }}
-          disabled={!activeStreamingJobId}
-          aria-label="Stop current AI generation"
-          className={`h-9 rounded-lg px-2.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
-            activeStreamingJobId
-              ? 'border border-rose-500/70 bg-rose-500/15 text-rose-200 hover:bg-rose-500/25'
-              : 'cursor-not-allowed border border-neutral-700 bg-neutral-800 text-neutral-500'
-          }`}
-        >
-          Stop
-        </button>
+        {activeStreamingJobId && (
+          <button
+            type="button"
+            onClick={() => executionManager.abort(activeStreamingJobId)}
+            aria-label="Stop current AI generation"
+            className="h-9 rounded-lg border border-rose-500/70 bg-rose-500/15 px-2.5 text-xs font-medium text-rose-200 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          >
+            Стоп
+          </button>
+        )}
       </form>
       {contextStats && (
         <div className="mt-2 text-[11px] text-cyan-300">

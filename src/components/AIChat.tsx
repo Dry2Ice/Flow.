@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, Plus } from 'lucide-react';
+import { Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, Plus, Trash2, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAppStore } from '@/lib/store';
@@ -69,6 +69,42 @@ export function AIChat() {
     } catch (error) {
       console.error('Failed to copy:', error);
     }
+  };
+
+  const handleClearChat = () => {
+    useAppStore.setState((state) => {
+      const session = state.sessions[activeSessionId];
+      if (!session) return state;
+      return {
+        sessions: {
+          ...state.sessions,
+          [activeSessionId]: {
+            ...session,
+            messages: [],
+          },
+        },
+      };
+    });
+  };
+
+  const handleExportChat = () => {
+    if (messages.length === 0) return;
+    const markdown = [
+      `# AI Chat Export`,
+      ``,
+      `Session: ${activeSessionId}`,
+      `Exported: ${new Date().toISOString()}`,
+      ``,
+      ...messages.map((message) => `## ${message.role === 'user' ? 'User' : 'Assistant'} (${message.timestamp.toLocaleString()})\n\n${message.content}`),
+    ].join('\n');
+
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `flow-chat-${activeSessionId.slice(0, 8)}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -160,6 +196,24 @@ export function AIChat() {
             title="New Session"
           >
             <Plus className="w-3 h-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleExportChat}
+            disabled={messages.length === 0}
+            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Export chat as markdown"
+          >
+            <Download className="w-3 h-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleClearChat}
+            disabled={messages.length === 0}
+            className="flex items-center gap-1 rounded-md border border-red-800/80 bg-red-950/50 px-2 py-1 text-xs text-red-200 hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Clear chat"
+          >
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
