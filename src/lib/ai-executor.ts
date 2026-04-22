@@ -41,6 +41,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
     updateAIRequest,
     currentProject,
     getProjectContext,
+    sessions,
   } = state;
 
   const selectedPreset = input.presetId
@@ -84,6 +85,20 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
 
   try {
     const currentFile = openFiles.find((file) => file.path === activeFile);
+    const sessionMessages = sessions[activeSessionId]?.messages ?? [];
+    // Exclude the user message we just added (it's the last one, role='user')
+    // Take up to 8 messages before it for history
+    const historyMessages = sessionMessages
+      .slice(0, -1)
+      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .slice(-8)
+      .map((message) => ({
+        role: message.role as 'user' | 'assistant',
+        // Strip FILE blocks from assistant messages to save tokens
+        content: message.role === 'assistant'
+          ? message.content.replace(/<<<FILE:[\s\S]*?<<<END_FILE>>>/g, '[file changes applied]').trim()
+          : message.content,
+      }));
 
     let projectFiles = openFiles.map((file) => ({
       path: file.path,
@@ -130,6 +145,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
         preset: selectedPreset || undefined,
         generalPrompt,
         signal: input.signal,
+        conversationHistory: historyMessages,
         context: {
           currentFile: activeFile || undefined,
           selectedCode: currentFile?.content,

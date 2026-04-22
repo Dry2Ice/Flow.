@@ -20,6 +20,8 @@ export interface OpenFile {
 }
 
 const DEFAULT_SESSION_ID = 'default';
+const SESSION_STORAGE_KEY = 'flow.session.v1';
+const MAX_PERSISTED_MESSAGES = 20;
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
 const ACTIVE_PRESET_STORAGE_KEY = 'flow-active-preset-id';
@@ -281,6 +283,7 @@ interface AppState {
   decrementSessionRequests: (sessionId: string) => void;
   setActiveSession: (sessionId: string) => void;
   createSession: (sessionId?: string) => string;
+  clearSession: (sessionId: string) => void;
   getSessionState: (sessionId: string) => SessionState;
 
   setSidebarOpen: (open: boolean) => void;
@@ -519,18 +522,32 @@ export const useAppStore = create<AppState>()(
     })),
     setCurrentTask: (task) => set({ currentTask: task }),
 
-    addMessage: (sessionId, message) => set((state) => {
-      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
-      return {
-        sessions: {
-          ...state.sessions,
-          [sessionId]: {
-            ...session,
-            messages: [...session.messages, message]
+    addMessage: (sessionId, message) => {
+      set((state) => {
+        const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
+        return {
+          sessions: {
+            ...state.sessions,
+            [sessionId]: {
+              ...session,
+              messages: [...session.messages, message]
+            }
           }
+        };
+      });
+
+      // Persist last N messages of the default session
+      if (isClient && sessionId === DEFAULT_SESSION_ID) {
+        try {
+          const messages = useAppStore.getState().sessions[DEFAULT_SESSION_ID]?.messages ?? [];
+          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+            messages: messages.slice(-MAX_PERSISTED_MESSAGES),
+          }));
+        } catch {
+          // ignore quota errors
         }
-      };
-    }),
+      }
+    },
     setGenerating: (sessionId, generating) => set((state) => {
       const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
       return {
@@ -597,6 +614,28 @@ export const useAppStore = create<AppState>()(
       }));
       return sessionId;
     },
+    clearSession: (sessionId) => set((state) => {
+      const session = state.sessions[sessionId];
+      if (!session) return state;
+
+      if (isClient && sessionId === DEFAULT_SESSION_ID) {
+        try {
+          localStorage.removeItem(SESSION_STORAGE_KEY);
+        } catch {
+          // ignore localStorage errors
+        }
+      }
+
+      return {
+        sessions: {
+          ...state.sessions,
+          [sessionId]: {
+            ...session,
+            messages: [],
+          },
+        },
+      };
+    }),
     getSessionState: (sessionId) => {
       const state = get();
       return state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
@@ -990,6 +1029,37 @@ export const useAppStore = create<AppState>()(
     },
   }))
 );
+
+// Rehydrate session messages from localStorage on mount
+if (isClient) {
+  try {
+    const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as { messages: any[] };
+      if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
+        // Restore timestamps as Date objects
+        const restoredMessages = parsed.messages.map((message: any) => ({
+          ...message,
+          timestamp: new Date(message.timestamp),
+        }));
+        // Set into the default session
+        setTimeout(() => {
+          useAppStore.setState((state) => ({
+            sessions: {
+              ...state.sessions,
+              [DEFAULT_SESSION_ID]: {
+                ...state.sessions[DEFAULT_SESSION_ID],
+                messages: restoredMessages,
+              },
+            },
+          }));
+        }, 0);
+      }
+    }
+  } catch {
+    // ignore corrupt localStorage
+  }
+}
 
 if (isClient) {
   useAppStore.subscribe(

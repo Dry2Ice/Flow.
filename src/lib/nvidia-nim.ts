@@ -21,6 +21,7 @@ export interface GenerateCodeRequest extends PromptRequest {
   generalPrompt?: string;
   signal?: AbortSignal;
   onChunk?: (text: string) => void;
+  conversationHistory?: import('@/types').ConversationTurn[];
 }
 
 export interface GenerateCodeResponse {
@@ -542,6 +543,7 @@ Rules:
     const fullSystemPrompt = generalPrompt
       ? `${baseSystemPrompt}\n\n${generalPrompt}\n\n${contextSummary}`
       : `${baseSystemPrompt}\n\n${contextSummary}`;
+    const history = request.conversationHistory ?? [];
 
     const isFiniteNumber = (value: unknown): value is number =>
       typeof value === 'number' && Number.isFinite(value);
@@ -583,6 +585,7 @@ ${numberedLines}
           return `${fullSystemPrompt}\n\nProject Context - Complete Codebase:\n${formattedFiles}`;
         })()
       },
+      ...history.map((turn) => ({ role: turn.role, content: turn.content })),
       {
         role: 'user',
         content: request.prompt

@@ -139,6 +139,11 @@ export interface PromptPreset {
   systemPrompt: string;
 }
 
+export interface ConversationTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface FileWithMetadata {
   path: string;
   content: string;
@@ -158,6 +163,7 @@ export interface PromptRequest {
   prompt: string;
   preset?: PromptPreset;
   generalPrompt?: string;
+  conversationHistory?: ConversationTurn[];
   context?: {
     currentFile?: string;
     selectedCode?: string;
