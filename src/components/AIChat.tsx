@@ -39,6 +39,18 @@ export function AIChat() {
       }))
     );
   const lastAssistantMessageId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
+  const visibleMessages = messages.filter((message, index) => {
+    // Remove empty assistant messages that are not the last message in the session
+    // (the last one may still be actively streaming)
+    if (
+      message.role === 'assistant' &&
+      message.content.trim() === '' &&
+      index < messages.length - 1
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -230,7 +242,7 @@ export function AIChat() {
                 <p className="text-xs mt-2">Ask questions, request code changes, or get help with your project</p>
               </div>
             ) : (
-              messages.map((message) => (
+              visibleMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-3 ${

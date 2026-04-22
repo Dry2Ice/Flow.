@@ -323,6 +323,10 @@ class NvidiaNimService {
     this.config = config;
   }
 
+  getContextTokens(): number {
+    return this.config?.contextTokens ?? 0;
+  }
+
   async generateCode(request: GenerateCodeRequest): Promise<GenerateCodeResponse> {
     if (!this.config) {
       throw new Error('Nvidia NIM configuration not set');

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Send, Zap, CheckCircle2, LoaderCircle, Circle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
@@ -77,6 +77,25 @@ export function PromptInput() {
     .filter((log) => log.sessionId === activeSessionId && log.message.startsWith('[Ultra]'))
     .slice()
     .reverse();
+
+  useEffect(() => {
+    // Don't abort during Ultra Mode — it manages its own multi-step flow
+    if (ultraModeActive) return;
+
+    if (activeStreamingJobId) {
+      executionManager.abort(activeStreamingJobId);
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        jobId: activeStreamingJobId,
+        timestamp: new Date(),
+        type: 'info',
+        message: 'Generation aborted: active file changed',
+        source: 'user_action',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFile]);
 
   const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
     const jobId = crypto.randomUUID();
@@ -181,7 +200,50 @@ export function PromptInput() {
           });
         }
       } else {
-        setContextStats(null);
+        const contextTokens = nvidiaNimService.getContextTokens();
+
+        if (contextTokens > 0) {
+          const activeDirectory = activeFile ? (activeFile.includes('/') ? activeFile.slice(0, activeFile.lastIndexOf('/')) : '') : '';
+          const promptLower = requestInput.prompt.toLowerCase();
+          const originalCount = projectFiles.length;
+          const maxChars = contextTokens * 3;
+
+          const scoredFiles = projectFiles
+            .map((file) => {
+              const fileName = file.path.split('/').pop()?.toLowerCase() ?? file.path.toLowerCase();
+              const fileDirectory = file.path.includes('/') ? file.path.slice(0, file.path.lastIndexOf('/')) : '';
+
+              let score = 1;
+              if (fileName && promptLower.includes(fileName)) {
+                score = 3;
+              } else if (activeDirectory && fileDirectory === activeDirectory) {
+                score = 2;
+              }
+
+              return { ...file, score };
+            })
+            .sort((a, b) => b.score - a.score);
+
+          let totalChars = 0;
+          const trimmedList: typeof projectFiles = [];
+
+          for (const file of scoredFiles) {
+            const fileLength = file.content?.length ?? 0;
+            if (trimmedList.length > 0 && totalChars + fileLength > maxChars) {
+              break;
+            }
+            trimmedList.push({ path: file.path, content: file.content });
+            totalChars += fileLength;
+          }
+
+          projectFiles = trimmedList;
+          setContextStats({
+            totalFiles: originalCount,
+            relevantChunks: trimmedList.length,
+          });
+        } else {
+          setContextStats(null);
+        }
       }
 
       const requestPreset = requestInput.presetId
