@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Zap, CheckCircle2, LoaderCircle, Circle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
@@ -14,9 +14,13 @@ import { embeddingService } from '@/lib/embedding-service';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number | null>(null);
+  const [savedDraft, setSavedDraft] = useState('');
   const [streamingContent, setStreamingContent] = useState('');
   const [activeStreamingJobId, setActiveStreamingJobId] = useState<string | null>(null);
   const [contextStats, setContextStats] = useState<{ totalFiles: number; relevantChunks: number } | null>(null);
+  const presetSelectRef = useRef<HTMLSelectElement | null>(null);
   const ultraSteps = useMemo(() => ([
     {
       name: 'Code Analysis & Planning',
@@ -96,6 +100,38 @@ export function PromptInput() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFile]);
+
+  useEffect(() => {
+    const handleFocusPresetSelector = () => {
+      presetSelectRef.current?.focus();
+    };
+
+    window.addEventListener('flow:focus-preset-selector', handleFocusPresetSelector);
+    return () => window.removeEventListener('flow:focus-preset-selector', handleFocusPresetSelector);
+  }, []);
+
+  const navigateHistory = (direction: 'up' | 'down') => {
+    if (promptHistory.length === 0) return;
+
+    if (direction === 'up') {
+      const nextIndex = historyIndex === null
+        ? promptHistory.length - 1
+        : Math.max(0, historyIndex - 1);
+      if (historyIndex === null) setSavedDraft(prompt);
+      setHistoryIndex(nextIndex);
+      setPrompt(promptHistory[nextIndex]);
+    } else {
+      if (historyIndex === null) return;
+      const nextIndex = historyIndex + 1;
+      if (nextIndex >= promptHistory.length) {
+        setHistoryIndex(null);
+        setPrompt(savedDraft);
+      } else {
+        setHistoryIndex(nextIndex);
+        setPrompt(promptHistory[nextIndex]);
+      }
+    }
+  };
 
   const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
     const jobId = crypto.randomUUID();
@@ -598,7 +634,14 @@ export function PromptInput() {
     if (!prompt.trim() || ultraModeActive) return;
 
     const nextPrompt = prompt;
+    const trimmedPrompt = nextPrompt.trim();
     setPrompt('');
+    setPromptHistory((prev) => {
+      const deduped = prev.filter((item) => item !== trimmedPrompt);
+      return [...deduped, trimmedPrompt].slice(-50);
+    });
+    setHistoryIndex(null);
+    setSavedDraft('');
     void runRequest({ prompt: nextPrompt });
   };
 
@@ -665,6 +708,7 @@ export function PromptInput() {
         <div className="flex-1 rounded-lg border border-neutral-700 bg-neutral-900">
           <div className="flex items-center gap-2 border-b border-neutral-800 px-2 py-1.5">
             <select
+              ref={presetSelectRef}
               value={activePreset?.id ?? ''}
               onChange={(event) => {
                 const preset = promptPresets.find((item) => item.id === event.target.value);
@@ -684,7 +728,33 @@ export function PromptInput() {
           <textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Describe what you want to build or modify with AI assistance..."
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!ultraModeActive && prompt.trim()) {
+                  void handleSubmit(e as unknown as React.FormEvent);
+                }
+                return;
+              }
+
+              if (e.key === 'Escape' && activeStreamingJobId) {
+                e.preventDefault();
+                executionManager.abort(activeStreamingJobId);
+                return;
+              }
+
+              if (e.key === 'ArrowUp' && prompt === '') {
+                e.preventDefault();
+                navigateHistory('up');
+                return;
+              }
+
+              if (e.key === 'ArrowDown' && historyIndex !== null) {
+                e.preventDefault();
+                navigateHistory('down');
+              }
+            }}
+            placeholder="Describe what you want to build or modify... (Ctrl+Enter to send, ↑ for history)"
             className="min-h-16 w-full resize-none bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             rows={2}
             disabled={ultraModeActive}
