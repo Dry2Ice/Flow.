@@ -117,6 +117,18 @@ export default function Home() {
     return () => window.removeEventListener('reset-dock-layout', handler);
   }, []);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('flow:focus-preset-selector'));
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // Demo project creation on first visit
   useEffect(() => {
     if (projects.length === 0) {
