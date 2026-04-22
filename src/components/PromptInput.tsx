@@ -10,11 +10,13 @@ import { AIRequest, PromptRequest } from '@/types';
 import { executionManager } from '@/lib/execution-manager';
 import { aiService } from '@/lib/ai-service';
 import { codeExecutor } from '@/lib/code-executor';
+import { embeddingService } from '@/lib/embedding-service';
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
   const [streamingContent, setStreamingContent] = useState('');
   const [activeStreamingJobId, setActiveStreamingJobId] = useState<string | null>(null);
+  const [contextStats, setContextStats] = useState<{ totalFiles: number; relevantChunks: number } | null>(null);
   const ultraSteps = useMemo(() => ([
     {
       name: 'Code Analysis & Planning',
@@ -67,6 +69,9 @@ export function PromptInput() {
     currentProject,
     getProjectContext,
     logs,
+    embeddingConfig,
+    projectChunks,
+    indexProjectForEmbedding,
   } = useAppStore();
   const ultraLogs = logs
     .filter((log) => log.sessionId === activeSessionId && log.message.startsWith('[Ultra]'))
@@ -142,6 +147,42 @@ export function PromptInput() {
       const projectContext = currentProject
         ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
         : undefined;
+
+      if (embeddingConfig) {
+        embeddingService.setConfig(embeddingConfig);
+
+        let chunks = projectChunks;
+        if (chunks.length === 0) {
+          await indexProjectForEmbedding();
+          chunks = useAppStore.getState().projectChunks;
+        }
+
+        if (chunks.length > 0) {
+          const relevant = await embeddingService.search(requestInput.prompt, chunks, 5);
+          if (relevant.length > 0) {
+            const relevantByPath = new Map<string, string[]>();
+            relevant.forEach((chunk) => {
+              const range = `// lines ${chunk.startLine}-${chunk.endLine}`;
+              const snippet = `${range}\n${chunk.content}`;
+              const existing = relevantByPath.get(chunk.filePath) || [];
+              existing.push(snippet);
+              relevantByPath.set(chunk.filePath, existing);
+            });
+
+            projectFiles = Array.from(relevantByPath.entries()).map(([path, snippets]) => ({
+              path,
+              content: snippets.join('\n\n'),
+            }));
+          }
+
+          setContextStats({
+            totalFiles: new Set(chunks.map((chunk) => chunk.filePath)).size,
+            relevantChunks: relevant.length,
+          });
+        }
+      } else {
+        setContextStats(null);
+      }
 
       const requestPreset = requestInput.presetId
         ? promptPresets.find((preset) => preset.id === requestInput.presetId) ?? activePreset
@@ -629,6 +670,11 @@ export function PromptInput() {
           Stop
         </button>
       </form>
+      {contextStats && (
+        <div className="mt-2 text-[11px] text-cyan-300">
+          Контекст: {contextStats.totalFiles} файлов → {contextStats.relevantChunks} релевантных фрагментов
+        </div>
+      )}
       {activeStreamingJobId && (
         <div className="mt-2 flex items-center justify-between rounded-md border border-blue-500/20 bg-blue-500/5 px-2 py-1 text-[11px] text-blue-200">
           <span className="inline-flex items-center gap-1.5">
