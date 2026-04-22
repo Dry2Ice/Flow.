@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const { code, filePath, projectPath, action = 'execute' } = await request.json();
 
-    if (!code || !filePath) {
+    if (action === 'execute' && (!code || !filePath)) {
       return NextResponse.json(
         { error: 'Code and filePath are required' },
         { status: 400 }
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
       case 'lint':
         // Lint the code
-        result = await codeExecutor.lintCode(code, filePath);
+        result = await codeExecutor.lintCode(code || '', filePath || '', projectPath || process.cwd());
         break;
 
       case 'build':

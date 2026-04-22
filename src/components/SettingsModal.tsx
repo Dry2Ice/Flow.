@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS = {
   embedApiKey: '',
   embedBaseUrl: '',
   embedModel: '',
+  autoValidateAfterAI: true,
 };
 
 export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
@@ -53,6 +54,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [embedApiKey, setEmbedApiKey] = useState('');
   const [embedBaseUrl, setEmbedBaseUrl] = useState('');
   const [embedModel, setEmbedModel] = useState('');
+  const [autoValidateAfterAI, setAutoValidateAfterAI] = useState(true);
   const [availableEmbedModels, setAvailableEmbedModels] = useState<string[]>([]);
   const [isLoadingEmbedModels, setIsLoadingEmbedModels] = useState(false);
   const [embeddingTestStatus, setEmbeddingTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -86,6 +88,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     indexProjectForEmbedding,
     generalPrompt,
     setGeneralPrompt,
+    setAutoValidateAfterAI: setStoreAutoValidateAfterAI,
   } = useAppStore();
 
   // Use external state if provided, otherwise use internal
@@ -108,6 +111,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setEmbedApiKey(settings.embedApiKey || settings.apiKey || DEFAULT_SETTINGS.embedApiKey);
     setEmbedBaseUrl(settings.embedBaseUrl || settings.baseUrl || DEFAULT_SETTINGS.embedBaseUrl);
     setEmbedModel(settings.embedModel || DEFAULT_SETTINGS.embedModel);
+    setAutoValidateAfterAI(settings.autoValidateAfterAI ?? DEFAULT_SETTINGS.autoValidateAfterAI);
+    setStoreAutoValidateAfterAI(settings.autoValidateAfterAI ?? DEFAULT_SETTINGS.autoValidateAfterAI);
     setEmbeddingConfig(settings.embeddingConfig ?? null);
 
     if (typeof settings.generalPrompt === 'string') {
@@ -440,6 +445,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       embedApiKey,
       embedBaseUrl,
       embedModel,
+      autoValidateAfterAI,
       embeddingConfig,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -535,6 +541,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         frequencyPenalty,
         stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
         projectPath,
+        autoValidateAfterAI,
       };
       const embeddingPayload = embedModel && embedBaseUrl
         ? {
@@ -564,6 +571,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
         // Update store
         setProjectPath(projectPath);
+        setStoreAutoValidateAfterAI(autoValidateAfterAI);
         setEmbeddingConfig(embeddingPayload);
 
         if (projectPath.trim()) {
@@ -598,6 +606,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           embedApiKey,
           embedBaseUrl,
           embedModel,
+          autoValidateAfterAI,
           embeddingConfig: embeddingPayload,
         };
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
@@ -700,6 +709,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     />
                   </label>
                 </div>
+                <label className="mt-3 flex items-center gap-2 text-xs text-neutral-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoValidateAfterAI}
+                    onChange={e => setAutoValidateAfterAI(e.target.checked)}
+                    className="rounded"
+                  />
+                  Auto-validate (tsc) after AI writes files
+                </label>
                 <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
               </div>
 

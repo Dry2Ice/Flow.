@@ -15,6 +15,7 @@ export function DiffViewer() {
     openFile,
     currentProject,
     setIndexStale,
+    autoValidateAfterAI,
   } = useAppStore();
   const [fileIndex, setFileIndex] = useState(0);
   const [rejected, setRejected] = useState<Set<string>>(new Set());
@@ -42,6 +43,56 @@ export function DiffViewer() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ projectPath, filePath: change.filePath, content: change.newContent }),
         });
+      }
+    }
+
+    if (projectPath && autoValidateAfterAI) {
+      const { addLog, activeSessionId } = useAppStore.getState();
+
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        timestamp: new Date(),
+        type: 'info',
+        message: 'Running TypeScript type check...',
+        source: 'ai_execution',
+      });
+
+      try {
+        const lintRes = await fetch('/api/project/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: '', filePath: '', projectPath, action: 'lint' }),
+        });
+        const lintData = await lintRes.json();
+
+        if (!lintData.success && lintData.output) {
+          addLog({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId,
+            timestamp: new Date(),
+            type: 'warning',
+            message: 'Type errors found — sending to AI for correction',
+            source: 'ai_execution',
+          });
+
+          const { executeAIRequest } = await import('@/lib/ai-executor');
+          await executeAIRequest({
+            prompt: `The code changes you just made introduced TypeScript errors. Please fix them:\n\n\`\`\`\n${lintData.output.slice(0, 3000)}\n\`\`\`\n\nFix all errors and output the corrected files.`,
+            requestType: 'debugging',
+          });
+        } else {
+          addLog({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId,
+            timestamp: new Date(),
+            type: 'success',
+            message: 'TypeScript: no errors after AI changes',
+            source: 'ai_execution',
+          });
+        }
+      } catch {
+        // Non-critical — validation is best-effort
       }
     }
 
