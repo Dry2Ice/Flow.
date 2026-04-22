@@ -184,6 +184,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
         const alreadyOpen = useAppStore.getState().openFiles.find(f => f.path === change.filePath);
         if (alreadyOpen) {
           updateFileContent(change.filePath, change.newContent);
+          useAppStore.getState().setIndexStale(true);
         } else {
           openFile(change.filePath, change.newContent);
         }

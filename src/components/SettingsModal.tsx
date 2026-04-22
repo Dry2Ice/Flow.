@@ -82,6 +82,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     projectChunks,
     isIndexingProject,
     indexedAt,
+    isIndexStale,
     indexProjectForEmbedding,
     generalPrompt,
     setGeneralPrompt,
@@ -888,7 +889,16 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300">
-                    <div>Indexing status: {isIndexingProject ? 'Indexing…' : projectChunks.length > 0 ? `Ready (${projectChunks.length} chunks)` : 'Not indexed'}</div>
+                    <div>
+                      Indexing status:{' '}
+                      {isIndexingProject
+                        ? 'Indexing…'
+                        : projectChunks.length > 0
+                          ? isIndexStale
+                            ? <span className="text-yellow-400 dark:text-yellow-400 light:text-yellow-600">⚠ Index is stale — re-index recommended</span>
+                            : `Ready (${projectChunks.length} chunks)`
+                          : 'Not indexed'}
+                    </div>
                     {indexedAt && <div className="text-neutral-400 mt-1">Last indexed: {indexedAt.toLocaleString()}</div>}
                     <button
                       type="button"

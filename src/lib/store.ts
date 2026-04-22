@@ -232,6 +232,7 @@ interface AppState {
   projectChunks: CodeChunk[];
   isIndexingProject: boolean;
   indexedAt: Date | null;
+  isIndexStale: boolean;
 
   // Ultra mode
   ultraModeActive: boolean;
@@ -302,6 +303,7 @@ interface AppState {
   // Project actions
   setProjectPath: (path: string) => void;
   setEmbeddingConfig: (config: EmbeddingConfig | null) => void;
+  setIndexStale: (stale: boolean) => void;
   indexProjectForEmbedding: () => Promise<void>;
   createProject: (name: string, path: string) => Promise<Project>;
   loadProject: (path: string) => Promise<Project>;
@@ -374,6 +376,7 @@ export const useAppStore = create<AppState>()(
     projectChunks: [],
     isIndexingProject: false,
     indexedAt: null,
+    isIndexStale: false,
     ultraModeActive: false,
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
@@ -481,9 +484,17 @@ export const useAppStore = create<AppState>()(
       openFiles: state.openFiles.filter(f => f.path !== path),
       activeFile: state.activeFile === path ? state.openFiles.find(f => f.path !== path)?.path || null : state.activeFile
     })),
-    updateFileContent: (path, content) => set((state) => ({
-      openFiles: state.openFiles.map(f => f.path === path ? { ...f, content } : f)
-    })),
+    updateFileContent: (path, content) => set((state) => {
+      const nextState: Partial<AppState> = {
+        openFiles: state.openFiles.map(f => f.path === path ? { ...f, content } : f),
+      };
+
+      if (state.projectChunks.length > 0) {
+        nextState.isIndexStale = true;
+      }
+
+      return nextState;
+    }),
     setActiveFile: (path) => set({ activeFile: path }),
 
     // Plan actions
@@ -825,10 +836,11 @@ export const useAppStore = create<AppState>()(
       }
       set({ embeddingConfig: config });
     },
+    setIndexStale: (stale) => set({ isIndexStale: stale }),
     indexProjectForEmbedding: async () => {
       const state = get();
       if (!state.embeddingConfig || !state.projectPath.trim()) {
-        set({ projectChunks: [], isIndexingProject: false, indexedAt: null });
+        set({ projectChunks: [], isIndexingProject: false, indexedAt: null, isIndexStale: false });
         return;
       }
 
@@ -845,6 +857,7 @@ export const useAppStore = create<AppState>()(
         embeddingService.setConfig(state.embeddingConfig);
         const chunks = await embeddingService.indexProject(projectFiles);
         set({ projectChunks: chunks, indexedAt: new Date() });
+        set({ isIndexStale: false });
       } catch (error) {
         console.error('Failed to index project for embeddings:', error);
         set({ projectChunks: [] });
