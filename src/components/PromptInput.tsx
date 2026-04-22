@@ -560,7 +560,7 @@ export function PromptInput() {
 
     // Execute code testing
     try {
-      const testResult = await codeExecutor.runTests(projectPath || process.cwd());
+      const testResult = await codeExecutor.runTests(projectPath || '');
 
       addLog({
         id: crypto.randomUUID(),

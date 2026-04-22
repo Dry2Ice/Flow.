@@ -99,33 +99,33 @@ const createAccessibleComponent = (
   );
 };
 
-const FilesPanel = React.memo(function FilesPanel() {
+function FilesPanel() {
   return createAccessibleComponent(<FileBrowser />, 'files');
-});
+}
 
-const ProjectsPanel = React.memo(function ProjectsPanel() {
+function ProjectsPanel() {
   return createAccessibleComponent(<ProjectManager />, 'projects');
-});
+}
 
-const EditorPanel = React.memo(function EditorPanel() {
+function EditorPanel() {
   return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
       <CodeEditor />
     </Suspense>,
     'editor'
   );
-});
+}
 
-const PreviewPanel = React.memo(function PreviewPanel() {
+function PreviewPanel() {
   return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
       <CodePreview />
     </Suspense>,
     'preview'
   );
-});
+}
 
-const ChatPanel = React.memo(function ChatPanel() {
+function ChatPanel() {
   return createAccessibleComponent(
     <div className="flex h-full flex-col">
       <AIErrorBoundary sessionId="chat-ai">
@@ -135,20 +135,20 @@ const ChatPanel = React.memo(function ChatPanel() {
     </div>,
     'chat'
   );
-});
+}
 
-const LogsPanel = React.memo(function LogsPanel() {
+function LogsPanel() {
   return createAccessibleComponent(<SystemLogsPanel />, 'logs');
-});
+}
 
-const PlanPanel = React.memo(function PlanPanel() {
+function PlanPanel() {
   return createAccessibleComponent(
     <AIErrorBoundary sessionId="plan-ai">
       <DevelopmentPlan />
     </AIErrorBoundary>,
     'plan'
   );
-});
+}
 
 // Map panel id → component with lazy loading and accessibility
 const components: Record<string, React.FC<IDockviewPanelProps>> = {
@@ -163,6 +163,7 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
 const ALL_PANEL_IDS = ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'] as const;
+const COMPONENT_IDS = new Set(Object.keys(components));
 
 const DEFAULT_LAYOUT = {
   grid: {
@@ -309,7 +310,25 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   }, []);
 
   const loadLayout = useCallback((api: DockviewApi) => {
+    const isValidLayout = (layout: unknown): layout is { panels: Record<string, { component?: unknown }> } => {
+      if (!layout || typeof layout !== 'object') {
+        return false;
+      }
+
+      const panelEntries = Object.values((layout as { panels?: Record<string, { component?: unknown }> }).panels ?? {});
+      if (panelEntries.length === 0) {
+        return false;
+      }
+
+      return panelEntries.every((panel) => (
+        typeof panel?.component === 'string' && COMPONENT_IDS.has(panel.component)
+      ));
+    };
+
     const tryLoad = (json: any) => {
+      if (!isValidLayout(json)) {
+        throw new Error('Invalid layout JSON: unknown or missing panel component mapping.');
+      }
       api.clear();
       api.fromJSON(json);
     };
