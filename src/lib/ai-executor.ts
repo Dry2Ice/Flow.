@@ -20,6 +20,26 @@ export interface ExecuteAIRequestResult {
   error?: string;
 }
 
+export async function autoCommitAfterAIWrite(response: { explanation: string; changes?: Array<{ filePath: string; newContent: string }> }) {
+  const { autoCommitAfterAI, projectPath } = useAppStore.getState();
+  if (!autoCommitAfterAI || !projectPath) {
+    return;
+  }
+
+  const commitMsg = response.explanation.split('\n')[0].slice(0, 72) || 'AI: code changes';
+  await fetch('/api/git', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'save',
+      projectPath,
+      filePath: response.changes?.[0]?.filePath ?? '',
+      content: response.changes?.[0]?.newContent ?? '',
+      commitMessage: `AI: ${commitMsg}`,
+    }),
+  });
+}
+
 export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<ExecuteAIRequestResult> {
   const state = useAppStore.getState();
   const {

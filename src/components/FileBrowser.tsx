@@ -29,6 +29,7 @@ export function FileBrowser() {
     currentProject,
     openFile,
     activeFile,
+    gitInitialized,
     commits,
     initializeGitRepo,
     saveActiveFile,
@@ -43,12 +44,47 @@ export function FileBrowser() {
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [gitStatus, setGitStatus] = useState<{
+    modified: string[];
+    not_added: string[];
+    deleted: string[];
+  } | null>(null);
 
   useEffect(() => {
     if (currentProject && !currentProject.isDemo) {
       void loadCommitHistory();
     }
   }, [currentProject, loadCommitHistory]);
+
+  const loadGitStatus = async () => {
+    const projectPath = currentProject?.path;
+    if (!projectPath || !gitInitialized || currentProject?.isDemo) {
+      setGitStatus(null);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status', projectPath }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGitStatus({
+          modified: Array.isArray(data.modified) ? data.modified : [],
+          not_added: Array.isArray(data.not_added) ? data.not_added : [],
+          deleted: Array.isArray(data.deleted) ? data.deleted : [],
+        });
+      }
+    } catch {
+      // non-critical
+    }
+  };
+
+  useEffect(() => {
+    void loadGitStatus();
+  }, [currentProject?.path, currentProject?.isDemo, gitInitialized]);
 
   useEffect(() => {
     if (commits.length > 0 && !selectedCommit) {
@@ -70,6 +106,7 @@ export function FileBrowser() {
     const data = await response.json();
     if (data.files) {
       useAppStore.getState().updateProject({ files: data.files });
+      await loadGitStatus();
     }
   };
 
@@ -319,6 +356,35 @@ export function FileBrowser() {
           )}
           <span className="flex-1 truncate">{node.name}</span>
 
+          {gitStatus && (() => {
+            const rel = node.path.startsWith(`${currentProject.path}/`)
+              ? node.path.slice(currentProject.path.length + 1)
+              : node.path;
+
+            if (gitStatus.modified.includes(rel) || gitStatus.modified.includes(node.path)) {
+              return (
+                <span className="ml-auto shrink-0 rounded bg-orange-400/10 px-1 text-[10px] font-bold text-orange-400">
+                  M
+                </span>
+              );
+            }
+            if (gitStatus.not_added.includes(rel) || gitStatus.not_added.includes(node.path)) {
+              return (
+                <span className="ml-auto shrink-0 rounded bg-green-400/10 px-1 text-[10px] font-bold text-green-400">
+                  U
+                </span>
+              );
+            }
+            if (gitStatus.deleted.includes(rel) || gitStatus.deleted.includes(node.path)) {
+              return (
+                <span className="ml-auto shrink-0 rounded bg-red-400/10 px-1 text-[10px] font-bold text-red-400">
+                  D
+                </span>
+              );
+            }
+            return null;
+          })()}
+
           {renamingPath === node.path && renameValue && (
             <span className="ml-2 truncate text-[10px] text-blue-300">→ {renameValue}</span>
           )}
@@ -384,7 +450,10 @@ export function FileBrowser() {
               History
             </button>
             <button
-              onClick={() => void saveActiveFile()}
+              onClick={async () => {
+                await saveActiveFile();
+                await loadGitStatus();
+              }}
               disabled={!activeFile}
               className="flex items-center justify-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1.5 text-xs text-sky-200 hover:bg-sky-500/25 disabled:border-neutral-700 disabled:bg-neutral-800 disabled:text-neutral-500"
             >

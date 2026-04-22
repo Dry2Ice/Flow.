@@ -46,6 +46,22 @@ export function DiffViewer() {
       }
     }
 
+    const acceptedChanges = pendingChanges.filter((change) => !rejected.has(change.id));
+    if (acceptedChanges.length > 0) {
+      try {
+        const { autoCommitAfterAIWrite } = await import('@/lib/ai-executor');
+        await autoCommitAfterAIWrite({
+          explanation: `Applied ${acceptedChanges.length} AI-generated file change(s)`,
+          changes: acceptedChanges.map((change) => ({
+            filePath: change.filePath,
+            newContent: change.newContent,
+          })),
+        });
+      } catch {
+        // non-critical
+      }
+    }
+
     if (projectPath && autoValidateAfterAI) {
       const { addLog, activeSessionId } = useAppStore.getState();
 

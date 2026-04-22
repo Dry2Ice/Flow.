@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS = {
   embedBaseUrl: '',
   embedModel: '',
   autoValidateAfterAI: true,
+  autoCommitAfterAI: false,
 };
 
 export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
@@ -55,6 +56,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [embedBaseUrl, setEmbedBaseUrl] = useState('');
   const [embedModel, setEmbedModel] = useState('');
   const [autoValidateAfterAI, setAutoValidateAfterAI] = useState(true);
+  const [autoCommitAfterAI, setAutoCommitAfterAI] = useState(false);
   const [availableEmbedModels, setAvailableEmbedModels] = useState<string[]>([]);
   const [isLoadingEmbedModels, setIsLoadingEmbedModels] = useState(false);
   const [embeddingTestStatus, setEmbeddingTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -89,6 +91,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     generalPrompt,
     setGeneralPrompt,
     setAutoValidateAfterAI: setStoreAutoValidateAfterAI,
+    setAutoCommitAfterAI: setStoreAutoCommitAfterAI,
   } = useAppStore();
 
   // Use external state if provided, otherwise use internal
@@ -112,7 +115,9 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setEmbedBaseUrl(settings.embedBaseUrl || settings.baseUrl || DEFAULT_SETTINGS.embedBaseUrl);
     setEmbedModel(settings.embedModel || DEFAULT_SETTINGS.embedModel);
     setAutoValidateAfterAI(settings.autoValidateAfterAI ?? DEFAULT_SETTINGS.autoValidateAfterAI);
+    setAutoCommitAfterAI(settings.autoCommitAfterAI ?? DEFAULT_SETTINGS.autoCommitAfterAI);
     setStoreAutoValidateAfterAI(settings.autoValidateAfterAI ?? DEFAULT_SETTINGS.autoValidateAfterAI);
+    setStoreAutoCommitAfterAI(settings.autoCommitAfterAI ?? DEFAULT_SETTINGS.autoCommitAfterAI);
     setEmbeddingConfig(settings.embeddingConfig ?? null);
 
     if (typeof settings.generalPrompt === 'string') {
@@ -446,6 +451,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       embedBaseUrl,
       embedModel,
       autoValidateAfterAI,
+      autoCommitAfterAI,
       embeddingConfig,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -542,6 +548,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
         projectPath,
         autoValidateAfterAI,
+        autoCommitAfterAI,
       };
       const embeddingPayload = embedModel && embedBaseUrl
         ? {
@@ -572,6 +579,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         // Update store
         setProjectPath(projectPath);
         setStoreAutoValidateAfterAI(autoValidateAfterAI);
+        setStoreAutoCommitAfterAI(autoCommitAfterAI);
         setEmbeddingConfig(embeddingPayload);
 
         if (projectPath.trim()) {
@@ -607,6 +615,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           embedBaseUrl,
           embedModel,
           autoValidateAfterAI,
+          autoCommitAfterAI,
           embeddingConfig: embeddingPayload,
         };
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
@@ -717,6 +726,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     className="rounded"
                   />
                   Auto-validate (tsc) after AI writes files
+                </label>
+                <label className="mt-2 flex items-center gap-2 text-xs text-neutral-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoCommitAfterAI}
+                    onChange={e => setAutoCommitAfterAI(e.target.checked)}
+                    className="rounded"
+                  />
+                  Auto-commit after AI writes files
                 </label>
                 <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
               </div>
