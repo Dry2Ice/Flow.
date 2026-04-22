@@ -1168,7 +1168,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       <button
                         type="button"
                         onClick={handleEditGeneralPrompt}
-                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                       >
                         Edit General Prompt
                       </button>
@@ -1247,7 +1247,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                                   e.stopPropagation();
                                   handleEditPreset(preset.id);
                                 }}
-                                className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                               >
                                 Edit Prompt
                               </button>
@@ -1260,7 +1260,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 </div>
                 {activePreset && (
                   <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded">
-                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-sm">
                       <Check className="w-4 h-4" />
                       Active preset: <strong>{activePreset.name}</strong>
                     </div>
@@ -1269,12 +1269,12 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               </div>
 
               {message && (
-                <div className={`text-sm ${message.includes('successfully') ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`text-sm ${message.includes('successfully') ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                   {message}
                 </div>
               )}
               {showSavedIndicator && (
-                <div className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2">
+                <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2">
                   Настройки сохранены.
                 </div>
               )}
