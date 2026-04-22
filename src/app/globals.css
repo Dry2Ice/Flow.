@@ -61,57 +61,57 @@
 
 .light {
   color-scheme: light;
-  /* Ultra-bright, clean light theme */
-  --background: 0 0% 100%; /* Pure white background */
-  --foreground: 222 84% 5%; /* Very dark text for maximum contrast */
-  --card: 0 0% 100%; /* Pure white cards */
-  --card-foreground: 222 84% 5%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 84% 5%;
+  /* Soft peach light theme with balanced contrast */
+  --background: 28 68% 97%;
+  --foreground: 18 26% 18%;
+  --card: 24 74% 99%;
+  --card-foreground: 18 26% 18%;
+  --popover: 24 74% 99%;
+  --popover-foreground: 18 26% 18%;
   --primary: var(--flow-primary);
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96%; /* Very light gray */
-  --secondary-foreground: 222 84% 5%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 25% 27%; /* Dark gray for muted text */
+  --secondary: 28 56% 93%;
+  --secondary-foreground: 18 24% 24%;
+  --muted: 26 54% 92%;
+  --muted-foreground: 20 18% 38%;
   --accent: var(--flow-accent);
   --accent-foreground: 0 0% 100%;
   --destructive: var(--flow-error);
   --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 91%; /* Light borders */
-  --input: 214 32% 91%;
+  --border: 24 34% 84%;
+  --input: 24 34% 84%;
   --ring: var(--flow-primary);
    --radius: 0.75rem;
 
   /* Inverted neutral scale for light mode.
      Components written for dark mode (bg-neutral-950 = near-black) will now get
      near-white backgrounds, and text-neutral-100 will become near-black text. */
-  --tw-neutral-950: hsl(0 0% 100%);
-  --tw-neutral-900: hsl(210 17% 97%);
-  --tw-neutral-800: hsl(210 14% 93%);
-  --tw-neutral-700: hsl(210 12% 86%);
-  --tw-neutral-600: hsl(210 9% 71%);
-  --tw-neutral-500: hsl(210 7% 52%);
-  --tw-neutral-400: hsl(210 9% 36%);
-  --tw-neutral-300: hsl(210 12% 24%);
-  --tw-neutral-200: hsl(210 16% 14%);
-  --tw-neutral-100: hsl(210 20% 8%);
-  --tw-neutral-50:  hsl(210 24% 4%);
+  --tw-neutral-950: hsl(26 75% 99%);
+  --tw-neutral-900: hsl(26 60% 95%);
+  --tw-neutral-800: hsl(24 46% 88%);
+  --tw-neutral-700: hsl(24 34% 76%);
+  --tw-neutral-600: hsl(22 24% 62%);
+  --tw-neutral-500: hsl(20 16% 48%);
+  --tw-neutral-400: hsl(20 18% 36%);
+  --tw-neutral-300: hsl(18 20% 27%);
+  --tw-neutral-200: hsl(18 24% 18%);
+  --tw-neutral-100: hsl(16 30% 12%);
+  --tw-neutral-50:  hsl(16 34% 8%);
 
-  --color-gray-950: hsl(0 0% 100%);
-  --color-gray-900: hsl(210 17% 97%);
-  --color-gray-800: hsl(210 14% 93%);
-  --color-gray-700: hsl(210 12% 86%);
-  --color-gray-600: hsl(210 9% 71%);
-  --color-gray-500: hsl(210 7% 52%);
-  --color-gray-400: hsl(210 9% 36%);
-  --color-gray-300: hsl(210 12% 24%);
-  --color-gray-200: hsl(210 16% 14%);
-  --color-gray-100: hsl(210 20% 8%);
-  --color-gray-50:  hsl(210 24% 4%);
+  --color-gray-950: hsl(26 75% 99%);
+  --color-gray-900: hsl(26 60% 95%);
+  --color-gray-800: hsl(24 46% 88%);
+  --color-gray-700: hsl(24 34% 76%);
+  --color-gray-600: hsl(22 24% 62%);
+  --color-gray-500: hsl(20 16% 48%);
+  --color-gray-400: hsl(20 18% 36%);
+  --color-gray-300: hsl(18 20% 27%);
+  --color-gray-200: hsl(18 24% 18%);
+  --color-gray-100: hsl(16 30% 12%);
+  --color-gray-50:  hsl(16 34% 8%);
 
-  --flow-panel: hsl(0 0% 100%);
-  --flow-panel-border: hsl(214 32% 88%);
+  --flow-panel: hsl(26 75% 99%);
+  --flow-panel-border: hsl(24 34% 82%);
 }
 
 .dark {
@@ -183,7 +183,7 @@ body {
 
 .light body {
   background-image: none;
-  background-color: hsl(210 17% 96%);
+  background-color: hsl(28 68% 97%);
 }
 
 button,
