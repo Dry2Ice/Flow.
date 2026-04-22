@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
+import { CodeChunk, EmbeddingConfig, embeddingService } from '@/lib/embedding-service';
 
 export interface SessionState {
   messages: AIMessage[];
@@ -227,6 +228,10 @@ interface AppState {
 
   // Project settings
   projectPath: string;
+  embeddingConfig: EmbeddingConfig | null;
+  projectChunks: CodeChunk[];
+  isIndexingProject: boolean;
+  indexedAt: Date | null;
 
   // Ultra mode
   ultraModeActive: boolean;
@@ -296,6 +301,8 @@ interface AppState {
 
   // Project actions
   setProjectPath: (path: string) => void;
+  setEmbeddingConfig: (config: EmbeddingConfig | null) => void;
+  indexProjectForEmbedding: () => Promise<void>;
   createProject: (name: string, path: string) => Promise<Project>;
   loadProject: (path: string) => Promise<Project>;
   switchProject: (projectId: string) => void;
@@ -363,6 +370,10 @@ export const useAppStore = create<AppState>()(
     promptPresets: initialPromptPresets,
     activePreset: initialActivePreset,
     projectPath: '',
+    embeddingConfig: null,
+    projectChunks: [],
+    isIndexingProject: false,
+    indexedAt: null,
     ultraModeActive: false,
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
@@ -808,6 +819,38 @@ export const useAppStore = create<AppState>()(
       });
     },
     setProjectPath: (path: string) => set({ projectPath: path }),
+    setEmbeddingConfig: (config) => {
+      if (config) {
+        embeddingService.setConfig(config);
+      }
+      set({ embeddingConfig: config });
+    },
+    indexProjectForEmbedding: async () => {
+      const state = get();
+      if (!state.embeddingConfig || !state.projectPath.trim()) {
+        set({ projectChunks: [], isIndexingProject: false, indexedAt: null });
+        return;
+      }
+
+      set({ isIndexingProject: true });
+      try {
+        const projectResponse = await fetch('/api/project/files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectPath: state.projectPath }),
+        });
+        const projectData = await projectResponse.json();
+        const projectFiles = Array.isArray(projectData?.files) ? projectData.files : [];
+
+        const chunks = await embeddingService.indexProject(projectFiles);
+        set({ projectChunks: chunks, indexedAt: new Date() });
+      } catch (error) {
+        console.error('Failed to index project for embeddings:', error);
+        set({ projectChunks: [] });
+      } finally {
+        set({ isIndexingProject: false });
+      }
+    },
     createProject: async (name: string, path: string) => {
       try {
         const normalizedPath = path.trim();

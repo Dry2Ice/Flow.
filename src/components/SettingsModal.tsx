@@ -27,6 +27,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [presencePenalty, setPresencePenalty] = useState(0);
   const [frequencyPenalty, setFrequencyPenalty] = useState(0);
   const [stopSequences, setStopSequences] = useState('');
+  const [embedUseSameApiKey, setEmbedUseSameApiKey] = useState(true);
+  const [embedApiKey, setEmbedApiKey] = useState('');
+  const [embedBaseUrl, setEmbedBaseUrl] = useState('');
+  const [embedModel, setEmbedModel] = useState('');
+  const [availableEmbedModels, setAvailableEmbedModels] = useState<string[]>([]);
+  const [isLoadingEmbedModels, setIsLoadingEmbedModels] = useState(false);
+  const [embeddingTestStatus, setEmbeddingTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
 
   // Model management
   const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -47,6 +54,12 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setActivePreset,
     updatePromptPreset,
     setProjectPath,
+    embeddingConfig,
+    setEmbeddingConfig,
+    projectChunks,
+    isIndexingProject,
+    indexedAt,
+    indexProjectForEmbedding,
     generalPrompt,
     setGeneralPrompt,
   } = useAppStore();
@@ -72,6 +85,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         setFrequencyPenalty(settings.frequencyPenalty ?? 0.0);
         setStopSequences(settings.stopSequences?.join(', ') || '');
         setProjectPath(settings.projectPath || '');
+        setEmbedUseSameApiKey(settings.embedUseSameApiKey ?? true);
+        setEmbedApiKey(settings.embedApiKey || settings.apiKey || '');
+        setEmbedBaseUrl(settings.embedBaseUrl || settings.baseUrl || '');
+        setEmbedModel(settings.embedModel || '');
+        if (settings.embeddingConfig) {
+          setEmbeddingConfig(settings.embeddingConfig);
+        }
         if (settings.generalPrompt) {
           setGeneralPrompt(settings.generalPrompt);
         }
@@ -146,6 +166,73 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       alert('Error loading models. Please try again.');
     } finally {
       setIsLoadingModels(false);
+    }
+  };
+
+  const loadEmbedModels = async () => {
+    const resolvedApiKey = embedUseSameApiKey ? apiKey : embedApiKey;
+    if (!resolvedApiKey || !embedBaseUrl) {
+      alert('Please enter embedding API key and Base URL first');
+      return;
+    }
+
+    setIsLoadingEmbedModels(true);
+    try {
+      const response = await fetch('/api/nim/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: resolvedApiKey, baseUrl: embedBaseUrl }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data?.map((item: any) => item.id) || [];
+        setAvailableEmbedModels(models);
+      } else {
+        const err = await response.json().catch(() => ({}));
+        alert(`Failed to load embedding models: ${err.error || response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error loading embedding models:', error);
+      alert('Error loading embedding models. Please try again.');
+    } finally {
+      setIsLoadingEmbedModels(false);
+    }
+  };
+
+  const testEmbedding = async () => {
+    const resolvedApiKey = embedUseSameApiKey ? apiKey : embedApiKey;
+    if (!resolvedApiKey || !embedBaseUrl || !embedModel) {
+      setMessage('Please fill in embedding API key, base URL, and model');
+      return;
+    }
+
+    setEmbeddingTestStatus('testing');
+    try {
+      const response = await fetch('/api/nim/embed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: ['console.log("hello flow")'],
+          model: embedModel,
+          apiKey: resolvedApiKey,
+          baseUrl: embedBaseUrl,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && Array.isArray(data.embeddings) && data.embeddings.length > 0) {
+        setEmbeddingTestStatus('success');
+        setMessage(`Embedding test successful. Vector dimensions: ${data.embeddings[0]?.length ?? 0}`);
+      } else {
+        setEmbeddingTestStatus('error');
+        setMessage(data?.error || 'Embedding test failed');
+      }
+    } catch (error) {
+      console.error('Embedding test failed:', error);
+      setEmbeddingTestStatus('error');
+      setMessage('Embedding test failed: network or timeout error.');
+    } finally {
+      setTimeout(() => setEmbeddingTestStatus('idle'), 3000);
     }
   };
 
@@ -351,6 +438,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
         projectPath,
       };
+      const embeddingPayload = embedModel && embedBaseUrl
+        ? {
+            apiKey: embedUseSameApiKey ? apiKey : embedApiKey,
+            baseUrl: embedBaseUrl,
+            model: embedModel,
+          }
+        : null;
 
       const response = await axios.post('/api/nim/config', config);
 
@@ -372,6 +466,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
         // Update store
         setProjectPath(projectPath);
+        setEmbeddingConfig(embeddingPayload);
 
         if (projectPath.trim()) {
           try {
@@ -399,7 +494,12 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         const settingsToSave = {
           ...config,
           activePresetId: activePreset?.id || null,
-          generalPrompt
+          generalPrompt,
+          embedUseSameApiKey,
+          embedApiKey,
+          embedBaseUrl,
+          embedModel,
+          embeddingConfig: embeddingPayload,
         };
         localStorage.setItem('nim-settings', JSON.stringify(settingsToSave));
         window.dispatchEvent(new CustomEvent('settings-saved'));
@@ -572,8 +672,107 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       </button>
                     </div>
                   </div>
-                </div>
                </div>
+               </div>
+
+              {/* Embedding Model Section */}
+              <div className="border-b border-neutral-600 pb-4">
+                <h4 className="text-md font-medium text-neutral-200 mb-3">Embedding Model</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="flex items-center gap-2 text-sm text-neutral-300 md:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={embedUseSameApiKey}
+                      onChange={(e) => setEmbedUseSameApiKey(e.target.checked)}
+                      className="rounded border-neutral-600 bg-neutral-700"
+                    />
+                    Use same API key
+                  </label>
+
+                  {!embedUseSameApiKey && (
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-300 mb-1">
+                        Embed API Key
+                      </label>
+                      <input
+                        type="password"
+                        value={embedApiKey}
+                        onChange={(e) => setEmbedApiKey(e.target.value)}
+                        className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Embedding API key"
+                      />
+                    </div>
+                  )}
+
+                  <div className={!embedUseSameApiKey ? '' : 'md:col-span-1'}>
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Embed Base URL
+                    </label>
+                    <input
+                      type="url"
+                      value={embedBaseUrl}
+                      onChange={(e) => setEmbedBaseUrl(e.target.value)}
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://api.nvidia.com/v1"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      Embed Model
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={embedModel}
+                        onChange={(e) => setEmbedModel(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select embedding model...</option>
+                        {availableEmbedModels.map((modelName) => (
+                          <option key={modelName} value={modelName}>
+                            {modelName}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={loadEmbedModels}
+                        disabled={isLoadingEmbedModels || !(embedUseSameApiKey ? apiKey : embedApiKey) || !embedBaseUrl}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 rounded text-sm font-medium transition-colors"
+                      >
+                        {isLoadingEmbedModels ? 'Loading…' : 'Load Embed Models'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={testEmbedding}
+                        disabled={embeddingTestStatus === 'testing' || !embedModel}
+                        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                          embeddingTestStatus === 'success'
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : embeddingTestStatus === 'error'
+                            ? 'bg-red-600 hover:bg-red-700'
+                            : 'bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600'
+                        }`}
+                      >
+                        {embeddingTestStatus === 'testing' ? 'Testing…' : 'Test Embedding'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300">
+                    <div>Indexing status: {isIndexingProject ? 'Indexing…' : projectChunks.length > 0 ? `Ready (${projectChunks.length} chunks)` : 'Not indexed'}</div>
+                    {indexedAt && <div className="text-neutral-400 mt-1">Last indexed: {indexedAt.toLocaleString()}</div>}
+                    <button
+                      type="button"
+                      onClick={() => void indexProjectForEmbedding()}
+                      disabled={isIndexingProject || !embeddingConfig}
+                      className="mt-2 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-neutral-600 rounded text-xs font-medium transition-colors"
+                    >
+                      {isIndexingProject ? 'Re-indexing…' : 'Re-index Project'}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
                {/* Connection Testing Section */}
                <div className="border-b border-neutral-600 pb-4">
