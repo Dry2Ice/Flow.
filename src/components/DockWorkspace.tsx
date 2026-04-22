@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, lazy, Suspense, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useState, lazy, Suspense, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import {
   DockviewReact,
@@ -78,8 +78,8 @@ const PANEL_ACCESSIBILITY = {
 
 // Enhanced component wrapper with accessibility
 const createAccessibleComponent = (
-  Component: React.ReactNode,
-  panelId: string
+  component: React.ReactNode,
+  panelId: keyof typeof PANEL_ACCESSIBILITY
 ) => {
   const config = PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY];
   return (
@@ -94,28 +94,39 @@ const createAccessibleComponent = (
       <div id={`${panelId}-description`} className="sr-only">
         {config.description}
       </div>
-      {Component}
+      {component}
     </div>
   );
 };
 
-// Map panel id → component with lazy loading and accessibility
-const components: Record<string, React.FC<IDockviewPanelProps>> = {
-  files: () => createAccessibleComponent(<FileBrowser />, 'files'),
-  projects: () => createAccessibleComponent(<ProjectManager />, 'projects'),
-  editor: () => createAccessibleComponent(
+const FilesPanel = React.memo(function FilesPanel() {
+  return createAccessibleComponent(<FileBrowser />, 'files');
+});
+
+const ProjectsPanel = React.memo(function ProjectsPanel() {
+  return createAccessibleComponent(<ProjectManager />, 'projects');
+});
+
+const EditorPanel = React.memo(function EditorPanel() {
+  return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
       <CodeEditor />
     </Suspense>,
     'editor'
-  ),
-  preview: () => createAccessibleComponent(
+  );
+});
+
+const PreviewPanel = React.memo(function PreviewPanel() {
+  return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
       <CodePreview />
     </Suspense>,
     'preview'
-  ),
-  chat: () => createAccessibleComponent(
+  );
+});
+
+const ChatPanel = React.memo(function ChatPanel() {
+  return createAccessibleComponent(
     <div className="flex h-full flex-col">
       <AIErrorBoundary sessionId="chat-ai">
         <AIChat />
@@ -123,14 +134,31 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
       <PromptInput />
     </div>,
     'chat'
-  ),
-  logs: () => createAccessibleComponent(<SystemLogsPanel />, 'logs'),
-  plan: () => createAccessibleComponent(
+  );
+});
+
+const LogsPanel = React.memo(function LogsPanel() {
+  return createAccessibleComponent(<SystemLogsPanel />, 'logs');
+});
+
+const PlanPanel = React.memo(function PlanPanel() {
+  return createAccessibleComponent(
     <AIErrorBoundary sessionId="plan-ai">
       <DevelopmentPlan />
     </AIErrorBoundary>,
     'plan'
-  ),
+  );
+});
+
+// Map panel id → component with lazy loading and accessibility
+const components: Record<string, React.FC<IDockviewPanelProps>> = {
+  files: FilesPanel,
+  projects: ProjectsPanel,
+  editor: EditorPanel,
+  preview: PreviewPanel,
+  chat: ChatPanel,
+  logs: LogsPanel,
+  plan: PlanPanel,
 };
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
