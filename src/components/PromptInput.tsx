@@ -2,17 +2,37 @@
 
 "use client";
 
-import { useMemo, useState } from 'react';
-import { Send, Zap, CheckCircle2, LoaderCircle, Circle } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Send, Zap, CheckCircle2, LoaderCircle, Circle, BookOpen } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { AIRequest, PromptRequest } from '@/types';
 import { executionManager } from '@/lib/execution-manager';
 import { aiService } from '@/lib/ai-service';
 import { codeExecutor } from '@/lib/code-executor';
+import { embeddingService } from '@/lib/embedding-service';
+
+const PROMPT_TEMPLATES = [
+  { label: 'Add error handling', text: 'Add proper error handling to this file. Use try/catch for async operations and provide meaningful error messages.' },
+  { label: 'Write unit tests', text: 'Write comprehensive unit tests for this file using the project\'s testing framework. Cover edge cases and error paths.' },
+  { label: 'Refactor for readability', text: 'Refactor this file to improve readability. Extract complex logic into well-named functions, add JSDoc comments to public APIs.' },
+  { label: 'Add TypeScript types', text: 'Add explicit TypeScript types to all functions, parameters, and variables in this file. Remove all `any` types.' },
+  { label: 'Optimize performance', text: 'Analyze this file for performance issues and optimize it. Consider memoization, lazy loading, and reducing re-renders.' },
+  { label: 'Security review', text: 'Review this code for security vulnerabilities. Check for XSS, injection attacks, insecure data handling, and exposed secrets.' },
+  { label: 'Add documentation', text: 'Add comprehensive JSDoc/TSDoc comments to all exported functions, classes, and interfaces in this file.' },
+];
 
 export function PromptInput() {
   const [prompt, setPrompt] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number | null>(null);
+  const [savedDraft, setSavedDraft] = useState('');
+  const [streamingContent, setStreamingContent] = useState('');
+  const [activeStreamingJobId, setActiveStreamingJobId] = useState<string | null>(null);
+  const [contextStats, setContextStats] = useState<{ totalFiles: number; relevantChunks: number } | null>(null);
+  const presetSelectRef = useRef<HTMLSelectElement | null>(null);
+  const templatesRef = useRef<HTMLDivElement | null>(null);
   const ultraSteps = useMemo(() => ([
     {
       name: 'Code Analysis & Planning',
@@ -65,15 +85,81 @@ export function PromptInput() {
     currentProject,
     getProjectContext,
     logs,
+    embeddingConfig,
+    projectChunks,
+    indexProjectForEmbedding,
   } = useAppStore();
   const ultraLogs = logs
     .filter((log) => log.sessionId === activeSessionId && log.message.startsWith('[Ultra]'))
     .slice()
     .reverse();
 
+  useEffect(() => {
+    // Don't abort during Ultra Mode — it manages its own multi-step flow
+    if (ultraModeActive) return;
+
+    if (activeStreamingJobId) {
+      executionManager.abort(activeStreamingJobId);
+      addLog({
+        id: crypto.randomUUID(),
+        sessionId: activeSessionId,
+        jobId: activeStreamingJobId,
+        timestamp: new Date(),
+        type: 'info',
+        message: 'Generation aborted: active file changed',
+        source: 'user_action',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFile]);
+
+  useEffect(() => {
+    const handleFocusPresetSelector = () => {
+      presetSelectRef.current?.focus();
+    };
+
+    window.addEventListener('flow:focus-preset-selector', handleFocusPresetSelector);
+    return () => window.removeEventListener('flow:focus-preset-selector', handleFocusPresetSelector);
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (templatesRef.current && !templatesRef.current.contains(event.target as Node)) {
+        setShowTemplates(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const navigateHistory = (direction: 'up' | 'down') => {
+    if (promptHistory.length === 0) return;
+
+    if (direction === 'up') {
+      const nextIndex = historyIndex === null
+        ? promptHistory.length - 1
+        : Math.max(0, historyIndex - 1);
+      if (historyIndex === null) setSavedDraft(prompt);
+      setHistoryIndex(nextIndex);
+      setPrompt(promptHistory[nextIndex]);
+    } else {
+      if (historyIndex === null) return;
+      const nextIndex = historyIndex + 1;
+      if (nextIndex >= promptHistory.length) {
+        setHistoryIndex(null);
+        setPrompt(savedDraft);
+      } else {
+        setHistoryIndex(nextIndex);
+        setPrompt(promptHistory[nextIndex]);
+      }
+    }
+  };
+
   const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
     const jobId = crypto.randomUUID();
     const requestId = crypto.randomUUID();
+    const streamingMessageId = crypto.randomUUID();
 
     const aiRequest: AIRequest = {
       id: requestId,
@@ -107,6 +193,8 @@ export function PromptInput() {
 
     incrementSessionRequests(activeSessionId);
     setGenerating(activeSessionId, true);
+    setStreamingContent('');
+    setActiveStreamingJobId(jobId);
     const controller = executionManager.createController(jobId);
 
     try {
@@ -138,6 +226,85 @@ export function PromptInput() {
         ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
         : undefined;
 
+      if (embeddingConfig) {
+        embeddingService.setConfig(embeddingConfig);
+
+        let chunks = projectChunks;
+        if (chunks.length === 0) {
+          await indexProjectForEmbedding();
+          chunks = useAppStore.getState().projectChunks;
+        }
+
+        if (chunks.length > 0) {
+          const relevant = await embeddingService.search(requestInput.prompt, chunks, 5);
+          if (relevant.length > 0) {
+            const relevantByPath = new Map<string, string[]>();
+            relevant.forEach((chunk) => {
+              const range = `// lines ${chunk.startLine}-${chunk.endLine}`;
+              const snippet = `${range}\n${chunk.content}`;
+              const existing = relevantByPath.get(chunk.filePath) || [];
+              existing.push(snippet);
+              relevantByPath.set(chunk.filePath, existing);
+            });
+
+            projectFiles = Array.from(relevantByPath.entries()).map(([path, snippets]) => ({
+              path,
+              content: snippets.join('\n\n'),
+            }));
+          }
+
+          setContextStats({
+            totalFiles: new Set(chunks.map((chunk) => chunk.filePath)).size,
+            relevantChunks: relevant.length,
+          });
+        }
+      } else {
+        const contextTokens = nvidiaNimService.getContextTokens();
+
+        if (contextTokens > 0) {
+          const activeDirectory = activeFile ? (activeFile.includes('/') ? activeFile.slice(0, activeFile.lastIndexOf('/')) : '') : '';
+          const promptLower = requestInput.prompt.toLowerCase();
+          const originalCount = projectFiles.length;
+          const maxChars = contextTokens * 3;
+
+          const scoredFiles = projectFiles
+            .map((file) => {
+              const fileName = file.path.split('/').pop()?.toLowerCase() ?? file.path.toLowerCase();
+              const fileDirectory = file.path.includes('/') ? file.path.slice(0, file.path.lastIndexOf('/')) : '';
+
+              let score = 1;
+              if (fileName && promptLower.includes(fileName)) {
+                score = 3;
+              } else if (activeDirectory && fileDirectory === activeDirectory) {
+                score = 2;
+              }
+
+              return { ...file, score };
+            })
+            .sort((a, b) => b.score - a.score);
+
+          let totalChars = 0;
+          const trimmedList: typeof projectFiles = [];
+
+          for (const file of scoredFiles) {
+            const fileLength = file.content?.length ?? 0;
+            if (trimmedList.length > 0 && totalChars + fileLength > maxChars) {
+              break;
+            }
+            trimmedList.push({ path: file.path, content: file.content });
+            totalChars += fileLength;
+          }
+
+          projectFiles = trimmedList;
+          setContextStats({
+            totalFiles: originalCount,
+            relevantChunks: trimmedList.length,
+          });
+        } else {
+          setContextStats(null);
+        }
+      }
+
       const requestPreset = requestInput.presetId
         ? promptPresets.find((preset) => preset.id === requestInput.presetId) ?? activePreset
         : activePreset;
@@ -157,9 +324,42 @@ export function PromptInput() {
         },
       };
 
-      const response = await nvidiaNimService.generateCode({
+      addMessage(activeSessionId, {
+        id: streamingMessageId,
+        sessionId: activeSessionId,
+        jobId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+      });
+
+      const response = await nvidiaNimService.generateCodeStream({
         ...request,
         signal: controller.signal,
+        onChunk: (chunk) => {
+          setStreamingContent((previous) => {
+            const nextContent = previous + chunk;
+            useAppStore.setState((state) => {
+              const session = state.sessions[activeSessionId];
+              if (!session) return state;
+
+              return {
+                sessions: {
+                  ...state.sessions,
+                  [activeSessionId]: {
+                    ...session,
+                    messages: session.messages.map((message) =>
+                      message.id === streamingMessageId
+                        ? { ...message, content: nextContent }
+                        : message
+                    ),
+                  },
+                },
+              };
+            });
+            return nextContent;
+          });
+        },
       });
 
       updateAIRequest(requestId, {
@@ -179,14 +379,23 @@ export function PromptInput() {
         source: 'ai_execution',
       });
 
-      addMessage(activeSessionId, {
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        jobId,
-        role: 'assistant',
-        content: response.explanation,
-        timestamp: new Date(),
-        changes: response.changes,
+      useAppStore.setState((state) => {
+        const session = state.sessions[activeSessionId];
+        if (!session) return state;
+
+        return {
+          sessions: {
+            ...state.sessions,
+            [activeSessionId]: {
+              ...session,
+              messages: session.messages.map((message) =>
+                message.id === streamingMessageId
+                  ? { ...message, content: response.explanation, changes: response.changes }
+                  : message
+              ),
+            },
+          },
+        };
       });
 
       if (response.tasks) {
@@ -205,7 +414,21 @@ export function PromptInput() {
         });
       }
     } catch (error) {
-      const isAbort = error instanceof Error && error.name === 'CanceledError';
+      const isAbort = error instanceof Error && (error.name === 'CanceledError' || error.name === 'AbortError');
+
+      useAppStore.setState((state) => {
+        const session = state.sessions[activeSessionId];
+        if (!session) return state;
+        return {
+          sessions: {
+            ...state.sessions,
+            [activeSessionId]: {
+              ...session,
+              messages: session.messages.filter((message) => message.id !== streamingMessageId),
+            },
+          },
+        };
+      });
 
       updateAIRequest(requestId, {
         status: 'failed',
@@ -253,6 +476,8 @@ export function PromptInput() {
       });
     } finally {
       executionManager.clear(jobId);
+      setStreamingContent('');
+      setActiveStreamingJobId((current) => (current === jobId ? null : current));
       decrementSessionRequests(activeSessionId);
     }
   };
@@ -277,7 +502,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'info',
-      message: `[Ultra] Step 1/3 started: ${ultraSteps[0].name}`,
+      message: `[Ultra] Step 1/4 started: ${ultraSteps[0].name}`,
       source: 'ai_execution',
     });
 
@@ -291,7 +516,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'success',
-      message: `[Ultra] Step 1/3 completed: ${ultraSteps[0].name}`,
+      message: `[Ultra] Step 1/4 completed: ${ultraSteps[0].name}`,
       source: 'ai_execution',
     });
     await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -303,7 +528,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'info',
-      message: `[Ultra] Step 2/3 started: ${ultraSteps[1].name}`,
+      message: `[Ultra] Step 2/4 started: ${ultraSteps[1].name}`,
       source: 'ai_execution',
     });
 
@@ -317,7 +542,7 @@ export function PromptInput() {
       sessionId: activeSessionId,
       timestamp: new Date(),
       type: 'success',
-      message: `[Ultra] Step 2/3 completed: ${ultraSteps[1].name}`,
+      message: `[Ultra] Step 2/4 completed: ${ultraSteps[1].name}`,
       source: 'ai_execution',
     });
     await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -335,7 +560,7 @@ export function PromptInput() {
 
     // Execute code testing
     try {
-      const testResult = await codeExecutor.runTests(projectPath || process.cwd());
+      const testResult = await codeExecutor.runTests(projectPath || '');
 
       addLog({
         id: crypto.randomUUID(),
@@ -410,20 +635,6 @@ export function PromptInput() {
       source: 'ai_execution',
     });
 
-    await runRequest({
-      prompt: `User Request: ${promptToUse}\n\nAfter implementing the changes above, ${ultraSteps[2].prompt}`,
-      requestType: 'debugging',
-      presetId: ultraSteps[2].presetId,
-    });
-    addLog({
-      id: crypto.randomUUID(),
-      sessionId: activeSessionId,
-      timestamp: new Date(),
-      type: 'success',
-      message: `[Ultra] Step 3/3 completed: ${ultraSteps[2].name}`,
-      source: 'ai_execution',
-    });
-
     const lastStepPresetId = ultraSteps[ultraSteps.length - 1]?.presetId;
     if (lastStepPresetId) {
       const lastPreset = promptPresets.find((item) => item.id === lastStepPresetId);
@@ -446,7 +657,14 @@ export function PromptInput() {
     if (!prompt.trim() || ultraModeActive) return;
 
     const nextPrompt = prompt;
+    const trimmedPrompt = nextPrompt.trim();
     setPrompt('');
+    setPromptHistory((prev) => {
+      const deduped = prev.filter((item) => item !== trimmedPrompt);
+      return [...deduped, trimmedPrompt].slice(-50);
+    });
+    setHistoryIndex(null);
+    setSavedDraft('');
     void runRequest({ prompt: nextPrompt });
   };
 
@@ -485,7 +703,7 @@ export function PromptInput() {
                   ) : (
                     <Circle className="h-3.5 w-3.5 text-neutral-500" />
                   )}
-                  <span className={`${isCurrent ? 'text-yellow-200' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
+                  <span className={`${isCurrent ? 'text-yellow-200 dark:text-yellow-200 light:text-yellow-800' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
                     {stepNumber}. {step.name}
                   </span>
                 </div>
@@ -498,7 +716,7 @@ export function PromptInput() {
               <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">Stage logs</div>
               <div className="max-h-24 space-y-1 overflow-y-auto pr-1">
                 {ultraLogs.slice(0, 5).map((log) => (
-                  <p key={log.id} className="text-[11px] text-neutral-300">
+                  <p key={log.id} className="text-[11px]">
                     <span className="text-neutral-500">{log.timestamp.toLocaleTimeString()} </span>
                     {log.message.replace('[Ultra] ', '')}
                   </p>
@@ -513,6 +731,7 @@ export function PromptInput() {
         <div className="flex-1 rounded-lg border border-neutral-700 bg-neutral-900">
           <div className="flex items-center gap-2 border-b border-neutral-800 px-2 py-1.5">
             <select
+              ref={presetSelectRef}
               value={activePreset?.id ?? ''}
               onChange={(event) => {
                 const preset = promptPresets.find((item) => item.id === event.target.value);
@@ -528,16 +747,77 @@ export function PromptInput() {
                 </option>
               ))}
             </select>
-            <span className="ml-auto text-[11px] text-neutral-500">{prompt.length}/1000</span>
+            <div className="relative" ref={templatesRef}>
+              <button
+                type="button"
+                onClick={() => setShowTemplates((v) => !v)}
+                title="Insert prompt template"
+                className="flex items-center gap-1 rounded px-1.5 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Templates</span>
+              </button>
+              {showTemplates && (
+                <div className="absolute bottom-full left-0 z-50 mb-1 w-64 rounded-lg border border-neutral-700 bg-neutral-900/95 py-1 shadow-xl backdrop-blur-sm">
+                  {PROMPT_TEMPLATES.map((template) => (
+                    <button
+                      key={template.label}
+                      type="button"
+                      onClick={() => {
+                        setPrompt((previous) => (previous ? `${previous}\n\n${template.text}` : template.text));
+                        setShowTemplates(false);
+                      }}
+                      className="w-full px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                    >
+                      {template.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Describe what you want to build or modify with AI assistance..."
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!ultraModeActive && prompt.trim()) {
+                  void handleSubmit(e as unknown as React.FormEvent);
+                }
+                return;
+              }
+
+              if (e.key === 'Escape' && activeStreamingJobId) {
+                e.preventDefault();
+                executionManager.abort(activeStreamingJobId);
+                return;
+              }
+
+              if (e.key === 'ArrowUp' && prompt === '') {
+                e.preventDefault();
+                navigateHistory('up');
+                return;
+              }
+
+              if (e.key === 'ArrowDown' && historyIndex !== null) {
+                e.preventDefault();
+                navigateHistory('down');
+              }
+            }}
+            placeholder="Describe what you want to build or modify... (Ctrl+Enter to send, ↑ for history)"
             className="min-h-16 w-full resize-none bg-transparent px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             rows={2}
             disabled={ultraModeActive}
           />
+          {prompt.includes('@') && (
+            <div className="px-3 pb-1 text-[11px] text-neutral-500">
+              Tip: use <span className="font-mono text-blue-400">@filename.ts</span> to include a specific file in context
+            </div>
+          )}
+          <div className="border-t border-neutral-800 px-3 py-1.5 text-[11px] text-neutral-500">
+            {prompt.length} chars / ~{Math.ceil(prompt.length / 4)} tokens
+          </div>
         </div>
 
         <button
@@ -545,7 +825,7 @@ export function PromptInput() {
           onClick={() => executeUltraMode(prompt)}
           disabled={ultraModeActive || !projectPath || !prompt.trim()}
           aria-label="Run Ultra Mode"
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-xs font-medium text-purple-200 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 items-center gap-1.5 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-xs font-medium text-purple-700 dark:text-purple-200 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Zap className="h-4 w-4" />
           Ultra
@@ -562,7 +842,33 @@ export function PromptInput() {
         >
           <Send className="h-4 w-4" />
         </button>
+        {activeStreamingJobId && (
+          <button
+            type="button"
+            onClick={() => executionManager.abort(activeStreamingJobId)}
+            aria-label="Stop current AI generation"
+            className="h-9 rounded-lg border border-rose-400 bg-rose-50 px-2.5 text-xs font-medium light:text-rose-700 text-rose-700 dark:text-rose-200 dark:border-rose-500/70 dark:bg-rose-500/15 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          >
+            Стоп
+          </button>
+        )}
       </form>
+      {contextStats && (
+        <div className="mt-2 text-[11px] text-cyan-700 dark:text-cyan-300">
+          Контекст: {contextStats.totalFiles} файлов → {contextStats.relevantChunks} релевантных фрагментов
+        </div>
+      )}
+      {activeStreamingJobId && (
+        <div className="mt-2 flex items-center justify-between rounded-md border border-blue-500/20 bg-blue-500/5 px-2 py-1 text-[11px] text-blue-700 dark:text-blue-200">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-300" />
+            Streaming response…
+          </span>
+          <span>
+            ~{Math.ceil(streamingContent.length / 4)} tokens / {streamingContent.length} chars
+          </span>
+        </div>
+      )}
     </div>
   );
 }

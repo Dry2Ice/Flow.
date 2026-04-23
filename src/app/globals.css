@@ -61,56 +61,57 @@
 
 .light {
   color-scheme: light;
-  /* Ultra-bright, clean light theme */
-  --background: 0 0% 100%; /* Pure white background */
-  --foreground: 222 84% 5%; /* Very dark text for maximum contrast */
-  --card: 0 0% 100%; /* Pure white cards */
-  --card-foreground: 222 84% 5%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 84% 5%;
+  /* Soft peach light theme with balanced contrast */
+  --background: 28 68% 97%;
+  --foreground: 18 26% 18%;
+  --card: 24 74% 99%;
+  --card-foreground: 18 26% 18%;
+  --popover: 24 74% 99%;
+  --popover-foreground: 18 26% 18%;
   --primary: var(--flow-primary);
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96%; /* Very light gray */
-  --secondary-foreground: 222 84% 5%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 25% 27%; /* Dark gray for muted text */
+  --secondary: 28 56% 93%;
+  --secondary-foreground: 18 24% 24%;
+  --muted: 26 54% 92%;
+  --muted-foreground: 20 18% 38%;
   --accent: var(--flow-accent);
   --accent-foreground: 0 0% 100%;
   --destructive: var(--flow-error);
   --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 91%; /* Light borders */
-  --input: 214 32% 91%;
+  --border: 24 34% 84%;
+  --input: 24 34% 84%;
   --ring: var(--flow-primary);
    --radius: 0.75rem;
 
-   /* High-contrast neutral palette for light theme */
-   --tw-neutral-50:  hsl(210 20% 98%);
-   --tw-neutral-100: hsl(210 15% 95%);
-   --tw-neutral-200: hsl(210 10% 89%);
-   --tw-neutral-300: hsl(210 8% 83%);
-   --tw-neutral-400: hsl(210 6% 69%);
-   --tw-neutral-500: hsl(210 4% 58%);
-   --tw-neutral-600: hsl(210 6% 46%);
-   --tw-neutral-700: hsl(210 8% 37%);
-   --tw-neutral-800: hsl(210 10% 29%);
-   --tw-neutral-900: hsl(210 15% 21%);
-   --tw-neutral-950: hsl(210 20% 13%);
+  /* Inverted neutral scale for light mode.
+     Components written for dark mode (bg-neutral-950 = near-black) will now get
+     near-white backgrounds, and text-neutral-100 will become near-black text. */
+  --tw-neutral-950: hsl(26 75% 99%);
+  --tw-neutral-900: hsl(26 60% 95%);
+  --tw-neutral-800: hsl(24 46% 88%);
+  --tw-neutral-700: hsl(24 34% 76%);
+  --tw-neutral-600: hsl(22 24% 62%);
+  --tw-neutral-500: hsl(20 16% 48%);
+  --tw-neutral-400: hsl(20 18% 36%);
+  --tw-neutral-300: hsl(18 20% 27%);
+  --tw-neutral-200: hsl(18 24% 18%);
+  --tw-neutral-100: hsl(16 30% 12%);
+  --tw-neutral-50:  hsl(16 34% 8%);
 
-   --color-gray-50: hsl(210 20% 98%);
-   --color-gray-100: hsl(210 15% 95%);
-   --color-gray-200: hsl(210 10% 89%);
-   --color-gray-300: hsl(210 8% 83%);
-   --color-gray-400: hsl(210 6% 69%);
-   --color-gray-500: hsl(210 4% 58%);
-   --color-gray-600: hsl(210 6% 46%);
-   --color-gray-700: hsl(210 8% 37%);
-   --color-gray-800: hsl(210 10% 29%);
-   --color-gray-900: hsl(210 15% 21%);
-   --color-gray-950: hsl(210 20% 13%);
+  --color-gray-950: hsl(26 75% 99%);
+  --color-gray-900: hsl(26 60% 95%);
+  --color-gray-800: hsl(24 46% 88%);
+  --color-gray-700: hsl(24 34% 76%);
+  --color-gray-600: hsl(22 24% 62%);
+  --color-gray-500: hsl(20 16% 48%);
+  --color-gray-400: hsl(20 18% 36%);
+  --color-gray-300: hsl(18 20% 27%);
+  --color-gray-200: hsl(18 24% 18%);
+  --color-gray-100: hsl(16 30% 12%);
+  --color-gray-50:  hsl(16 34% 8%);
 
-  /* Light theme panel styles - clean and minimal */
-  --flow-panel: color-mix(in srgb, hsl(0 0% 100%) 98%, transparent);
-  --flow-panel-border: color-mix(in srgb, hsl(214 32% 91%) 80%, transparent);
+  --flow-panel: hsl(26 75% 99%);
+  --flow-panel-border: hsl(24 34% 82%);
 }
 
 .dark {
@@ -181,10 +182,8 @@ body {
 }
 
 .light body {
-  background-image:
-    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.06), transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.04), transparent 50%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.99) 100%);
+  background-image: none;
+  background-color: hsl(28 68% 97%);
 }
 
 button,
@@ -357,17 +356,19 @@ summary,
 
 /* Dockview light theme */
 .light .dockview-theme-dark {
-  --dv-background-color: hsl(var(--background));
-  --dv-group-view-background-color: hsl(var(--card));
-  --dv-tabs-and-actions-container-background-color: hsl(210 30% 96%);
-  --dv-activegroup-visibletab-color: hsl(var(--foreground));
-  --dv-activegroup-hiddentab-color: hsl(var(--muted-foreground));
-  --dv-inactivegroup-visibletab-color: hsl(var(--muted-foreground));
-  --dv-tab-divider-color: hsl(var(--border));
-  --dv-drag-over-background-color: hsl(var(--primary) / 0.10);
-  --dv-drag-over-border-color: hsl(var(--primary));
-  --dv-separator-border: hsl(var(--border));
-  --dv-floating-box-shadow: 0 8px 24px -6px rgba(0,0,0,0.15);
+  --dv-background-color: hsl(210 17% 94%);
+  --dv-group-view-background-color: hsl(0 0% 100%);
+  --dv-tabs-and-actions-container-background-color: hsl(210 15% 92%);
+  --dv-activegroup-visibletab-background-color: hsl(0 0% 100%);
+  --dv-activegroup-visibletab-color: hsl(210 24% 6%);
+  --dv-activegroup-hiddentab-color: hsl(210 10% 40%);
+  --dv-inactivegroup-visibletab-color: hsl(210 10% 40%);
+  --dv-inactivegroup-hiddentab-color: hsl(210 10% 55%);
+  --dv-tab-divider-color: hsl(214 32% 84%);
+  --dv-drag-over-background-color: hsl(238 60% 94%);
+  --dv-drag-over-border-color: hsl(238 60% 60%);
+  --dv-separator-border: hsl(214 32% 84%);
+  --dv-floating-box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.14);
 }
 
 /* Accessibility enhancements for dockview */

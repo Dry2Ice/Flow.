@@ -2,14 +2,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { codeExecutor } from '@/lib/code-executor';
-import fs from 'fs';
-import path from 'path';
+import { buildProject, lintProject, runProjectTests } from '@/lib/project-ops';
 
 export async function POST(request: NextRequest) {
   try {
     const { code, filePath, projectPath, action = 'execute' } = await request.json();
 
-    if (!code || !filePath) {
+    if (action === 'execute' && (!code || !filePath)) {
       return NextResponse.json(
         { error: 'Code and filePath are required' },
         { status: 400 }
@@ -26,17 +25,17 @@ export async function POST(request: NextRequest) {
 
       case 'test':
         // Run tests
-        result = await codeExecutor.runTests(projectPath || process.cwd());
+        result = await runProjectTests(projectPath || process.cwd());
         break;
 
       case 'lint':
         // Lint the code
-        result = await codeExecutor.lintCode(code, filePath);
+        result = await lintProject(projectPath || process.cwd());
         break;
 
       case 'build':
         // Build the project
-        result = await codeExecutor.buildProject(projectPath || process.cwd());
+        result = await buildProject(projectPath || process.cwd());
         break;
 
       default:
@@ -77,11 +76,11 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'test':
-        result = await codeExecutor.runTests(process.cwd());
+        result = await runProjectTests(process.cwd());
         break;
 
       case 'build':
-        result = await codeExecutor.buildProject(process.cwd());
+        result = await buildProject(process.cwd());
         break;
 
       default:

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, lazy, Suspense, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useState, lazy, Suspense, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import {
   DockviewReact,
   DockviewReadyEvent,
@@ -77,8 +78,8 @@ const PANEL_ACCESSIBILITY = {
 
 // Enhanced component wrapper with accessibility
 const createAccessibleComponent = (
-  Component: React.ReactNode,
-  panelId: string
+  component: React.ReactNode,
+  panelId: keyof typeof PANEL_ACCESSIBILITY
 ) => {
   const config = PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY];
   return (
@@ -93,28 +94,39 @@ const createAccessibleComponent = (
       <div id={`${panelId}-description`} className="sr-only">
         {config.description}
       </div>
-      {Component}
+      {component}
     </div>
   );
 };
 
-// Map panel id → component with lazy loading and accessibility
-const components: Record<string, React.FC<IDockviewPanelProps>> = {
-  files: () => createAccessibleComponent(<FileBrowser />, 'files'),
-  projects: () => createAccessibleComponent(<ProjectManager />, 'projects'),
-  editor: () => createAccessibleComponent(
+const FilesPanel = React.memo(function FilesPanel() {
+  return createAccessibleComponent(<FileBrowser />, 'files');
+});
+
+const ProjectsPanel = React.memo(function ProjectsPanel() {
+  return createAccessibleComponent(<ProjectManager />, 'projects');
+});
+
+const EditorPanel = React.memo(function EditorPanel() {
+  return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
       <CodeEditor />
     </Suspense>,
     'editor'
-  ),
-  preview: () => createAccessibleComponent(
+  );
+});
+
+const PreviewPanel = React.memo(function PreviewPanel() {
+  return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
       <CodePreview />
     </Suspense>,
     'preview'
-  ),
-  chat: () => createAccessibleComponent(
+  );
+});
+
+const ChatPanel = React.memo(function ChatPanel() {
+  return createAccessibleComponent(
     <div className="flex h-full flex-col">
       <AIErrorBoundary sessionId="chat-ai">
         <AIChat />
@@ -122,94 +134,87 @@ const components: Record<string, React.FC<IDockviewPanelProps>> = {
       <PromptInput />
     </div>,
     'chat'
-  ),
-  logs: () => createAccessibleComponent(<SystemLogsPanel />, 'logs'),
-  plan: () => createAccessibleComponent(
+  );
+});
+
+const LogsPanel = React.memo(function LogsPanel() {
+  return createAccessibleComponent(<SystemLogsPanel />, 'logs');
+});
+
+const PlanPanel = React.memo(function PlanPanel() {
+  return createAccessibleComponent(
     <AIErrorBoundary sessionId="plan-ai">
       <DevelopmentPlan />
     </AIErrorBoundary>,
     'plan'
-  ),
-};
+  );
+});
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
+const ALL_PANEL_IDS = ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'] as const;
+const COMPONENT_IDS = new Set(['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan']);
 
 const DEFAULT_LAYOUT = {
   grid: {
     root: {
       type: 'branch',
-      orientation: 'VERTICAL',
+      orientation: 'HORIZONTAL',
       data: [
         {
+          type: 'leaf',
+          size: 18,
+          data: { id: 'group-left', views: ['files', 'projects'], activeView: 'files' },
+        },
+        {
           type: 'branch',
-          orientation: 'HORIZONTAL',
-          size: 70,
+          orientation: 'VERTICAL',
+          size: 55,
           data: [
-            { type: 'leaf', data: { views: ['files', 'projects'] }, id: 'left', size: 20 },
             {
               type: 'branch',
               orientation: 'HORIZONTAL',
+              size: 70,
               data: [
-                { type: 'leaf', data: { views: ['editor'] }, id: 'editor', size: 50 },
-                { type: 'leaf', data: { views: ['preview'] }, id: 'preview', size: 50 },
+                {
+                  type: 'leaf',
+                  size: 55,
+                  data: { id: 'group-editor', views: ['editor'], activeView: 'editor' },
+                },
+                {
+                  type: 'leaf',
+                  size: 45,
+                  data: { id: 'group-preview', views: ['preview'], activeView: 'preview' },
+                },
               ],
             },
-            { type: 'leaf', data: { views: ['chat', 'logs'] }, id: 'right', size: 25 },
+            {
+              type: 'leaf',
+              size: 30,
+              data: { id: 'group-plan', views: ['plan'], activeView: 'plan' },
+            },
           ],
         },
-        { type: 'leaf', data: { views: ['plan'] }, id: 'bottom', size: 30 },
+        {
+          type: 'leaf',
+          size: 27,
+          data: { id: 'group-right', views: ['chat', 'logs'], activeView: 'chat' },
+        },
       ],
-      id: 'root',
     },
-    width: 100,
-    height: 100,
-    orientation: 'VERTICAL',
+    width: 1200,
+    height: 800,
+    orientation: 'HORIZONTAL',
   },
   panels: {
-    files: {
-      id: 'files',
-      title: PANEL_ACCESSIBILITY.files.title,
-      component: 'files',
-      ariaLabel: PANEL_ACCESSIBILITY.files.ariaLabel
-    },
-    projects: {
-      id: 'projects',
-      title: PANEL_ACCESSIBILITY.projects.title,
-      component: 'projects',
-      ariaLabel: PANEL_ACCESSIBILITY.projects.ariaLabel
-    },
-    editor: {
-      id: 'editor',
-      title: PANEL_ACCESSIBILITY.editor.title,
-      component: 'editor',
-      ariaLabel: PANEL_ACCESSIBILITY.editor.ariaLabel
-    },
-    preview: {
-      id: 'preview',
-      title: PANEL_ACCESSIBILITY.preview.title,
-      component: 'preview',
-      ariaLabel: PANEL_ACCESSIBILITY.preview.ariaLabel
-    },
-    chat: {
-      id: 'chat',
-      title: PANEL_ACCESSIBILITY.chat.title,
-      component: 'chat',
-      ariaLabel: PANEL_ACCESSIBILITY.chat.ariaLabel
-    },
-    logs: {
-      id: 'logs',
-      title: PANEL_ACCESSIBILITY.logs.title,
-      component: 'logs',
-      ariaLabel: PANEL_ACCESSIBILITY.logs.ariaLabel
-    },
-    plan: {
-      id: 'plan',
-      title: PANEL_ACCESSIBILITY.plan.title,
-      component: 'plan',
-      ariaLabel: PANEL_ACCESSIBILITY.plan.ariaLabel
-    },
+    files: { id: 'files', title: PANEL_ACCESSIBILITY.files.title, contentComponent: 'files' },
+    projects: { id: 'projects', title: PANEL_ACCESSIBILITY.projects.title, contentComponent: 'projects' },
+    editor: { id: 'editor', title: PANEL_ACCESSIBILITY.editor.title, contentComponent: 'editor' },
+    preview: { id: 'preview', title: PANEL_ACCESSIBILITY.preview.title, contentComponent: 'preview' },
+    chat: { id: 'chat', title: PANEL_ACCESSIBILITY.chat.title, contentComponent: 'chat' },
+    logs: { id: 'logs', title: PANEL_ACCESSIBILITY.logs.title, contentComponent: 'logs' },
+    plan: { id: 'plan', title: PANEL_ACCESSIBILITY.plan.title, contentComponent: 'plan' },
   },
-  activeGroup: 'editor',
+  activeGroup: 'group-editor',
 };
 
 interface DockWorkspaceProps {
@@ -221,9 +226,21 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [layoutSaved, setLayoutSaved] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [openPanelIds, setOpenPanelIds] = useState<Set<string>>(new Set(ALL_PANEL_IDS));
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const addPanelMenuRef = useRef<HTMLDivElement | null>(null);
+  const components = useMemo<Record<string, React.FC<IDockviewPanelProps>>>(() => ({
+    files: FilesPanel,
+    projects: ProjectsPanel,
+    editor: EditorPanel,
+    preview: PreviewPanel,
+    chat: ChatPanel,
+    logs: LogsPanel,
+    plan: PlanPanel,
+  }), []);
 
   // Keyboard navigation support
-  const panelOrder = useMemo(() => ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'], []);
+  const panelOrder = useMemo(() => [...ALL_PANEL_IDS], []);
 
   const handleKeyboardNavigation = useCallback((event: KeyboardEvent) => {
     if (!apiRef.current) return;
@@ -291,23 +308,106 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   }, []);
 
   const loadLayout = useCallback((api: DockviewApi) => {
-    try {
-      const saved = localStorage.getItem(LAYOUT_KEY);
-      if (saved) {
-        api.fromJSON(JSON.parse(saved) as any);
-        return;
+    const isValidLayout = (layout: unknown): boolean => {
+      if (!layout || typeof layout !== 'object') return false;
+
+      const l = layout as Record<string, unknown>;
+      if (!l.grid || typeof l.grid !== 'object') return false;
+      if (!l.panels || typeof l.panels !== 'object') return false;
+
+      const panels = l.panels as Record<string, Record<string, unknown>>;
+      const entries = Object.values(panels);
+      if (entries.length === 0) return false;
+
+      return entries.every((panel) => (
+        (typeof panel?.component === 'string' && COMPONENT_IDS.has(panel.component)) ||
+        (typeof panel?.contentComponent === 'string' && COMPONENT_IDS.has(panel.contentComponent))
+      ));
+    };
+
+    const tryLoad = (json: any): boolean => {
+      if (!isValidLayout(json)) {
+        return false;
       }
-    } catch {
-      // fall through
+
+      try {
+        api.clear();
+        api.fromJSON(json);
+        return true;
+      } catch (err) {
+        console.error('[DockWorkspace] fromJSON failed:', err);
+        return false;
+      }
+    };
+
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (tryLoad(parsed)) return;
+        console.warn('[DockWorkspace] Saved layout invalid, falling back to default');
+        localStorage.removeItem(LAYOUT_KEY);
+      } catch (err) {
+        console.warn('[DockWorkspace] Saved layout failed to parse, falling back to default:', err);
+        localStorage.removeItem(LAYOUT_KEY);
+      }
     }
-    api.fromJSON(DEFAULT_LAYOUT as any);
+
+    tryLoad(DEFAULT_LAYOUT);
   }, []);
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
     localStorage.removeItem(LAYOUT_KEY);
-    apiRef.current.fromJSON(DEFAULT_LAYOUT as any);
+    const api = apiRef.current;
+
+    try {
+      api.clear();
+      api.fromJSON(DEFAULT_LAYOUT as any);
+    } catch (err) {
+      console.error('[DockWorkspace] resetLayout fromJSON failed:', err);
+    }
   }, []);
+
+  const addPanel = useCallback((panelId: string) => {
+    if (!apiRef.current) return;
+
+    const config = DEFAULT_LAYOUT.panels[panelId as keyof typeof DEFAULT_LAYOUT.panels];
+    if (!config) return;
+
+    const api = apiRef.current;
+    const groups = api.groups;
+
+    if (groups.length === 0) {
+      // No groups exist yet — add as a floating panel or wait for layout to load
+      // Use setTimeout to retry after the deferred fromJSON has run
+      setTimeout(() => {
+        const retryGroups = apiRef.current?.groups ?? [];
+        if (retryGroups.length > 0) {
+          apiRef.current!.addPanel({
+            id: config.id,
+            title: config.title,
+            component: config.id,
+            position: { referenceGroup: retryGroups[0] },
+          });
+        }
+      }, 50);
+      return;
+    }
+
+    const targetGroup = api.activeGroup ?? groups[0];
+    api.addPanel({
+      id: config.id,
+      title: config.title,
+      component: config.id,
+      position: { referenceGroup: targetGroup },
+    });
+  }, []);
+
+  const closedPanels = useMemo(
+    () => ALL_PANEL_IDS.filter(id => !openPanelIds.has(id)),
+    [openPanelIds]
+  );
 
   // Cleanup timeout on unmount and save immediately
   useEffect(() => {
@@ -335,7 +435,27 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     apiRef.current = event.api;
     event.api.onDidLayoutChange(() => saveLayout());
     loadLayout(event.api);
+
+    const updateOpenPanels = () => {
+      setOpenPanelIds(new Set(event.api.panels.map(panel => panel.id)));
+    };
+
+    updateOpenPanels();
+    event.api.onDidAddPanel(updateOpenPanels);
+    event.api.onDidRemovePanel(updateOpenPanels);
   }, [loadLayout, saveLayout]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!addPanelMenuRef.current) return;
+      if (!addPanelMenuRef.current.contains(event.target as Node)) {
+        setShowAddPanel(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="relative h-full w-full">
@@ -385,6 +505,40 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
           <div className="bg-amber-600/90 text-amber-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2 border border-amber-500/30">
             <div className="w-2 h-2 bg-amber-300 rounded-full animate-pulse" aria-hidden="true" />
             Saving layout...
+          </div>
+        </div>
+      )}
+
+      {closedPanels.length > 0 && (
+        <div className="absolute bottom-4 left-4 z-50" ref={addPanelMenuRef}>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAddPanel(value => !value)}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/90 px-3 py-1.5 text-xs font-medium text-neutral-300 shadow-lg backdrop-blur-sm transition-all hover:border-neutral-500 hover:text-neutral-100"
+              title="Add a panel back to the workspace"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add panel
+            </button>
+
+            {showAddPanel && (
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-lg border border-neutral-700 bg-neutral-900/95 py-1 shadow-xl backdrop-blur-sm">
+                {closedPanels.map(panelId => (
+                  <button
+                    key={panelId}
+                    type="button"
+                    onClick={() => {
+                      addPanel(panelId);
+                      setShowAddPanel(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                  >
+                    {PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY].title}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

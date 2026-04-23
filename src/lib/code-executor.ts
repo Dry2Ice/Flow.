@@ -5,6 +5,7 @@ interface ExecutionResult {
   output: string;
   error?: string;
   logs: string[];
+  exitCode?: number;
 }
 
 interface ExecutionContext {
@@ -16,6 +17,23 @@ interface ExecutionContext {
 class CodeExecutor {
   private worker: Worker | null = null;
   private executionTimeout = 5000; // 5 seconds
+
+  private async invokeProjectAction(action: 'test' | 'lint' | 'build', payload: Record<string, unknown>): Promise<ExecutionResult> {
+    const response = await fetch('/api/project/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
+    });
+
+    const result = await response.json();
+    return {
+      success: Boolean(result.success),
+      output: result.output || '',
+      error: result.error,
+      logs: Array.isArray(result.logs) ? result.logs : [],
+      exitCode: typeof result.exitCode === 'number' ? result.exitCode : undefined,
+    };
+  }
 
   // Create a safe execution environment for JavaScript
   async executeJavaScript(code: string, context: ExecutionContext): Promise<ExecutionResult> {
@@ -151,49 +169,18 @@ class CodeExecutor {
   }
 
   // Run tests for a project
-  async runTests(projectPath: string, testPattern: string = '**/*.test.{js,ts}'): Promise<ExecutionResult> {
-    // This would integrate with testing frameworks like Jest, Vitest, etc.
-    // For now, return a simulation
-    return {
-      success: true,
-      output: 'Tests completed',
-      logs: [
-        'Running test suite...',
-        '✓ All tests passed',
-        `Test files found: ${testPattern}`
-      ]
-    };
+  async runTests(projectPath: string): Promise<ExecutionResult> {
+    return this.invokeProjectAction('test', { projectPath });
   }
 
   // Lint code
-  async lintCode(code: string, filePath: string): Promise<ExecutionResult> {
-    // This would integrate with ESLint, TSLint, etc.
-    // For now, return a simulation
-    return {
-      success: true,
-      output: 'Code linting completed',
-      logs: [
-        'Running linter...',
-        '✓ No linting errors found',
-        `Checked: ${filePath}`
-      ]
-    };
+  async lintCode(code: string, filePath: string, projectPath?: string): Promise<ExecutionResult> {
+    return this.invokeProjectAction('lint', { code, filePath, projectPath });
   }
 
   // Build project
   async buildProject(projectPath: string): Promise<ExecutionResult> {
-    // This would run build commands like npm run build, tsc, etc.
-    // For now, return a simulation
-    return {
-      success: true,
-      output: 'Build completed successfully',
-      logs: [
-        'Running build process...',
-        '✓ TypeScript compilation successful',
-        '✓ Bundle created',
-        '✓ Build artifacts generated'
-      ]
-    };
+    return this.invokeProjectAction('build', { projectPath });
   }
 
   dispose() {
