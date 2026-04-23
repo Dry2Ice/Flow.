@@ -22,6 +22,7 @@ const DEFAULT_SESSION_ID = 'default';
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
 const ACTIVE_PRESET_STORAGE_KEY = 'flow-active-preset-id';
+const LOCALE_STORAGE_KEY = 'flow-locale';
 
 const DEFAULT_PROMPT_PRESETS: PromptPreset[] = [
   {
@@ -95,6 +96,88 @@ Deliver production-ready code that solves the user's problem effectively.`
   }
 ];
 
+// Language resources
+const DEFAULT_LOCALES = {
+  en: {
+    settings: {
+      title: 'Settings',
+      aiConfiguration: 'AI Configuration',
+      quickActions: 'Quick Actions',
+      connectionTesting: 'Connection & Testing',
+      generationParameters: 'Generation Parameters',
+      generalPrompt: 'General System Prompt',
+      promptPresets: 'Prompt Presets (3 editable)',
+      resetLayout: 'Reset Workspace Layout',
+      restoreDefaults: 'Restore default panel sizes and layout',
+      apiKey: 'API Key',
+      baseUrl: 'Base URL',
+      model: 'Model',
+      temperature: 'Temperature',
+      topP: 'Top-p',
+      topK: 'Top-k',
+      maxTokens: 'Max Response Tokens',
+      contextTokens: 'Context Tokens',
+      stopSequences: 'Stop Sequences',
+      testConnection: 'Test Connection',
+      sendTestMessage: 'Send Test Message',
+      save: 'Save',
+      cancel: 'Cancel',
+      language: 'Language',
+      english: 'English',
+      russian: 'Русский'
+    },
+    status: {
+      connected: 'Connected',
+      disconnected: 'Disconnected',
+      connecting: 'Connecting...'
+    },
+    messages: {
+      noConnection: 'Please configure API connection first',
+      testFailed: 'Test message failed',
+      success: 'Success'
+    }
+  },
+  ru: {
+    settings: {
+      title: 'Настройки',
+      aiConfiguration: 'Настройка ИИ',
+      quickActions: 'Быстрые действия',
+      connectionTesting: 'Подключение и тестирование',
+      generationParameters: 'Параметры генерации',
+      generalPrompt: 'Общий системный промпт',
+      promptPresets: 'Промпт-шаблоны (3 редактируемых)',
+      resetLayout: 'Сбросить компоновку рабочей области',
+      restoreDefaults: 'Восстановить значения по умолчанию для размеров и компоновки панелей',
+      apiKey: 'API ключ',
+      baseUrl: 'Базовый URL',
+      model: 'Модель',
+      temperature: 'Температура',
+      topP: 'Top-p',
+      topK: 'Top-k',
+      maxTokens: 'Макс. токены ответа',
+      contextTokens: 'Контекстные токены',
+      stopSequences: 'Стоп-последовательности',
+      testConnection: 'Проверить подключение',
+      sendTestMessage: 'Отправить тестовое сообщение',
+      save: 'Сохранить',
+      cancel: 'Отмена',
+      language: 'Язык',
+      english: 'Английский',
+      russian: 'Русский'
+    },
+    status: {
+      connected: 'Подключено',
+      disconnected: 'Отключено',
+      connecting: 'Подключение...'
+    },
+    messages: {
+      noConnection: 'Сначала настройте подключение к API',
+      testFailed: 'Тестовое сообщение не отправлено',
+      success: 'Успешно'
+    }
+  }
+};
+
 const isClient = typeof window !== 'undefined';
 
 const loadPromptPresets = (): PromptPreset[] => {
@@ -141,6 +224,18 @@ const saveActivePresetId = (presetId: string | null) => {
 
   localStorage.removeItem(ACTIVE_PRESET_STORAGE_KEY);
 };
+
+const loadLocale = (): string => {
+  if (!isClient) return 'en';
+  return localStorage.getItem(LOCALE_STORAGE_KEY) || 'en';
+};
+
+const saveLocale = (locale: string) => {
+  if (!isClient) return;
+  localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+};
+
+// Note: isClient is declared above to avoid duplication
 
 const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
