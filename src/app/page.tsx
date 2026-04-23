@@ -11,6 +11,7 @@ import { DiffViewer } from '@/components/DiffViewer';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { DockWorkspace } from '@/components/DockWorkspace';
+import { useI18n } from '@/lib/i18n';
 
 function TopControlButton({
   onClick,
@@ -44,6 +45,7 @@ function TopControlButton({
 }
 
 export default function Home() {
+  const { t, locale } = useI18n();
   const { diffViewerOpen, projects, currentProject, setCurrentProject } = useAppStore();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [apiConfigured, setApiConfigured] = useState(false);
@@ -135,7 +137,7 @@ export default function Home() {
       const { openFile, addMessage } = useAppStore.getState();
       const demoProject = {
         id: 'demo',
-        name: 'Demo Project',
+        name: t('app.demoProject'),
         path: '/demo',
         files: [
           { name: 'index.html', path: 'index.html', type: 'file' as const },
@@ -158,8 +160,8 @@ export default function Home() {
 </head>
 <body>
   <div class="container">
-    <h1>Welcome to <span class="brand">Flow</span></h1>
-    <p>AI-powered development platform. Open a real project or start chatting with the AI.</p>
+    <h1>${t('app.demoWelcomeTitle')}</h1>
+    <p>${t('app.demoWelcomeDescription')}</p>
   </div>
   <script src="script.js"></script>
 </body>
@@ -169,41 +171,41 @@ export default function Home() {
         id: 'welcome',
         sessionId: 'default-session',
         role: 'assistant',
-        content: '👋 **Welcome to Flow!**\\n\\nI\'m your AI development assistant. To get started:\\n\\n1. **Configure your API** — click the Settings button in the header and enter your NVIDIA NIM API key\\n2. **Open a project** — use the Projects tab to create a new project or load an existing directory\\n3. **Ask me anything** — type a prompt below and I\'ll write, debug, or plan code for you',
+        content: t('app.welcomeMessage'),
         timestamp: new Date(),
       });
     } else if (!currentProject && projects.length > 0) {
       setCurrentProject(projects[0]);
     }
-  }, [projects, currentProject, setCurrentProject]);
+  }, [projects, currentProject, setCurrentProject, t, locale]);
 
   return (
     <main className="min-h-screen text-neutral-100">
       <header className="app-header relative z-10 border-b border-neutral-800/90 bg-neutral-950/85 backdrop-blur-xl">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Workspace</p>
-            <h1 className="text-sm font-semibold text-neutral-100">Flow IDE</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">{t('app.workspace')}</p>
+            <h1 className="text-sm font-semibold text-neutral-100">{t('app.title')}</h1>
           </div>
           <div className="flex items-center gap-2 rounded-2xl border border-neutral-800/90 bg-neutral-900/70 px-2 py-1 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.85)]">
-            <TopControlButton onClick={() => setSettingsModalOpen(true)} label="Open settings" isActive={settingsModalOpen}>
+            <TopControlButton onClick={() => setSettingsModalOpen(true)} label={t('app.openSettings')} isActive={settingsModalOpen}>
               <Settings className="h-4 w-4" />
             </TopControlButton>
             <ThemeToggle />
-            <TopControlButton onClick={() => setStatsOpen(!statsOpen)} label="Toggle statistics" isActive={statsOpen}>
+            <TopControlButton onClick={() => setStatsOpen(!statsOpen)} label={t('app.toggleStatistics')} isActive={statsOpen}>
               <BarChart3 className="h-4 w-4" />
             </TopControlButton>
           </div>
           <div className="justify-self-end flex items-center gap-2">
             <span className={`h-2 w-2 rounded-full ${apiConfigured ? 'bg-emerald-400' : 'bg-amber-400'}`} />
             <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-500">
-              {apiConfigured ? 'AI Ready' : (
+              {apiConfigured ? t('app.aiReady') : (
                 <button
                   type="button"
                   onClick={() => setSettingsModalOpen(true)}
                   className="uppercase tracking-[0.16em] text-amber-500 hover:text-amber-400 transition"
                 >
-                  Configure API
+                  {t('app.configureApi')}
                 </button>
               )}
             </span>
@@ -226,10 +228,10 @@ export default function Home() {
         aria-hidden={!statsOpen}
       >
         <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">Statistics</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">{t('app.statistics')}</h2>
           <button
             onClick={() => setStatsOpen(false)}
-            title="Close statistics panel"
+            title={t('app.closeStatisticsPanel')}
             className="rounded-md border border-neutral-700 bg-neutral-800/80 p-1.5 text-neutral-300 transition hover:border-neutral-600 hover:text-white"
             type="button"
           >

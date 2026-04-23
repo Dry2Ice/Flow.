@@ -7,6 +7,7 @@ import { X, Check, RotateCcw, Download, Upload, Info } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
+import { useI18n } from '@/lib/i18n';
 
 interface SettingsModalProps {
   isOpen?: boolean;
@@ -38,7 +39,8 @@ const DEFAULT_SETTINGS = {
 };
 
 export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose }: SettingsModalProps = {}) {
-  const UNTRUSTED_PATH_MESSAGE = "Путь не в списке доверенных. Нажмите 'Доверять этому пути' для разрешения доступа";
+  const { t, locale, setLocale } = useI18n();
+  const UNTRUSTED_PATH_MESSAGE = t('settings.messages.untrustedPath');
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
@@ -137,7 +139,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setEmbeddingConfig(null);
     localStorage.removeItem(SETTINGS_STORAGE_KEY);
     if (notify) {
-      setMessage('Настройки сброшены к значениям по умолчанию.');
+      setMessage(t('settings.messages.settingsReset'));
       setTimeout(() => setMessage(''), 2500);
     }
   };
@@ -171,20 +173,20 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const validateBaseUrl = (value: string): string | null => {
     const trimmed = value.trim();
     if (!trimmed) {
-      return 'Укажите Base URL';
+      return t('settings.messages.baseUrlRequired');
     }
 
     if (!/^https?:\/\//i.test(trimmed)) {
-      return 'Base URL должен начинаться с http:// или https://';
+      return t('settings.messages.baseUrlProtocol');
     }
 
     try {
       const parsed = new URL(trimmed);
       if (!parsed.pathname || parsed.pathname === '/' || !parsed.pathname.endsWith('/v1')) {
-        return 'Base URL должен заканчиваться на /v1';
+        return t('settings.messages.baseUrlV1');
       }
     } catch {
-      return 'Некорректный URL';
+      return t('settings.messages.invalidUrl');
     }
 
     return null;
@@ -192,7 +194,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
   const loadAvailableModels = async () => {
     if (!apiKey || !baseUrl) {
-      alert('Please enter API Key and Base URL first');
+      alert(t('settings.messages.enterApiAndBaseUrl'));
       return;
     }
 
@@ -210,11 +212,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         setAvailableModels(models);
       } else {
         const err = await response.json().catch(() => ({}));
-        alert(`Failed to load models: ${err.error || response.statusText}`);
+        alert(t('settings.messages.failedLoadModels', { error: err.error || response.statusText }));
       }
     } catch (error) {
       console.error('Error loading models:', error);
-      alert('Error loading models. Please try again.');
+      alert(t('settings.messages.errorLoadModels'));
     } finally {
       setIsLoadingModels(false);
     }
@@ -223,7 +225,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const loadEmbedModels = async () => {
     const resolvedApiKey = embedUseSameApiKey ? apiKey : embedApiKey;
     if (!resolvedApiKey || !embedBaseUrl) {
-      alert('Please enter embedding API key and Base URL first');
+      alert(t('settings.messages.enterEmbedApiAndBaseUrl'));
       return;
     }
 
@@ -241,11 +243,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         setAvailableEmbedModels(models);
       } else {
         const err = await response.json().catch(() => ({}));
-        alert(`Failed to load embedding models: ${err.error || response.statusText}`);
+        alert(t('settings.messages.failedLoadEmbedModels', { error: err.error || response.statusText }));
       }
     } catch (error) {
       console.error('Error loading embedding models:', error);
-      alert('Error loading embedding models. Please try again.');
+      alert(t('settings.messages.errorLoadEmbedModels'));
     } finally {
       setIsLoadingEmbedModels(false);
     }
@@ -254,7 +256,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const testEmbedding = async () => {
     const resolvedApiKey = embedUseSameApiKey ? apiKey : embedApiKey;
     if (!resolvedApiKey || !embedBaseUrl || !embedModel) {
-      setMessage('Please fill in embedding API key, base URL, and model');
+      setMessage(t('settings.messages.fillEmbedRequired'));
       return;
     }
 
@@ -273,15 +275,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       const data = await response.json().catch(() => ({}));
       if (response.ok && Array.isArray(data.embeddings) && data.embeddings.length > 0) {
         setEmbeddingTestStatus('success');
-        setMessage(`Embedding test successful. Vector dimensions: ${data.embeddings[0]?.length ?? 0}`);
+        setMessage(t('settings.messages.embeddingSuccess', { dimensions: data.embeddings[0]?.length ?? 0 }));
       } else {
         setEmbeddingTestStatus('error');
-        setMessage(data?.error || 'Embedding test failed');
+        setMessage(data?.error || t('settings.messages.embeddingFailed'));
       }
     } catch (error) {
       console.error('Embedding test failed:', error);
       setEmbeddingTestStatus('error');
-      setMessage('Embedding test failed: network or timeout error.');
+      setMessage(t('settings.messages.embeddingNetworkFailed'));
     } finally {
       setTimeout(() => setEmbeddingTestStatus('idle'), 3000);
     }
@@ -289,7 +291,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
   const testConnection = async () => {
     if (!apiKey || !baseUrl || !model) {
-      setMessage('Please fill in API Key, Base URL, and Model');
+      setMessage(t('settings.messages.fillApiRequired'));
       return;
     }
 
@@ -300,7 +302,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     }
 
     setConnectionStatus('connecting');
-    setMessage('Testing connection (timeout: 15 seconds)...');
+    setMessage(t('settings.messages.testingConnection'));
     try {
       const response = await fetch('/api/nim/probe', {
         method: 'POST',
@@ -312,11 +314,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
       if (response.ok) {
         setConnectionStatus('connected');
-        setMessage('Connection successful.');
+        setMessage(t('settings.messages.connectionSuccess'));
         setTimeout(() => setConnectionStatus('idle'), 3000);
       } else {
-        const errorText = data?.error || response.statusText || 'Unknown error';
-        const causeText = data?.cause ? ` | Cause: ${data.cause}` : '';
+        const errorText = data?.error || response.statusText || t('settings.messages.unknownError');
+        const causeText = data?.cause ? ` | ${t('settings.messages.cause', { cause: data.cause })}` : '';
         setConnectionStatus('error');
         setMessage(`HTTP ${response.status}: ${errorText}${causeText}`);
         setTimeout(() => setConnectionStatus('idle'), 3000);
@@ -324,14 +326,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     } catch (error) {
       console.error('Connection test failed:', error);
       setConnectionStatus('error');
-      setMessage('Connection failed: timeout after 15 seconds or network error.');
+      setMessage(t('settings.messages.connectionFailed'));
       setTimeout(() => setConnectionStatus('idle'), 3000);
     }
   };
 
   const sendTestMessage = async () => {
     if (!apiKey || !baseUrl || !model) {
-      setMessage('Please fill in API Key, Base URL, and Model');
+      setMessage(t('settings.messages.fillApiRequired'));
       return;
     }
 
@@ -342,7 +344,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     }
 
     setTestMessageStatus('sending');
-    setMessage('Sending test message (timeout: 15 seconds)...');
+    setMessage(t('settings.messages.sendingTest'));
     try {
       const response = await fetch('/api/nim/probe', {
         method: 'POST',
@@ -361,21 +363,21 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         const reply = data.choices?.[0]?.message?.content;
         if (reply) {
           setTestMessageStatus('success');
-          setMessage(`Test successful! AI replied: "${reply}"`);
+          setMessage(t('settings.messages.testSuccess', { reply }));
         } else {
           setTestMessageStatus('error');
-          setMessage('Test message succeeded but no response content was returned.');
+          setMessage(t('settings.messages.testNoContent'));
         }
       } else {
-        const errorText = data?.error || response.statusText || 'Unknown error';
-        const causeText = data?.cause ? ` | Cause: ${data.cause}` : '';
+        const errorText = data?.error || response.statusText || t('settings.messages.unknownError');
+        const causeText = data?.cause ? ` | ${t('settings.messages.cause', { cause: data.cause })}` : '';
         setTestMessageStatus('error');
         setMessage(`HTTP ${response.status}: ${errorText}${causeText}`);
       }
     } catch (error) {
       console.error('Test message failed:', error);
       setTestMessageStatus('error');
-      setMessage('Test message failed: timeout after 15 seconds or network error.');
+      setMessage(t('settings.messages.testFailed'));
     } finally {
       setTimeout(() => setTestMessageStatus('idle'), 3000);
     }
@@ -668,7 +670,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-neutral-800 shadow-xl light:bg-white">
             <div className="flex items-center justify-between border-b border-neutral-700 p-4 light:border-neutral-300">
               <h3 className="text-lg font-semibold text-neutral-200 light:text-neutral-900">
-                AI Configuration Settings
+                {t('settings.modalTitle')}
               </h3>
               <button
                 onClick={handleClose}
@@ -681,7 +683,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
             <form onSubmit={handleSubmit} className="p-4 space-y-6 max-h-[calc(90vh-80px)] overflow-y-auto">
               {/* Quick Actions */}
               <div className="border-b border-neutral-600 pb-4 light:border-neutral-300">
-                <h4 className="mb-3 text-md font-medium text-neutral-200 light:text-neutral-900">Quick Actions</h4>
+                <h4 className="mb-3 text-md font-medium text-neutral-200 light:text-neutral-900">{t('settings.quickActions')}</h4>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -689,7 +691,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     className="flex items-center gap-2 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded text-sm transition-colors"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    Reset Workspace Layout
+                    {t('settings.resetWorkspaceLayout')}
                   </button>
                   <button
                     type="button"
@@ -697,7 +699,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     className="flex items-center gap-2 px-4 py-2 bg-rose-700/80 hover:bg-rose-600 rounded text-sm transition-colors"
                   >
                     <RotateCcw className="w-4 h-4" />
-                    Сбросить настройки
+                    {t('settings.resetSettings')}
                   </button>
                   <button
                     type="button"
@@ -705,11 +707,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     className="flex items-center gap-2 px-4 py-2 bg-blue-700/80 hover:bg-blue-600 rounded text-sm transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    Экспорт настроек
+                    {t('settings.exportSettings')}
                   </button>
                   <label className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-emerald-700/80 hover:bg-emerald-600 rounded text-sm transition-colors">
                     <Upload className="w-4 h-4" />
-                    Импорт настроек
+                    {t('settings.importSettings')}
                     <input
                       type="file"
                       accept="application/json"
@@ -725,7 +727,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     onChange={e => setAutoValidateAfterAI(e.target.checked)}
                     className="rounded"
                   />
-                  Auto-validate (tsc) after AI writes files
+                  {t('settings.autoValidate')}
                 </label>
                 <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-neutral-300 light:text-neutral-700">
                   <input
@@ -734,34 +736,51 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     onChange={e => setAutoCommitAfterAI(e.target.checked)}
                     className="rounded"
                   />
-                  Auto-commit after AI writes files
+                  {t('settings.autoCommit')}
                 </label>
-                <p className="mt-2 text-xs text-neutral-500 light:text-neutral-600">Restore default panel sizes and layout</p>
+                <p className="mt-2 text-xs text-neutral-500 light:text-neutral-600">{t('settings.restoreDefaults')}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <label className="text-xs text-neutral-300 light:text-neutral-700">{t('settings.language')}</label>
+                  <button
+                    type="button"
+                    onClick={() => setLocale('en')}
+                    className={`rounded px-2 py-1 text-xs ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
+                  >
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocale('ru')}
+                    className={`rounded px-2 py-1 text-xs ${locale === 'ru' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
+                  >
+                    RU
+                  </button>
+                </div>
               </div>
 
               {/* API Configuration Section */}
               <div>
                 <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 light:border-neutral-300 light:text-neutral-900">
-                  API Configuration
+                  {t('settings.apiConfiguration')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      API Key
+                      {t('settings.apiKey')}
                     </label>
                     <input
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Your Nvidia NIM API key"
+                      placeholder={t('settings.apiKeyPlaceholder')}
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-1">
-                      Base URL
+                      {t('settings.baseUrl')}
                     </label>
                     <input
                       type="url"
@@ -772,7 +791,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                       required
                     />
                     <div className="text-xs text-neutral-400 mt-1">
-                      Обычно https://api.nvidia.com/v1 или http://localhost:8000/v1
+                      {t('settings.baseUrlHint')}
                     </div>
                   </div>
 
@@ -1311,7 +1330,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               )}
               {showSavedIndicator && (
                 <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-3 py-2">
-                  Настройки сохранены.
+                  {t('settings.messages.saved')}
                 </div>
               )}
 
@@ -1321,14 +1340,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 onClick={handleClose}
                   className="flex-1 px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded transition-colors"
                 >
-                  Cancel
+                  {t('settings.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 disabled:cursor-not-allowed rounded transition-colors"
                 >
-                  {isLoading ? 'Saving...' : 'Save'}
+                  {isLoading ? t('settings.saving') : t('settings.save')}
                 </button>
               </div>
             </form>
