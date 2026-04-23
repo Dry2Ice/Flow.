@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildNimUrl, normalizeEndpointPath, normalizeNimBaseUrl } from '../url-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { texts, model, apiKey, baseUrl } = await request.json();
+    const { texts, model, apiKey, baseUrl, embeddingsPath, endpointPath } = await request.json();
 
     if (!Array.isArray(texts) || texts.length === 0 || !model || !apiKey || !baseUrl) {
       return NextResponse.json(
@@ -11,8 +12,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedBaseUrl = String(baseUrl).trim().replace(/\/+$/, '');
-    const response = await fetch(`${normalizedBaseUrl}/embeddings`, {
+    const normalizedBaseUrl = normalizeNimBaseUrl(baseUrl);
+    if (!normalizedBaseUrl.ok) {
+      return NextResponse.json({ error: normalizedBaseUrl.error }, { status: 400 });
+    }
+
+    const resolvedEmbeddingsPath = normalizeEndpointPath(embeddingsPath ?? endpointPath, '/embeddings');
+    const response = await fetch(buildNimUrl(normalizedBaseUrl.value, resolvedEmbeddingsPath), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
