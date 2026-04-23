@@ -338,7 +338,8 @@ summary,
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
 
 /* Dockview dark theme */
-.dark .dockview-theme-dark {
+.dark .dockview-theme-dark,
+.dockview-theme-dark {
   --dv-background-color: hsl(var(--background));
   --dv-group-view-background-color: hsl(var(--card));
   --dv-tabs-and-actions-container-background-color: hsl(222 40% 5%);
@@ -355,7 +356,8 @@ summary,
 }
 
 /* Dockview light theme */
-.light .dockview-theme-dark {
+.light .dockview-theme-light,
+.dockview-theme-light {
   --dv-background-color: hsl(210 17% 94%);
   --dv-group-view-background-color: hsl(0 0% 100%);
   --dv-tabs-and-actions-container-background-color: hsl(210 15% 92%);

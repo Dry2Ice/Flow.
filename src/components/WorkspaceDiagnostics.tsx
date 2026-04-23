@@ -29,19 +29,19 @@ export function SystemLogsPanel() {
   };
 
   if (sessionLogs.length === 0) {
-    return <p className="p-4 text-sm text-neutral-400">No logs yet for this session.</p>;
+    return <p className="p-4 text-sm text-neutral-400 light:text-neutral-600">No logs yet for this session.</p>;
   }
 
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-2">
+    <div className="h-full space-y-2 overflow-y-auto p-3">
       {sessionLogs.map((log) => (
-        <article key={log.id} className="rounded-lg border border-neutral-700 bg-neutral-900/65 p-3">
-          <div className="mb-1 flex items-center gap-2 text-xs text-neutral-400">
+        <article key={log.id} className="rounded-lg border border-neutral-700 bg-neutral-900/65 p-3 light:border-neutral-300 light:bg-white">
+          <div className="mb-1 flex items-center gap-2 text-xs text-neutral-400 light:text-neutral-600">
             {icon(log.type)}
             <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
             <span className="ml-auto uppercase tracking-wider">{log.type}</span>
           </div>
-          <p className="text-sm">{log.message}</p>
+          <p className="text-sm light:text-neutral-800">{log.message}</p>
         </article>
       ))}
     </div>
@@ -83,7 +83,7 @@ export function ErrorsPanel() {
   };
 
   if (bugs.length === 0) {
-    return <p className="p-4 text-sm text-neutral-400">No tracked errors right now.</p>;
+    return <p className="p-4 text-sm text-neutral-400 light:text-neutral-600">No tracked errors right now.</p>;
   }
 
   return (
