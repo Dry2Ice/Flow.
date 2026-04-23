@@ -22,7 +22,7 @@ export function SystemLogsPanel() {
       case 'warning':
         return <ShieldAlert className="h-4 w-4 text-amber-400" />;
       case 'success':
-        return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
       default:
         return <Info className="h-4 w-4 text-sky-400" />;
     }
@@ -41,7 +41,7 @@ export function SystemLogsPanel() {
             <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
             <span className="ml-auto uppercase tracking-wider">{log.type}</span>
           </div>
-          <p className="text-sm">{log.message}</p>
+          <p className="text-sm text-neutral-200">{log.message}</p>
         </article>
       ))}
     </div>
@@ -95,7 +95,7 @@ export function ErrorsPanel() {
             <span className="font-semibold uppercase">{bug.severity}</span>
             <span className="ml-auto text-neutral-400">{bug.status}</span>
           </div>
-          <h4 className="text-sm font-semibold">{bug.title}</h4>
+          <h4 className="text-sm font-semibold text-neutral-100">{bug.title}</h4>
           <p className="mt-1 text-sm text-neutral-300">{bug.description}</p>
           <div className="mt-2 flex gap-2">
             <button
@@ -108,7 +108,7 @@ export function ErrorsPanel() {
             <button
               onClick={() => handleFixBug(bug)}
               disabled={loadingBugId === bug.id}
-              className="rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700/50 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-800/40 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded border border-emerald-700/50 bg-emerald-900/30 px-2 py-1 text-xs text-emerald-300 transition hover:bg-emerald-800/40 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loadingBugId === bug.id ? 'Fixing…' : 'Fix'}
             </button>

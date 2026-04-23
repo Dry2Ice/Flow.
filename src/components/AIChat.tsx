@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, Plus, Trash2, Download } from 'lucide-react';
+import { Bot, User, Copy, Check, MessageSquare, FileText, AlertCircle, Info, CheckCircle, Plus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAppStore } from '@/lib/store';
@@ -14,6 +14,7 @@ export function AIChat() {
     sessions,
     activeSessionId,
     setActiveSession,
+    createSession,
     logs,
   } = useAppStore();
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -37,19 +38,6 @@ export function AIChat() {
         description: change.description || 'File updated by AI',
       }))
     );
-  const lastAssistantMessageId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
-  const visibleMessages = messages.filter((message, index) => {
-    // Remove empty assistant messages that are not the last message in the session
-    // (the last one may still be actively streaming)
-    if (
-      message.role === 'assistant' &&
-      message.content.trim() === '' &&
-      index < messages.length - 1
-    ) {
-      return false;
-    }
-    return true;
-  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,42 +68,6 @@ export function AIChat() {
     } catch (error) {
       console.error('Failed to copy:', error);
     }
-  };
-
-  const handleClearChat = () => {
-    useAppStore.setState((state) => {
-      const session = state.sessions[activeSessionId];
-      if (!session) return state;
-      return {
-        sessions: {
-          ...state.sessions,
-          [activeSessionId]: {
-            ...session,
-            messages: [],
-          },
-        },
-      };
-    });
-  };
-
-  const handleExportChat = () => {
-    if (messages.length === 0) return;
-    const markdown = [
-      `# AI Chat Export`,
-      ``,
-      `Session: ${activeSessionId}`,
-      `Exported: ${new Date().toISOString()}`,
-      ``,
-      ...messages.map((message) => `## ${message.role === 'user' ? 'User' : 'Assistant'} (${message.timestamp.toLocaleString()})\n\n${message.content}`),
-    ].join('\n');
-
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `flow-chat-${activeSessionId.slice(0, 8)}.md`;
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -177,7 +129,7 @@ export function AIChat() {
             {connectionStatus === 'connected' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-700">Connected</span>
+                <span className="text-emerald-400">Connected</span>
               </>
             )}
             {connectionStatus === 'reconnecting' && (
@@ -189,7 +141,7 @@ export function AIChat() {
             {connectionStatus === 'failed' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-red-400" />
-                <span className="text-red-400 dark:text-red-400 light:text-red-700">Connection Failed</span>
+                <span className="text-red-400">Connection Failed</span>
               </>
             )}
             {!connectionStatus && (
@@ -202,34 +154,11 @@ export function AIChat() {
 
           <button
             type="button"
-            onClick={handleExportChat}
-            disabled={messages.length === 0}
-            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
-            title="Export chat as markdown"
+            onClick={() => createSession()}
+            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500"
+            title="New Session"
           >
-            <Download className="w-3 h-3" />
-          </button>
-          <button
-            onClick={() => {
-              const newId = crypto.randomUUID();
-              useAppStore.setState((state) => ({
-                sessions: { ...state.sessions, [newId]: { messages: [], isGenerating: false, activeRequests: 0 } },
-                activeSessionId: newId,
-              }));
-            }}
-            title="New session"
-            className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-          >
-            <Plus className="h-3 w-3" /> New
-          </button>
-          <button
-            type="button"
-            onClick={handleClearChat}
-            disabled={messages.length === 0}
-            className="flex items-center gap-1 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100 dark:border-red-800/80 dark:bg-red-950/50 dark:text-red-200 dark:hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50"
-            title="Clear chat"
-          >
-            <Trash2 className="w-3 h-3" />
+            <Plus className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -246,7 +175,7 @@ export function AIChat() {
                 <p className="text-xs mt-2">Ask questions, request code changes, or get help with your project</p>
               </div>
             ) : (
-              visibleMessages.map((message) => (
+              messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-3 ${
@@ -257,7 +186,7 @@ export function AIChat() {
                     className={`max-w-[80%] rounded-lg p-2 ${
                       message.role === 'user'
                         ? 'bg-blue-600 text-white'
-                        : 'bg-neutral-800 text-neutral-200'
+                        : 'bg-neutral-700 text-neutral-200'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -275,7 +204,7 @@ export function AIChat() {
                     </div>
 
                     {message.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                      <div className="prose prose-sm prose-invert max-w-none text-sm">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
@@ -288,36 +217,33 @@ export function AIChat() {
                                   </code>
                                 </pre>
                               ) : (
-                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-indigo-600 dark:text-blue-300" {...props}>
+                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-blue-300" {...props}>
                                   {children}
                                 </code>
                               );
                             },
                             p({ children }: any) {
-                              return <p className="mb-2 last:mb-0">{children}</p>;
+                              return <p className="mb-2 last:mb-0 text-neutral-200">{children}</p>;
                             },
                             ul({ children }: any) {
-                              return <ul className="mb-2 ml-4 list-disc space-y-1">{children}</ul>;
+                              return <ul className="mb-2 ml-4 list-disc space-y-1 text-neutral-200">{children}</ul>;
                             },
                             ol({ children }: any) {
-                              return <ol className="mb-2 ml-4 list-decimal space-y-1">{children}</ol>;
+                              return <ol className="mb-2 ml-4 list-decimal space-y-1 text-neutral-200">{children}</ol>;
                             },
-                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold">{children}</h1>; },
-                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold">{children}</h2>; },
-                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium">{children}</h3>; },
-                            strong({ children }: any) { return <strong className="font-semibold">{children}</strong>; },
+                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold text-neutral-100">{children}</h1>; },
+                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold text-neutral-100">{children}</h2>; },
+                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium text-neutral-200">{children}</h3>; },
+                            strong({ children }: any) { return <strong className="font-semibold text-neutral-100">{children}</strong>; },
                             a({ href, children }: any) {
-                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 dark:hover:text-blue-300 underline">{children}</a>;
+                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">{children}</a>;
                             },
                             blockquote({ children }: any) {
-                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic">{children}</blockquote>;
+                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic text-neutral-400">{children}</blockquote>;
                             },
                           }}
                         >
                           {message.content}
-                          {isGenerating && message.id === lastAssistantMessageId && (
-                            <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-300 align-middle" aria-hidden="true" />
-                          )}
                         </ReactMarkdown>
                       </div>
                     ) : (
@@ -405,10 +331,10 @@ export function AIChat() {
                           {getLogIcon(log.type)}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-medium text-blue-600 dark:text-blue-300">{log.source || 'ai_execution'}</span>
+                              <span className="text-xs font-medium text-blue-300">{log.source || 'ai_execution'}</span>
                               <span className="text-xs text-neutral-500">{log.timestamp.toLocaleTimeString()}</span>
                             </div>
-                            <p className="text-sm">{log.message}</p>
+                            <p className="text-sm text-neutral-200">{log.message}</p>
                           </div>
                         </div>
                       </div>
@@ -447,7 +373,7 @@ export function AIChat() {
                               <span className="text-xs font-medium text-red-300">ERROR</span>
                               <span className="text-xs text-neutral-500">{log.timestamp.toLocaleTimeString()}</span>
                             </div>
-                            <p className="text-sm">{log.message}</p>
+                            <p className="text-sm text-neutral-200">{log.message}</p>
                             {log.details && <p className="text-xs text-neutral-400 mt-1">{log.details}</p>}
                           </div>
                         </div>

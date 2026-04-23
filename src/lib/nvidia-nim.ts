@@ -1,5 +1,6 @@
 // src/lib/nvidia-nim.ts
 
+import axios from 'axios';
 import { DevelopmentTask, CodeChange, PromptRequest } from '@/types';
 import { useAppStore } from '@/lib/store';
 
@@ -20,8 +21,6 @@ export interface NvidiaNimConfig {
 export interface GenerateCodeRequest extends PromptRequest {
   generalPrompt?: string;
   signal?: AbortSignal;
-  onChunk?: (text: string) => void;
-  conversationHistory?: import('@/types').ConversationTurn[];
 }
 
 export interface GenerateCodeResponse {
@@ -324,10 +323,6 @@ class NvidiaNimService {
     this.config = config;
   }
 
-  getContextTokens(): number {
-    return this.config?.contextTokens ?? 0;
-  }
-
   async generateCode(request: GenerateCodeRequest): Promise<GenerateCodeResponse> {
     if (!this.config) {
       throw new Error('Nvidia NIM configuration not set');
@@ -335,26 +330,20 @@ class NvidiaNimService {
 
     try {
       const { requestBody } = this.buildRequestPayload(request);
-      const response = await fetch('/api/nim/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-NIM-Key': this.config.apiKey,
-          'X-NIM-BaseUrl': this.config.baseUrl,
-        },
-        body: JSON.stringify(requestBody),
-        signal: request.signal,
-      });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
+      const response = await axios.post(
+        `${this.config.baseUrl}/chat/completions`,
+        requestBody,
+        {
+          signal: request.signal,
+          headers: {
+            'Authorization': `Bearer ${this.config.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-      if (typeof content !== 'string') {
-        throw new Error('Invalid response format from NIM API');
-      }
+      const content = response.data.choices[0].message.content;
       return this.parseResponse(content);
     } catch (error) {
       console.error('Nvidia NIM API error:', error);
@@ -411,12 +400,11 @@ class NvidiaNimService {
           delay = Math.min(delay * 2, MAX_RETRY_DELAY);
         }
 
-        const response = await fetch('/api/nim/generate?stream=true', {
+        const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
           method: 'POST',
           headers: {
+            'Authorization': `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
-            'X-NIM-Key': this.config.apiKey,
-            'X-NIM-BaseUrl': this.config.baseUrl,
           },
           body: JSON.stringify({ ...requestBody, stream: true }),
           signal,
@@ -471,7 +459,6 @@ class NvidiaNimService {
               if (typeof delta === 'string' && delta) {
                 fullContent += delta;
                 onChunk(delta);
-                request.onChunk?.(delta);
               }
             } catch {
               // Skip malformed SSE lines
@@ -543,7 +530,6 @@ Rules:
     const fullSystemPrompt = generalPrompt
       ? `${baseSystemPrompt}\n\n${generalPrompt}\n\n${contextSummary}`
       : `${baseSystemPrompt}\n\n${contextSummary}`;
-    const history = request.conversationHistory ?? [];
 
     const isFiniteNumber = (value: unknown): value is number =>
       typeof value === 'number' && Number.isFinite(value);
@@ -585,7 +571,6 @@ ${numberedLines}
           return `${fullSystemPrompt}\n\nProject Context - Complete Codebase:\n${formattedFiles}`;
         })()
       },
-      ...history.map((turn) => ({ role: turn.role, content: turn.content })),
       {
         role: 'user',
         content: request.prompt
