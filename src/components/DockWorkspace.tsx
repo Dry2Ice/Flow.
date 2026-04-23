@@ -206,13 +206,13 @@ const DEFAULT_LAYOUT = {
     orientation: 'HORIZONTAL',
   },
   panels: {
-    files: { id: 'files', title: PANEL_ACCESSIBILITY.files.title, component: 'files' },
-    projects: { id: 'projects', title: PANEL_ACCESSIBILITY.projects.title, component: 'projects' },
-    editor: { id: 'editor', title: PANEL_ACCESSIBILITY.editor.title, component: 'editor' },
-    preview: { id: 'preview', title: PANEL_ACCESSIBILITY.preview.title, component: 'preview' },
-    chat: { id: 'chat', title: PANEL_ACCESSIBILITY.chat.title, component: 'chat' },
-    logs: { id: 'logs', title: PANEL_ACCESSIBILITY.logs.title, component: 'logs' },
-    plan: { id: 'plan', title: PANEL_ACCESSIBILITY.plan.title, component: 'plan' },
+    files: { id: 'files', title: PANEL_ACCESSIBILITY.files.title, contentComponent: 'files' },
+    projects: { id: 'projects', title: PANEL_ACCESSIBILITY.projects.title, contentComponent: 'projects' },
+    editor: { id: 'editor', title: PANEL_ACCESSIBILITY.editor.title, contentComponent: 'editor' },
+    preview: { id: 'preview', title: PANEL_ACCESSIBILITY.preview.title, contentComponent: 'preview' },
+    chat: { id: 'chat', title: PANEL_ACCESSIBILITY.chat.title, contentComponent: 'chat' },
+    logs: { id: 'logs', title: PANEL_ACCESSIBILITY.logs.title, contentComponent: 'logs' },
+    plan: { id: 'plan', title: PANEL_ACCESSIBILITY.plan.title, contentComponent: 'plan' },
   },
   activeGroup: 'group-editor',
 };
@@ -330,20 +330,14 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         return false;
       }
 
-      // Defer fromJSON to the next task so React can flush the updateOptions
-      // effect that registers the component factory (useEffect([props.components])).
-      // Calling fromJSON synchronously inside onReady (which runs inside
-      // useEffect([], [])) means the factory hasn't been updated yet.
-      setTimeout(() => {
-        try {
-          api.clear();
-          api.fromJSON(json);
-        } catch (err) {
-          console.error('[DockWorkspace] fromJSON failed:', err);
-        }
-      }, 0);
-
-      return true;
+      try {
+        api.clear();
+        api.fromJSON(json);
+        return true;
+      } catch (err) {
+        console.error('[DockWorkspace] fromJSON failed:', err);
+        return false;
+      }
     };
 
     const saved = localStorage.getItem(LAYOUT_KEY);
@@ -367,14 +361,12 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
     localStorage.removeItem(LAYOUT_KEY);
     const api = apiRef.current;
 
-    setTimeout(() => {
-      try {
-        api.clear();
-        api.fromJSON(DEFAULT_LAYOUT as any);
-      } catch (err) {
-        console.error('[DockWorkspace] resetLayout fromJSON failed:', err);
-      }
-    }, 0);
+    try {
+      api.clear();
+      api.fromJSON(DEFAULT_LAYOUT as any);
+    } catch (err) {
+      console.error('[DockWorkspace] resetLayout fromJSON failed:', err);
+    }
   }, []);
 
   const addPanel = useCallback((panelId: string) => {
