@@ -664,15 +664,15 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     <>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-neutral-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-700">
-              <h3 className="text-lg font-semibold text-neutral-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-neutral-800 shadow-xl light:bg-white">
+            <div className="flex items-center justify-between border-b border-neutral-700 p-4 light:border-neutral-300">
+              <h3 className="text-lg font-semibold text-neutral-200 light:text-neutral-900">
                 AI Configuration Settings
               </h3>
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-neutral-700 rounded transition-colors"
+                className="rounded p-2 transition-colors hover:bg-neutral-700 light:hover:bg-neutral-100"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -680,8 +680,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
             <form onSubmit={handleSubmit} className="p-4 space-y-6 max-h-[calc(90vh-80px)] overflow-y-auto">
               {/* Quick Actions */}
-              <div className="border-b border-neutral-600 pb-4">
-                <h4 className="text-md font-medium text-neutral-200 mb-3">Quick Actions</h4>
+              <div className="border-b border-neutral-600 pb-4 light:border-neutral-300">
+                <h4 className="mb-3 text-md font-medium text-neutral-200 light:text-neutral-900">Quick Actions</h4>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -718,7 +718,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     />
                   </label>
                 </div>
-                <label className="mt-3 flex items-center gap-2 text-xs text-neutral-300 cursor-pointer">
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-neutral-300 light:text-neutral-700">
                   <input
                     type="checkbox"
                     checked={autoValidateAfterAI}
@@ -727,7 +727,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   />
                   Auto-validate (tsc) after AI writes files
                 </label>
-                <label className="mt-2 flex items-center gap-2 text-xs text-neutral-300 cursor-pointer">
+                <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-neutral-300 light:text-neutral-700">
                   <input
                     type="checkbox"
                     checked={autoCommitAfterAI}
@@ -736,12 +736,12 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   />
                   Auto-commit after AI writes files
                 </label>
-                <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
+                <p className="mt-2 text-xs text-neutral-500 light:text-neutral-600">Restore default panel sizes and layout</p>
               </div>
 
               {/* API Configuration Section */}
               <div>
-                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 light:border-neutral-300 light:text-neutral-900">
                   API Configuration
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -842,7 +842,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
               {/* Embedding Model Section */}
               <div className="border-b border-neutral-600 pb-4">
-                <h4 className="text-md font-medium text-neutral-200 mb-3">Embedding Model</h4>
+                <h4 className="text-md font-medium text-neutral-200 mb-3 light:text-neutral-900">Embedding Model</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="flex items-center gap-2 text-sm text-neutral-300 md:col-span-2">
                     <input
@@ -924,7 +924,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     </div>
                   </div>
 
-                  <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300">
+                  <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300 light:border-neutral-300 light:bg-neutral-100 light:text-neutral-700">
                     <div>
                       Indexing status:{' '}
                       {isIndexingProject
@@ -950,7 +950,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                {/* Connection Testing Section */}
                <div className="border-b border-neutral-600 pb-4">
-                 <h4 className="text-md font-medium text-neutral-200 mb-3">
+                 <h4 className="text-md font-medium text-neutral-200 mb-3 light:text-neutral-900">
                    Connection & Testing
                  </h4>
                  <div className="flex gap-3 flex-wrap">
@@ -1009,7 +1009,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                    </div>
                  )}
                  {message && (
-                   <div className="mt-2 text-sm text-neutral-200 bg-neutral-700/60 border border-neutral-600 rounded px-3 py-2">
+                   <div className="mt-2 rounded border border-neutral-600 bg-neutral-700/60 px-3 py-2 text-sm text-neutral-200 light:border-neutral-300 light:bg-neutral-100 light:text-neutral-800">
                      {message}
                    </div>
                  )}
@@ -1017,7 +1017,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                {/* Generation Parameters Section */}
               <div>
-                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 light:border-neutral-300 light:text-neutral-900">
                   Generation Parameters
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1161,7 +1161,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
               {/* General Prompt Section */}
               <div>
-                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 light:border-neutral-300 light:text-neutral-900">
                   General System Prompt
                 </h4>
                 <p className="text-sm text-neutral-400 mb-3">
@@ -1215,7 +1215,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
               {/* Prompt Presets Section */}
               <div>
-                <h4 className="text-md font-medium text-neutral-200 mb-3 border-b border-neutral-600 pb-2">
+                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 light:border-neutral-300 light:text-neutral-900">
                   Prompt Presets (3 editable)
                 </h4>
                 <div className="space-y-3">
@@ -1240,7 +1240,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                           )}
                         </div>
                         <div className="flex-1">
-                          <h5 className="font-medium text-neutral-200 mb-1">{preset.name}</h5>
+                          <h5 className="mb-1 font-medium text-neutral-200 light:text-neutral-900">{preset.name}</h5>
                           <p className="text-sm text-neutral-400 mb-2">{preset.description}</p>
 
                           {editingPreset === preset.id ? (

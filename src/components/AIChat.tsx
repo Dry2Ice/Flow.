@@ -90,18 +90,18 @@ export function AIChat() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-neutral-950/30">
+    <div className="flex h-full flex-col bg-neutral-950/30 light:bg-neutral-100/80">
       {/* Header */}
-      <div className="border-b border-neutral-800">
+      <div className="border-b border-neutral-800 light:border-neutral-300">
         <div className="flex items-center justify-between px-3 py-2.5">
-          <h3 className="text-sm font-medium text-neutral-200">AI Assistant</h3>
-          <div className="text-xs text-neutral-500">{messages.length} messages</div>
+          <h3 className="text-sm font-medium text-neutral-200 light:text-neutral-900">AI Assistant</h3>
+          <div className="text-xs text-neutral-500 light:text-neutral-600">{messages.length} messages</div>
         </div>
         <div className="flex items-center gap-2 px-2 pb-2">
           <select
             value={activeSessionId}
             onChange={(e) => setActiveSession(e.target.value)}
-            className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 light:border-neutral-300 light:bg-white light:text-neutral-900"
           >
             {Object.keys(sessions).map((sessionId) => (
               <option key={sessionId} value={sessionId}>
@@ -111,7 +111,7 @@ export function AIChat() {
           </select>
 
           {/* Connection status indicator */}
-          <div className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs">
+          <div className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs light:border-neutral-300 light:bg-white">
             {connectionStatus === 'connected' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -142,7 +142,7 @@ export function AIChat() {
             type="button"
             onClick={handleExportChat}
             disabled={messages.length === 0}
-            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50 light:border-neutral-300 light:bg-white light:hover:border-neutral-400"
             title="Export chat as markdown"
           >
             <Download className="w-3 h-3" />
@@ -156,7 +156,7 @@ export function AIChat() {
               }));
             }}
             title="New session"
-            className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
+            className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200 light:border-neutral-300 light:text-neutral-600 light:hover:bg-neutral-100 light:hover:text-neutral-900"
           >
             <Plus className="h-3 w-3" /> New
           </button>
@@ -194,7 +194,7 @@ export function AIChat() {
                   className={`max-w-[80%] rounded-lg p-2 ${
                     message.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-neutral-800 text-neutral-200'
+                      : 'bg-neutral-800 text-neutral-200 light:bg-white light:text-neutral-900 light:border light:border-neutral-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -212,20 +212,20 @@ export function AIChat() {
                   </div>
 
                   {message.role === 'assistant' ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm light:prose-neutral">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           code({ node, className, children, ...props }: any) {
                             const isBlock = className?.includes('language-');
                             return isBlock ? (
-                              <pre className="overflow-x-auto rounded-lg bg-neutral-900 border border-neutral-700 p-3 my-2">
-                                <code className={`text-xs font-mono text-neutral-200 ${className ?? ''}`} {...props}>
+                              <pre className="overflow-x-auto rounded-lg bg-neutral-900 border border-neutral-700 p-3 my-2 light:bg-neutral-100 light:border-neutral-300">
+                                <code className={`text-xs font-mono text-neutral-200 light:text-neutral-800 ${className ?? ''}`} {...props}>
                                   {children}
                                 </code>
                               </pre>
                             ) : (
-                              <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-indigo-600 dark:text-blue-300" {...props}>
+                              <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-indigo-600 dark:text-blue-300 light:bg-neutral-200" {...props}>
                                 {children}
                               </code>
                             );
@@ -247,7 +247,7 @@ export function AIChat() {
                             return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 dark:hover:text-blue-300 underline">{children}</a>;
                           },
                           blockquote({ children }: any) {
-                            return <blockquote className="border-l-2 border-neutral-600 pl-3 italic">{children}</blockquote>;
+                            return <blockquote className="border-l-2 border-neutral-600 pl-3 italic light:border-neutral-400">{children}</blockquote>;
                           },
                         }}
                       >
@@ -264,13 +264,13 @@ export function AIChat() {
                   )}
 
                     {message.changes && message.changes.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-neutral-600">
-                        <div className="text-xs text-neutral-400 mb-2">Code Changes:</div>
+                      <div className="mt-3 pt-3 border-t border-neutral-600 light:border-neutral-300">
+                        <div className="text-xs text-neutral-400 mb-2 light:text-neutral-600">Code Changes:</div>
                         <div className="space-y-1">
                           {message.changes.map((change, index) => (
-                            <div key={index} className="text-xs bg-neutral-800 p-2 rounded">
+                            <div key={index} className="text-xs bg-neutral-800 p-2 rounded light:bg-neutral-100">
                               <div className="font-medium text-green-400">{change.filePath}</div>
-                              <div className="text-neutral-300 mt-1">
+                              <div className="text-neutral-300 mt-1 light:text-neutral-700">
                                 {change.newContent.length > 100
                                   ? `${change.newContent.substring(0, 100)}...`
                                   : change.newContent}
@@ -284,7 +284,7 @@ export function AIChat() {
                     {message.role === 'assistant' && (
                       <button
                         onClick={() => copyToClipboard(message.content, message.id)}
-                        className="mt-1 p-1 opacity-60 hover:opacity-100 transition-opacity rounded hover:bg-neutral-700"
+                        className="mt-1 rounded p-1 opacity-60 transition-opacity hover:bg-neutral-700 hover:opacity-100 light:hover:bg-neutral-200"
                         title={copiedMessageId === message.id ? 'Copied!' : 'Copy message'}
                       >
                         {copiedMessageId === message.id ? (
@@ -301,13 +301,13 @@ export function AIChat() {
 
           {isGenerating && (
             <div className="flex justify-start">
-              <div className="bg-neutral-700 rounded-lg p-3 max-w-[80%]">
+              <div className="bg-neutral-700 rounded-lg p-3 max-w-[80%] light:bg-neutral-100 light:border light:border-neutral-300">
                 <div className="flex items-center gap-2 mb-2">
                   <Bot className="w-4 h-4" />
-                  <span className="text-xs text-neutral-400">AI Assistant</span>
+                  <span className="text-xs text-neutral-400 light:text-neutral-600">AI Assistant</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="text-sm text-neutral-300">Thinking</div>
+                  <div className="text-sm text-neutral-300 light:text-neutral-700">Thinking</div>
                   <div className="flex gap-1">
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />

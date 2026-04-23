@@ -28,6 +28,7 @@ export function CodeEditor() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isReloading, setIsReloading] = useState(false);
   const [originalContent, setOriginalContent] = useState<string>('');
+  const [editorTheme, setEditorTheme] = useState<'vs' | 'vs-dark'>('vs-dark');
 
   const currentFile = openFiles.find(f => f.path === activeFile);
 
@@ -189,6 +190,20 @@ export function CodeEditor() {
     setSaveMessage(null);
   }, [activeFile]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const resolveTheme = () => {
+      setEditorTheme(root.classList.contains('light') ? 'vs' : 'vs-dark');
+    };
+
+    resolveTheme();
+
+    const observer = new MutationObserver(resolveTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
+
   // Get language from file extension
   const getLanguage = (filePath: string) => {
     const ext = filePath.split('.').pop()?.toLowerCase();
@@ -218,11 +233,11 @@ export function CodeEditor() {
     <div className="h-full w-full">
       {currentFile ? (
         <div className="h-full flex flex-col">
-          <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2 text-xs text-neutral-300">
+          <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2 text-xs text-neutral-300 light:border-neutral-300 light:text-neutral-700">
             <div className="truncate">{currentFile.path}</div>
             <div className="flex items-center gap-2">
               {saveMessage && (
-                <span className={saveState === 'error' ? 'text-red-400' : 'text-emerald-400'}>
+                <span className={saveState === 'error' ? 'text-red-400 light:text-red-700' : 'text-emerald-400 light:text-emerald-700'}>
                   {saveMessage}
                 </span>
               )}
@@ -230,7 +245,7 @@ export function CodeEditor() {
                 type="button"
                 onClick={reloadFile}
                 disabled={isReloading}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900/70 px-2 py-1 hover:border-neutral-500 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900/70 px-2 py-1 hover:border-neutral-500 disabled:opacity-50 light:border-neutral-300 light:bg-white light:hover:border-neutral-400"
                 title="Reload from disk"
               >
                 <RefreshCcw className="h-3.5 w-3.5" />
@@ -240,7 +255,7 @@ export function CodeEditor() {
                 type="button"
                 onClick={saveFile}
                 disabled={saveState === 'saving'}
-                className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1 text-sky-100 hover:bg-sky-500/25 disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1 text-sky-100 hover:bg-sky-500/25 disabled:opacity-50 light:text-sky-700"
                 title="Save file (Ctrl/Cmd+S)"
               >
                 <Save className="h-3.5 w-3.5" />
@@ -255,7 +270,7 @@ export function CodeEditor() {
               value={currentFile.content}
               onChange={handleChange}
               onMount={handleEditorDidMount}
-              theme="vs-dark"
+              theme={editorTheme}
               options={{
                 minimap: { enabled: true, size: 'proportional' },
                 fontSize: 14,
