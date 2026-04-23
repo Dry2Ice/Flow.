@@ -99,33 +99,33 @@ const createAccessibleComponent = (
   );
 };
 
-function FilesPanel() {
+const FilesPanel = React.memo(function FilesPanel() {
   return createAccessibleComponent(<FileBrowser />, 'files');
-}
+});
 
-function ProjectsPanel() {
+const ProjectsPanel = React.memo(function ProjectsPanel() {
   return createAccessibleComponent(<ProjectManager />, 'projects');
-}
+});
 
-function EditorPanel() {
+const EditorPanel = React.memo(function EditorPanel() {
   return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Editor" />}>
       <CodeEditor />
     </Suspense>,
     'editor'
   );
-}
+});
 
-function PreviewPanel() {
+const PreviewPanel = React.memo(function PreviewPanel() {
   return createAccessibleComponent(
     <Suspense fallback={<ComponentSkeleton title="Code Preview" />}>
       <CodePreview />
     </Suspense>,
     'preview'
   );
-}
+});
 
-function ChatPanel() {
+const ChatPanel = React.memo(function ChatPanel() {
   return createAccessibleComponent(
     <div className="flex h-full flex-col">
       <AIErrorBoundary sessionId="chat-ai">
@@ -135,35 +135,24 @@ function ChatPanel() {
     </div>,
     'chat'
   );
-}
+});
 
-function LogsPanel() {
+const LogsPanel = React.memo(function LogsPanel() {
   return createAccessibleComponent(<SystemLogsPanel />, 'logs');
-}
+});
 
-function PlanPanel() {
+const PlanPanel = React.memo(function PlanPanel() {
   return createAccessibleComponent(
     <AIErrorBoundary sessionId="plan-ai">
       <DevelopmentPlan />
     </AIErrorBoundary>,
     'plan'
   );
-}
-
-// Map panel id → component with lazy loading and accessibility
-const components: Record<string, React.FC<IDockviewPanelProps>> = {
-  files: FilesPanel,
-  projects: ProjectsPanel,
-  editor: EditorPanel,
-  preview: PreviewPanel,
-  chat: ChatPanel,
-  logs: LogsPanel,
-  plan: PlanPanel,
-};
+});
 
 const LAYOUT_KEY = 'flow.dockview-layout.v1';
 const ALL_PANEL_IDS = ['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan'] as const;
-const COMPONENT_IDS = new Set(Object.keys(components));
+const COMPONENT_IDS = new Set(['files', 'projects', 'editor', 'preview', 'chat', 'logs', 'plan']);
 
 const DEFAULT_LAYOUT = {
   grid: {
@@ -240,6 +229,15 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   const [openPanelIds, setOpenPanelIds] = useState<Set<string>>(new Set(ALL_PANEL_IDS));
   const [showAddPanel, setShowAddPanel] = useState(false);
   const addPanelMenuRef = useRef<HTMLDivElement | null>(null);
+  const components = useMemo<Record<string, React.FC<IDockviewPanelProps>>>(() => ({
+    files: FilesPanel,
+    projects: ProjectsPanel,
+    editor: EditorPanel,
+    preview: PreviewPanel,
+    chat: ChatPanel,
+    logs: LogsPanel,
+    plan: PlanPanel,
+  }), []);
 
   // Keyboard navigation support
   const panelOrder = useMemo(() => [...ALL_PANEL_IDS], []);
