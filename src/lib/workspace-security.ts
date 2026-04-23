@@ -15,20 +15,6 @@ export class WorkspaceSecurityError extends Error {
 const USER_PATH_MAX_LENGTH = 1024;
 const TRUSTED_ROOTS_MAX = 16;
 const TRUSTED_ROOTS_ENV_SEPARATOR = /[,:;\n]/;
-const RUNTIME_TRUSTED_ROOTS_KEY = '__flow_runtime_trusted_roots__';
-
-type GlobalWithTrustedRoots = typeof globalThis & {
-  [RUNTIME_TRUSTED_ROOTS_KEY]?: Set<string>;
-};
-
-const globalWithTrustedRoots = globalThis as GlobalWithTrustedRoots;
-
-export const runtimeTrustedRoots =
-  globalWithTrustedRoots[RUNTIME_TRUSTED_ROOTS_KEY] ?? new Set<string>();
-
-if (!globalWithTrustedRoots[RUNTIME_TRUSTED_ROOTS_KEY]) {
-  globalWithTrustedRoots[RUNTIME_TRUSTED_ROOTS_KEY] = runtimeTrustedRoots;
-}
 
 function ensurePathWithinRoot(targetPath: string, rootPath: string, reason: string): void {
   const normalizedRoot = path.resolve(rootPath);
@@ -63,24 +49,7 @@ export function getConfiguredTrustedRoots(workspaceRoot: string): string[] {
     .map(root => root.trim())
     .filter(Boolean);
 
-  return normalizeTrustedRoots([workspaceRoot, ...envRoots, ...runtimeTrustedRoots]);
-}
-
-export function addRuntimeTrustedRoot(inputPath: string): string[] {
-  if (typeof inputPath !== 'string' || !inputPath.trim()) {
-    throw new WorkspaceSecurityError(400, 'invalid_trusted_root', 'Trusted root is invalid');
-  }
-
-  if (inputPath.length > USER_PATH_MAX_LENGTH) {
-    throw new WorkspaceSecurityError(400, 'trusted_root_too_long', 'Trusted root is invalid');
-  }
-
-  if (!path.isAbsolute(inputPath)) {
-    throw new WorkspaceSecurityError(400, 'trusted_root_must_be_absolute', 'Trusted root must be an absolute path');
-  }
-
-  runtimeTrustedRoots.add(path.resolve(inputPath));
-  return [...runtimeTrustedRoots];
+  return normalizeTrustedRoots([workspaceRoot, ...envRoots]);
 }
 
 export function registerTrustedProjectRoot(

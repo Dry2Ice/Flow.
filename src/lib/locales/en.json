@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "title": "Settings",
+    "aiConfiguration": "AI Configuration",
+    "quickActions": "Quick Actions",
+    "connectionTesting": "Connection & Testing",
+    "generationParameters": "Generation Parameters",
+    "generalPrompt": "General System Prompt",
+    "promptPresets": "Prompt Presets (3 editable)",
+    "resetLayout": "Reset Workspace Layout",
+    "restoreDefaults": "Restore default panel sizes and layout",
+    "apiKey": "API Key",
+    "baseUrl": "Base URL",
+    "model": "Model",
+    "temperature": "Temperature",
+    "topP": "Top-p",
+    "topK": "Top-k",
+    "maxTokens": "Max Response Tokens",
+    "contextTokens": "Context Tokens",
+    "stopSequences": "Stop Sequences",
+    "testConnection": "Test Connection",
+    "sendTestMessage": "Send Test Message",
+    "save": "Save",
+    "cancel": "Cancel",
+    "language": "Language",
+    "english": "English",
+    "russian": "Русский"
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting..."
+  },
+  "messages": {
+    "noConnection": "Please configure API connection first",
+    "testFailed": "Test message failed",
+    "success": "Success"
+  }
+}

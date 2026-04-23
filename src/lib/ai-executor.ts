@@ -20,26 +20,6 @@ export interface ExecuteAIRequestResult {
   error?: string;
 }
 
-export async function autoCommitAfterAIWrite(response: { explanation: string; changes?: Array<{ filePath: string; newContent: string }> }) {
-  const { autoCommitAfterAI, projectPath } = useAppStore.getState();
-  if (!autoCommitAfterAI || !projectPath) {
-    return;
-  }
-
-  const commitMsg = response.explanation.split('\n')[0].slice(0, 72) || 'AI: code changes';
-  await fetch('/api/git', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'save',
-      projectPath,
-      filePath: response.changes?.[0]?.filePath ?? '',
-      content: response.changes?.[0]?.newContent ?? '',
-      commitMessage: `AI: ${commitMsg}`,
-    }),
-  });
-}
-
 export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<ExecuteAIRequestResult> {
   const state = useAppStore.getState();
   const {
@@ -61,7 +41,6 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
     updateAIRequest,
     currentProject,
     getProjectContext,
-    sessions,
   } = state;
 
   const selectedPreset = input.presetId
@@ -105,20 +84,6 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
 
   try {
     const currentFile = openFiles.find((file) => file.path === activeFile);
-    const sessionMessages = sessions[activeSessionId]?.messages ?? [];
-    // Exclude the user message we just added (it's the last one, role='user')
-    // Take up to 8 messages before it for history
-    const historyMessages = sessionMessages
-      .slice(0, -1)
-      .filter((message) => message.role === 'user' || message.role === 'assistant')
-      .slice(-8)
-      .map((message) => ({
-        role: message.role as 'user' | 'assistant',
-        // Strip FILE blocks from assistant messages to save tokens
-        content: message.role === 'assistant'
-          ? message.content.replace(/<<<FILE:[\s\S]*?<<<END_FILE>>>/g, '[file changes applied]').trim()
-          : message.content,
-      }));
 
     let projectFiles = openFiles.map((file) => ({
       path: file.path,
@@ -142,33 +107,6 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       }
     }
 
-    // Parse @mentions to explicitly include specific files in context
-    const mentionRegex = /@([\w./-]+\.\w+)/g;
-    const mentions = [...input.prompt.matchAll(mentionRegex)].map((match) => match[1]);
-
-    if (mentions.length > 0 && projectPath) {
-      for (const mention of mentions) {
-        const alreadyIncluded = projectFiles.some((file) =>
-          file.path === mention || file.path.endsWith(`/${mention}`)
-        );
-        if (!alreadyIncluded) {
-          try {
-            const res = await fetch('/api/project/file', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ projectPath, filePath: mention }),
-            });
-            const data = await res.json();
-            if (data.content) {
-              projectFiles.push({ path: mention, content: data.content });
-            }
-          } catch {
-            // file not found — ignore
-          }
-        }
-      }
-    }
-
     const projectContext = currentProject
       ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
       : undefined;
@@ -184,12 +122,6 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       timestamp: new Date(),
     });
 
-    // Snapshot of files that might be changed — captured before AI responds
-    const fileContentSnapshot = new Map<string, string>();
-    for (const file of openFiles) {
-      fileContentSnapshot.set(file.path, file.content);
-    }
-
     let streamedContent = '';
 
     const response = await nvidiaNimService.generateCodeStream(
@@ -198,7 +130,6 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
         preset: selectedPreset || undefined,
         generalPrompt,
         signal: input.signal,
-        conversationHistory: historyMessages,
         context: {
           currentFile: activeFile || undefined,
           selectedCode: currentFile?.content,
@@ -244,24 +175,80 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       source: 'ai_execution',
     });
 
-    const enrichedChanges = (response.changes ?? []).map((change) => ({
-      ...change,
-      oldContent: fileContentSnapshot.get(change.filePath) ?? '',
-    }));
+    // Apply file changes produced by AI
+    if (response.changes && response.changes.length > 0) {
+      const { updateFileContent, openFile, currentProject } = useAppStore.getState();
 
-    if (enrichedChanges.length > 0) {
-      useAppStore.getState().setPendingChanges(enrichedChanges);
-      useAppStore.getState().setDiffViewerOpen(true);
+      for (const change of response.changes) {
+        // Always update in-memory store so the editor reflects the change immediately
+        const alreadyOpen = useAppStore.getState().openFiles.find(f => f.path === change.filePath);
+        if (alreadyOpen) {
+          updateFileContent(change.filePath, change.newContent);
+        } else {
+          openFile(change.filePath, change.newContent);
+        }
 
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        jobId,
-        timestamp: new Date(),
-        type: 'info',
-        message: `AI generated ${enrichedChanges.length} pending file change${enrichedChanges.length === 1 ? '' : 's'} for review`,
-        source: 'ai_execution',
-      });
+        // Write to disk only for real (non-demo) projects
+        if (currentProject && !currentProject.isDemo && projectPath) {
+          try {
+            await fetch('/api/project/file/write', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectPath,
+                filePath: change.filePath,
+                content: change.newContent,
+              }),
+            });
+            addLog({
+              id: crypto.randomUUID(),
+              sessionId: activeSessionId,
+              jobId,
+              timestamp: new Date(),
+              type: 'success',
+              message: `AI wrote changes to ${change.filePath}`,
+              source: 'file_operation',
+            });
+          } catch (err) {
+            addLog({
+              id: crypto.randomUUID(),
+              sessionId: activeSessionId,
+              jobId,
+              timestamp: new Date(),
+              type: 'error',
+              message: `Failed to write ${change.filePath} to disk: ${err instanceof Error ? err.message : 'unknown error'}`,
+              source: 'file_operation',
+            });
+          }
+        } else if (currentProject?.isDemo) {
+          addLog({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId,
+            jobId,
+            timestamp: new Date(),
+            type: 'info',
+            message: `Demo mode: ${change.filePath} updated in editor (not saved to disk). Open a real project to persist changes.`,
+            source: 'file_operation',
+          });
+        }
+      }
+
+      // Refresh the file tree in the store after AI writes files
+      if (currentProject && !currentProject.isDemo && projectPath) {
+        try {
+          const filesResponse = await fetch('/api/project/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectPath }),
+          });
+          const filesData = await filesResponse.json();
+          if (filesData.files) {
+            useAppStore.getState().updateProject({ files: filesData.files });
+          }
+        } catch {
+          // Non-critical — file tree refresh is best-effort
+        }
+      }
     }
 
     // Update the streaming message with final content and changes
@@ -272,7 +259,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
           ...state.sessions[activeSessionId],
           messages: state.sessions[activeSessionId].messages.map((m) =>
             m.id === streamingMessageId
-              ? { ...m, content: response.explanation, changes: enrichedChanges }
+              ? { ...m, content: response.explanation, changes: response.changes }
               : m
           ),
         },

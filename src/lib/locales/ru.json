@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "title": "Настройки",
+    "aiConfiguration": "Настройка ИИ",
+    "quickActions": "Быстрые действия",
+    "connectionTesting": "Подключение и тестирование",
+    "generationParameters": "Параметры генерации",
+    "generalPrompt": "Общий системный промпт",
+    "promptPresets": "Промпт-шаблоны (3 редактируемых)",
+    "resetLayout": "Сбросить компоновку рабочей области",
+    "restoreDefaults": "Восстановить значения по умолчанию для размеров и компоновки панелей",
+    "apiKey": "API ключ",
+    "baseUrl": "Базовый URL",
+    "model": "Модель",
+    "temperature": "Температура",
+    "topP": "Top-p",
+    "topK": "Top-k",
+    "maxTokens": "Макс. токены ответа",
+    "contextTokens": "Контекстные токены",
+    "stopSequences": "Стоп-последовательности",
+    "testConnection": "Проверить подключение",
+    "sendTestMessage": "Отправить тестовое сообщение",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "language": "Язык",
+    "english": "Английский",
+    "russian": "Русский"
+  },
+  "status": {
+    "connected": "Подключено",
+    "disconnected": "Отключено",
+    "connecting": "Подключение..."
+  },
+  "messages": {
+    "noConnection": "Сначала настройте подключение к API",
+    "testFailed": "Тестовое сообщение не отправлено",
+    "success": "Успешно"
+  }
+}

@@ -3,7 +3,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
-import { CodeChunk, EmbeddingConfig, embeddingService } from '@/lib/embedding-service';
 
 export interface SessionState {
   messages: AIMessage[];
@@ -20,11 +19,10 @@ export interface OpenFile {
 }
 
 const DEFAULT_SESSION_ID = 'default';
-const SESSION_STORAGE_KEY = 'flow.session.v1';
-const MAX_PERSISTED_MESSAGES = 20;
 
 const PROMPT_PRESETS_STORAGE_KEY = 'flow-prompt-presets';
 const ACTIVE_PRESET_STORAGE_KEY = 'flow-active-preset-id';
+const LOCALE_STORAGE_KEY = 'flow-locale';
 
 const DEFAULT_PROMPT_PRESETS: PromptPreset[] = [
   {
@@ -51,24 +49,26 @@ Provide actionable recommendations that can be implemented immediately.`
   },
   {
     id: 'analyze',
-    name: 'Analysis',
-    description: 'Deep project analysis and planning',
-    systemPrompt: `You are an expert software architect performing a deep code review.
-Analyze the provided codebase thoroughly and return a structured analysis.
-Your response MUST be valid JSON matching this schema exactly:
-{
-  "summary": "string",
-  "architecture": "string",
-  "framework": "string",
-  "complexity": "low|medium|high|very_high",
-  "keyComponents": ["string"],
-  "dependencies": ["string"],
-  "patterns": ["string"],
-  "insights": ["string"],
-  "recommendations": ["string"],
-  "suggestedTasks": [{ "title": "string", "description": "string", "priority": "high|medium|low" }]
-}
-Return ONLY the JSON object, no markdown, no preamble.`
+    name: 'Code Analysis & Planning',
+    description: 'Analyze codebase and create improvement plans',
+    systemPrompt: `You are a senior software architect specializing in code analysis and strategic planning. Your task is to:
+
+1. Thoroughly analyze the entire codebase structure, patterns, and architecture
+2. Identify areas for improvement, refactoring opportunities, and modernization needs
+3. Create detailed development plans with prioritized tasks
+4. Suggest architectural improvements and design patterns
+5. Provide technical debt assessment and recommendations
+6. Outline implementation strategies with clear milestones
+
+Consider:
+- Code organization and modularity
+- Design patterns and architectural decisions
+- Technology stack appropriateness
+- Scalability and maintainability
+- Testing coverage and quality assurance
+- Documentation and developer experience
+
+Generate a comprehensive improvement roadmap with measurable goals and success criteria.`
   },
   {
     id: 'develop',
@@ -95,6 +95,88 @@ When making changes:
 Deliver production-ready code that solves the user's problem effectively.`
   }
 ];
+
+// Language resources
+const DEFAULT_LOCALES = {
+  en: {
+    settings: {
+      title: 'Settings',
+      aiConfiguration: 'AI Configuration',
+      quickActions: 'Quick Actions',
+      connectionTesting: 'Connection & Testing',
+      generationParameters: 'Generation Parameters',
+      generalPrompt: 'General System Prompt',
+      promptPresets: 'Prompt Presets (3 editable)',
+      resetLayout: 'Reset Workspace Layout',
+      restoreDefaults: 'Restore default panel sizes and layout',
+      apiKey: 'API Key',
+      baseUrl: 'Base URL',
+      model: 'Model',
+      temperature: 'Temperature',
+      topP: 'Top-p',
+      topK: 'Top-k',
+      maxTokens: 'Max Response Tokens',
+      contextTokens: 'Context Tokens',
+      stopSequences: 'Stop Sequences',
+      testConnection: 'Test Connection',
+      sendTestMessage: 'Send Test Message',
+      save: 'Save',
+      cancel: 'Cancel',
+      language: 'Language',
+      english: 'English',
+      russian: 'Русский'
+    },
+    status: {
+      connected: 'Connected',
+      disconnected: 'Disconnected',
+      connecting: 'Connecting...'
+    },
+    messages: {
+      noConnection: 'Please configure API connection first',
+      testFailed: 'Test message failed',
+      success: 'Success'
+    }
+  },
+  ru: {
+    settings: {
+      title: 'Настройки',
+      aiConfiguration: 'Настройка ИИ',
+      quickActions: 'Быстрые действия',
+      connectionTesting: 'Подключение и тестирование',
+      generationParameters: 'Параметры генерации',
+      generalPrompt: 'Общий системный промпт',
+      promptPresets: 'Промпт-шаблоны (3 редактируемых)',
+      resetLayout: 'Сбросить компоновку рабочей области',
+      restoreDefaults: 'Восстановить значения по умолчанию для размеров и компоновки панелей',
+      apiKey: 'API ключ',
+      baseUrl: 'Базовый URL',
+      model: 'Модель',
+      temperature: 'Температура',
+      topP: 'Top-p',
+      topK: 'Top-k',
+      maxTokens: 'Макс. токены ответа',
+      contextTokens: 'Контекстные токены',
+      stopSequences: 'Стоп-последовательности',
+      testConnection: 'Проверить подключение',
+      sendTestMessage: 'Отправить тестовое сообщение',
+      save: 'Сохранить',
+      cancel: 'Отмена',
+      language: 'Язык',
+      english: 'Английский',
+      russian: 'Русский'
+    },
+    status: {
+      connected: 'Подключено',
+      disconnected: 'Отключено',
+      connecting: 'Подключение...'
+    },
+    messages: {
+      noConnection: 'Сначала настройте подключение к API',
+      testFailed: 'Тестовое сообщение не отправлено',
+      success: 'Успешно'
+    }
+  }
+};
 
 const isClient = typeof window !== 'undefined';
 
@@ -142,6 +224,18 @@ const saveActivePresetId = (presetId: string | null) => {
 
   localStorage.removeItem(ACTIVE_PRESET_STORAGE_KEY);
 };
+
+const loadLocale = (): string => {
+  if (!isClient) return 'en';
+  return localStorage.getItem(LOCALE_STORAGE_KEY) || 'en';
+};
+
+const saveLocale = (locale: string) => {
+  if (!isClient) return;
+  localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+};
+
+// Note: isClient is declared above to avoid duplication
 
 const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
@@ -217,7 +311,6 @@ interface AppState {
   sidebarOpen: boolean;
   diffViewerOpen: boolean;
   currentDiff: CodeChange | null;
-  pendingChanges: CodeChange[];
 
   // Git state
   gitInitialized: boolean;
@@ -229,13 +322,6 @@ interface AppState {
 
   // Project settings
   projectPath: string;
-  embeddingConfig: EmbeddingConfig | null;
-  autoValidateAfterAI: boolean;
-  autoCommitAfterAI: boolean;
-  projectChunks: CodeChunk[];
-  isIndexingProject: boolean;
-  indexedAt: Date | null;
-  isIndexStale: boolean;
 
   // Ultra mode
   ultraModeActive: boolean;
@@ -275,7 +361,6 @@ interface AppState {
   // Tasks
   addTask: (task: DevelopmentTask) => void;
   updateTask: (taskId: string, updates: Partial<DevelopmentTask>) => void;
-  deleteTask: (taskId: string) => void;
   setCurrentTask: (task: DevelopmentTask | null) => void;
 
   addMessage: (sessionId: string, message: AIMessage) => void;
@@ -284,15 +369,11 @@ interface AppState {
   decrementSessionRequests: (sessionId: string) => void;
   setActiveSession: (sessionId: string) => void;
   createSession: (sessionId?: string) => string;
-  clearSession: (sessionId: string) => void;
   getSessionState: (sessionId: string) => SessionState;
 
   setSidebarOpen: (open: boolean) => void;
   setDiffViewerOpen: (open: boolean) => void;
   setCurrentDiff: (diff: CodeChange | null) => void;
-  setPendingChanges: (changes: CodeChange[]) => void;
-  clearPendingChanges: () => void;
-  applyPendingChange: (changeId: string) => void;
 
   // Git actions
   setGitInitialized: (initialized: boolean) => void;
@@ -309,11 +390,6 @@ interface AppState {
 
   // Project actions
   setProjectPath: (path: string) => void;
-  setEmbeddingConfig: (config: EmbeddingConfig | null) => void;
-  setAutoValidateAfterAI: (enabled: boolean) => void;
-  setAutoCommitAfterAI: (enabled: boolean) => void;
-  setIndexStale: (stale: boolean) => void;
-  indexProjectForEmbedding: () => Promise<void>;
   createProject: (name: string, path: string) => Promise<Project>;
   loadProject: (path: string) => Promise<Project>;
   switchProject: (projectId: string) => void;
@@ -376,19 +452,11 @@ export const useAppStore = create<AppState>()(
     sidebarOpen: true,
     diffViewerOpen: false,
     currentDiff: null,
-    pendingChanges: [],
     gitInitialized: false,
     commits: [],
     promptPresets: initialPromptPresets,
     activePreset: initialActivePreset,
     projectPath: '',
-    embeddingConfig: null,
-    autoValidateAfterAI: true,
-    autoCommitAfterAI: false,
-    projectChunks: [],
-    isIndexingProject: false,
-    indexedAt: null,
-    isIndexStale: false,
     ultraModeActive: false,
     ultraModeStep: 0,
     ultraModeTotalSteps: 0,
@@ -496,17 +564,9 @@ export const useAppStore = create<AppState>()(
       openFiles: state.openFiles.filter(f => f.path !== path),
       activeFile: state.activeFile === path ? state.openFiles.find(f => f.path !== path)?.path || null : state.activeFile
     })),
-    updateFileContent: (path, content) => set((state) => {
-      const nextState: Partial<AppState> = {
-        openFiles: state.openFiles.map(f => f.path === path ? { ...f, content } : f),
-      };
-
-      if (state.projectChunks.length > 0) {
-        nextState.isIndexStale = true;
-      }
-
-      return nextState;
-    }),
+    updateFileContent: (path, content) => set((state) => ({
+      openFiles: state.openFiles.map(f => f.path === path ? { ...f, content } : f)
+    })),
     setActiveFile: (path) => set({ activeFile: path }),
 
     // Plan actions
@@ -525,38 +585,20 @@ export const useAppStore = create<AppState>()(
     updateTask: (taskId, updates) => set((state) => ({
       tasks: state.tasks.map(t => t.id === taskId ? { ...t, ...updates, updatedAt: new Date() } : t)
     })),
-    deleteTask: (taskId) => set((state) => ({
-      tasks: state.tasks.filter((task) => task.id !== taskId),
-      currentTask: state.currentTask?.id === taskId ? null : state.currentTask,
-    })),
     setCurrentTask: (task) => set({ currentTask: task }),
 
-    addMessage: (sessionId, message) => {
-      set((state) => {
-        const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
-        return {
-          sessions: {
-            ...state.sessions,
-            [sessionId]: {
-              ...session,
-              messages: [...session.messages, message]
-            }
+    addMessage: (sessionId, message) => set((state) => {
+      const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
+      return {
+        sessions: {
+          ...state.sessions,
+          [sessionId]: {
+            ...session,
+            messages: [...session.messages, message]
           }
-        };
-      });
-
-      // Persist last N messages of the default session
-      if (isClient && sessionId === DEFAULT_SESSION_ID) {
-        try {
-          const messages = useAppStore.getState().sessions[DEFAULT_SESSION_ID]?.messages ?? [];
-          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
-            messages: messages.slice(-MAX_PERSISTED_MESSAGES),
-          }));
-        } catch {
-          // ignore quota errors
         }
-      }
-    },
+      };
+    }),
     setGenerating: (sessionId, generating) => set((state) => {
       const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
       return {
@@ -623,28 +665,6 @@ export const useAppStore = create<AppState>()(
       }));
       return sessionId;
     },
-    clearSession: (sessionId) => set((state) => {
-      const session = state.sessions[sessionId];
-      if (!session) return state;
-
-      if (isClient && sessionId === DEFAULT_SESSION_ID) {
-        try {
-          localStorage.removeItem(SESSION_STORAGE_KEY);
-        } catch {
-          // ignore localStorage errors
-        }
-      }
-
-      return {
-        sessions: {
-          ...state.sessions,
-          [sessionId]: {
-            ...session,
-            messages: [],
-          },
-        },
-      };
-    }),
     getSessionState: (sessionId) => {
       const state = get();
       return state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
@@ -653,11 +673,6 @@ export const useAppStore = create<AppState>()(
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setDiffViewerOpen: (open) => set({ diffViewerOpen: open }),
     setCurrentDiff: (diff) => set({ currentDiff: diff }),
-    setPendingChanges: (changes) => set({ pendingChanges: changes }),
-    clearPendingChanges: () => set({ pendingChanges: [] }),
-    applyPendingChange: (changeId) => set((state) => ({
-      pendingChanges: state.pendingChanges.filter((change) => change.id !== changeId),
-    })),
 
     // Ultra mode actions
     startUltraMode: (totalSteps: number) => set({
@@ -883,43 +898,6 @@ export const useAppStore = create<AppState>()(
       });
     },
     setProjectPath: (path: string) => set({ projectPath: path }),
-    setEmbeddingConfig: (config) => {
-      if (config) {
-        embeddingService.setConfig(config);
-      }
-      set({ embeddingConfig: config });
-    },
-    setAutoValidateAfterAI: (enabled) => set({ autoValidateAfterAI: enabled }),
-    setAutoCommitAfterAI: (enabled) => set({ autoCommitAfterAI: enabled }),
-    setIndexStale: (stale) => set({ isIndexStale: stale }),
-    indexProjectForEmbedding: async () => {
-      const state = get();
-      if (!state.embeddingConfig || !state.projectPath.trim()) {
-        set({ projectChunks: [], isIndexingProject: false, indexedAt: null, isIndexStale: false });
-        return;
-      }
-
-      set({ isIndexingProject: true });
-      try {
-        const projectResponse = await fetch('/api/project/files', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectPath: state.projectPath }),
-        });
-        const projectData = await projectResponse.json();
-        const projectFiles = Array.isArray(projectData?.files) ? projectData.files : [];
-
-        embeddingService.setConfig(state.embeddingConfig);
-        const chunks = await embeddingService.indexProject(projectFiles);
-        set({ projectChunks: chunks, indexedAt: new Date() });
-        set({ isIndexStale: false });
-      } catch (error) {
-        console.error('Failed to index project for embeddings:', error);
-        set({ projectChunks: [] });
-      } finally {
-        set({ isIndexingProject: false });
-      }
-    },
     createProject: async (name: string, path: string) => {
       try {
         const normalizedPath = path.trim();
@@ -1045,37 +1023,6 @@ export const useAppStore = create<AppState>()(
     },
   }))
 );
-
-// Rehydrate session messages from localStorage on mount
-if (isClient) {
-  try {
-    const saved = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved) as { messages: any[] };
-      if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
-        // Restore timestamps as Date objects
-        const restoredMessages = parsed.messages.map((message: any) => ({
-          ...message,
-          timestamp: new Date(message.timestamp),
-        }));
-        // Set into the default session
-        setTimeout(() => {
-          useAppStore.setState((state) => ({
-            sessions: {
-              ...state.sessions,
-              [DEFAULT_SESSION_ID]: {
-                ...state.sessions[DEFAULT_SESSION_ID],
-                messages: restoredMessages,
-              },
-            },
-          }));
-        }, 0);
-      }
-    }
-  } catch {
-    // ignore corrupt localStorage
-  }
-}
 
 if (isClient) {
   useAppStore.subscribe(
