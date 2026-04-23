@@ -15,6 +15,7 @@ import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
+import { useI18n } from '@/lib/i18n';
 
 // Lazy load heavy components
 const CodeEditor = lazy(() => import('@/components/CodeEditor').then(module => ({ default: module.CodeEditor })));
@@ -222,6 +223,7 @@ interface DockWorkspaceProps {
 }
 
 export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
+  const { t } = useI18n();
   const apiRef = useRef<DockviewApi | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [layoutSaved, setLayoutSaved] = useState(false);
@@ -478,13 +480,13 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
-        Skip to main content
+        {t('dock.skipToMain')}
       </a>
 
       <div
         id="main-content"
         role="main"
-        aria-label="Flow IDE workspace with dockable panels"
+        aria-label={t('dock.workspaceAria')}
         className="h-full w-full"
       >
         <DockviewReact
@@ -501,10 +503,10 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
           className="absolute top-4 right-4 z-50 animate-fade-in"
           role="status"
           aria-live="polite"
-          aria-label="Layout changes saved successfully"
+          aria-label={t('dock.layoutSavedAria')}
         >
           <div className="bg-green-600/90 text-green-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm border border-green-500/30">
-            Layout saved
+            {t('dock.layoutSaved')}
           </div>
         </div>
       )}
@@ -514,11 +516,11 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
           className="absolute top-4 right-4 z-50"
           role="status"
           aria-live="polite"
-          aria-label="Saving layout changes"
+          aria-label={t('dock.layoutSavingAria')}
         >
           <div className="bg-amber-600/90 text-amber-100 px-3 py-1 rounded-md text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2 border border-amber-500/30">
             <div className="w-2 h-2 bg-amber-300 rounded-full animate-pulse" aria-hidden="true" />
-            Saving layout...
+            {t('dock.layoutSaving')}
           </div>
         </div>
       )}
@@ -530,10 +532,10 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
               type="button"
               onClick={() => setShowAddPanel(value => !value)}
               className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/90 px-3 py-1.5 text-xs font-medium text-neutral-300 shadow-lg backdrop-blur-sm transition-all hover:border-neutral-500 hover:text-neutral-100 light:border-neutral-300 light:bg-white/95 light:text-neutral-700 light:hover:border-neutral-400 light:hover:text-neutral-900"
-              title="Add a panel back to the workspace"
+              title={t('dock.addPanelTitle')}
             >
               <Plus className="h-3.5 w-3.5" />
-              Add panel
+              {t('dock.addPanel')}
             </button>
 
             {showAddPanel && (
@@ -548,7 +550,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
                     }}
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100 light:text-neutral-700 light:hover:bg-neutral-100 light:hover:text-neutral-900"
                   >
-                    {PANEL_ACCESSIBILITY[panelId as keyof typeof PANEL_ACCESSIBILITY].title}
+                    {t(`dock.panelTitles.${panelId}`)}
                   </button>
                 ))}
               </div>

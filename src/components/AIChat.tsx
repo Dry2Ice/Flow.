@@ -7,8 +7,10 @@ import { Bot, User, Copy, Check, Plus, Trash2, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAppStore } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 
 export function AIChat() {
+  const { t } = useI18n();
   const {
     sessions,
     activeSessionId,
@@ -72,12 +74,12 @@ export function AIChat() {
   const handleExportChat = () => {
     if (messages.length === 0) return;
     const markdown = [
-      `# AI Chat Export`,
+      `# ${t('chat.exportTitle')}`,
       ``,
-      `Session: ${activeSessionId}`,
-      `Exported: ${new Date().toISOString()}`,
+      t('chat.exportSession', { id: activeSessionId }),
+      t('chat.exportedAt', { date: new Date().toISOString() }),
       ``,
-      ...messages.map((message) => `## ${message.role === 'user' ? 'User' : 'Assistant'} (${message.timestamp.toLocaleString()})\n\n${message.content}`),
+      ...messages.map((message) => `## ${message.role === 'user' ? t('chat.exportRoleUser') : t('chat.exportRoleAssistant')} (${message.timestamp.toLocaleString()})\n\n${message.content}`),
     ].join('\n');
 
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
@@ -94,8 +96,8 @@ export function AIChat() {
       {/* Header */}
       <div className="border-b border-neutral-800 light:border-neutral-300">
         <div className="flex items-center justify-between px-3 py-2.5">
-          <h3 className="text-sm font-medium text-neutral-200 light:text-neutral-900">AI Assistant</h3>
-          <div className="text-xs text-neutral-500 light:text-neutral-600">{messages.length} messages</div>
+          <h3 className="text-sm font-medium text-neutral-200 light:text-neutral-900">{t('chat.title')}</h3>
+          <div className="text-xs text-neutral-500 light:text-neutral-600">{t('chat.messagesCount', { count: messages.length })}</div>
         </div>
         <div className="flex items-center gap-2 px-2 pb-2">
           <select
@@ -105,7 +107,7 @@ export function AIChat() {
           >
             {Object.keys(sessions).map((sessionId) => (
               <option key={sessionId} value={sessionId}>
-                Session: {sessionId.slice(0, 8)}
+                {t('chat.session', { id: sessionId.slice(0, 8) })}
               </option>
             ))}
           </select>
@@ -115,25 +117,25 @@ export function AIChat() {
             {connectionStatus === 'connected' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-700">Connected</span>
+                <span className="text-emerald-400 dark:text-emerald-400 light:text-emerald-700">{t('chat.connected')}</span>
               </>
             )}
             {connectionStatus === 'reconnecting' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-amber-400">Reconnecting{reconnectDelay ? ` (${(reconnectDelay / 1000).toFixed(0)}s)` : ''}</span>
+                <span className="text-amber-400">{t('chat.reconnecting')}{reconnectDelay ? ` (${(reconnectDelay / 1000).toFixed(0)}s)` : ''}</span>
               </>
             )}
             {connectionStatus === 'failed' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-red-400" />
-                <span className="text-red-400 dark:text-red-400 light:text-red-700">Connection Failed</span>
+                <span className="text-red-400 dark:text-red-400 light:text-red-700">{t('chat.connectionFailed')}</span>
               </>
             )}
             {!connectionStatus && (
               <>
                 <div className="h-2 w-2 rounded-full bg-neutral-500" />
-                <span className="text-neutral-500">Idle</span>
+                <span className="text-neutral-500">{t('chat.idle')}</span>
               </>
             )}
           </div>
@@ -143,7 +145,7 @@ export function AIChat() {
             onClick={handleExportChat}
             disabled={messages.length === 0}
             className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-50 light:border-neutral-300 light:bg-white light:hover:border-neutral-400"
-            title="Export chat as markdown"
+            title={t('chat.exportMarkdown')}
           >
             <Download className="w-3 h-3" />
           </button>
@@ -155,17 +157,17 @@ export function AIChat() {
                 activeSessionId: newId,
               }));
             }}
-            title="New session"
+            title={t('chat.newSession')}
             className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200 light:border-neutral-300 light:text-neutral-600 light:hover:bg-neutral-100 light:hover:text-neutral-900"
           >
-            <Plus className="h-3 w-3" /> New
+            <Plus className="h-3 w-3" /> {t('chat.new')}
           </button>
           <button
             type="button"
             onClick={handleClearChat}
             disabled={messages.length === 0}
             className="flex items-center gap-1 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100 dark:border-red-800/80 dark:bg-red-950/50 dark:text-red-200 dark:hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50"
-            title="Clear chat"
+            title={t('chat.clearChat')}
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -179,8 +181,8 @@ export function AIChat() {
           {messages.length === 0 ? (
             <div className="text-center text-neutral-500 py-8">
               <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">Start a conversation with the AI assistant</p>
-              <p className="text-xs mt-2">Ask questions, request code changes, or get help with your project</p>
+              <p className="text-sm">{t('chat.emptyTitle')}</p>
+              <p className="text-xs mt-2">{t('chat.emptyDescription')}</p>
             </div>
           ) : (
             visibleMessages.map((message) => (
@@ -204,7 +206,7 @@ export function AIChat() {
                       <Bot className="w-4 h-4" />
                     )}
                     <span className="text-xs opacity-70">
-                      {message.role === 'user' ? 'You' : 'AI Assistant'}
+                      {message.role === 'user' ? t('chat.you') : t('chat.assistant')}
                     </span>
                     <span className="text-xs opacity-50 ml-auto">
                       {message.timestamp.toLocaleTimeString()}
@@ -265,7 +267,7 @@ export function AIChat() {
 
                     {message.changes && message.changes.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-neutral-600 light:border-neutral-300">
-                        <div className="text-xs text-neutral-400 mb-2 light:text-neutral-600">Code Changes:</div>
+                        <div className="text-xs text-neutral-400 mb-2 light:text-neutral-600">{t('chat.codeChanges')}</div>
                         <div className="space-y-1">
                           {message.changes.map((change, index) => (
                             <div key={index} className="text-xs bg-neutral-800 p-2 rounded light:bg-neutral-100">
@@ -285,7 +287,7 @@ export function AIChat() {
                       <button
                         onClick={() => copyToClipboard(message.content, message.id)}
                         className="mt-1 rounded p-1 opacity-60 transition-opacity hover:bg-neutral-700 hover:opacity-100 light:hover:bg-neutral-200"
-                        title={copiedMessageId === message.id ? 'Copied!' : 'Copy message'}
+                        title={copiedMessageId === message.id ? t('chat.copied') : t('chat.copyMessage')}
                       >
                         {copiedMessageId === message.id ? (
                           <Check className="w-3 h-3 text-green-400" />
@@ -304,10 +306,10 @@ export function AIChat() {
               <div className="bg-neutral-700 rounded-lg p-3 max-w-[80%] light:bg-neutral-100 light:border light:border-neutral-300">
                 <div className="flex items-center gap-2 mb-2">
                   <Bot className="w-4 h-4" />
-                  <span className="text-xs text-neutral-400 light:text-neutral-600">AI Assistant</span>
+                  <span className="text-xs text-neutral-400 light:text-neutral-600">{t('chat.assistant')}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="text-sm text-neutral-300 light:text-neutral-700">Thinking</div>
+                  <div className="text-sm text-neutral-300 light:text-neutral-700">{t('chat.thinking')}</div>
                   <div className="flex gap-1">
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
