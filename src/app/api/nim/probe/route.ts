@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildNimUrl, normalizeNimBaseUrl } from '../url-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +9,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'apiKey, baseUrl, and model are required' }, { status: 400 });
     }
 
-    const response = await fetch(`${baseUrl}/chat/completions`, {
+    const normalizedBaseUrl = normalizeNimBaseUrl(baseUrl);
+    if (!normalizedBaseUrl.ok) {
+      return NextResponse.json({ error: normalizedBaseUrl.error }, { status: 400 });
+    }
+
+    const response = await fetch(buildNimUrl(normalizedBaseUrl.value, '/chat/completions'), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
