@@ -376,6 +376,8 @@ class NvidiaNimService {
     let attempt = 0;
     const MAX_RETRY_DELAY = 8000;
 
+    const requestSessionId = request.context?.sessionId;
+
     while (true) {
       try {
         attempt++;
@@ -383,10 +385,10 @@ class NvidiaNimService {
         if (attempt > 1) {
           // Log reconnect event
           const state = useAppStore.getState();
-          const activeSessionId = state.activeSessionId;
+          const targetSessionId = requestSessionId ?? state.activeSessionId;
           state.addLog({
             id: crypto.randomUUID(),
-            sessionId: activeSessionId,
+            sessionId: targetSessionId,
             timestamp: new Date(),
             type: 'warning',
             message: `Reconnecting to AI service... (attempt ${attempt})`,
@@ -395,16 +397,22 @@ class NvidiaNimService {
           });
 
           // Signal reconnecting state
-          useAppStore.setState((state: any) => ({
-            sessions: {
-              ...state.sessions,
-              [activeSessionId]: {
-                ...state.sessions[activeSessionId],
-                connectionStatus: 'reconnecting',
-                reconnectDelay: delay,
+          useAppStore.setState((state: any) => {
+            const sessionId = requestSessionId ?? state.activeSessionId;
+            const session = state.sessions[sessionId];
+            if (!session) return state;
+
+            return {
+              sessions: {
+                ...state.sessions,
+                [sessionId]: {
+                  ...session,
+                  connectionStatus: 'reconnecting',
+                  reconnectDelay: delay,
+                },
               },
-            },
-          }));
+            };
+          });
 
           // Wait exponential delay
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -427,23 +435,29 @@ class NvidiaNimService {
 
         // Update connection status to connected
         const state = useAppStore.getState();
-        const activeSessionId = state.activeSessionId;
-        useAppStore.setState((state: any) => ({
-          sessions: {
-            ...state.sessions,
-            [activeSessionId]: {
-              ...state.sessions[activeSessionId],
-              connectionStatus: 'connected',
-              reconnectDelay: 0,
+        const targetSessionId = requestSessionId ?? state.activeSessionId;
+        useAppStore.setState((state: any) => {
+          const sessionId = requestSessionId ?? state.activeSessionId;
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                connectionStatus: 'connected',
+                reconnectDelay: 0,
+              },
             },
-          },
-        }));
+          };
+        });
 
         // Log successful connection
         if (attempt > 1) {
           state.addLog({
             id: crypto.randomUUID(),
-            sessionId: activeSessionId,
+            sessionId: targetSessionId,
             timestamp: new Date(),
             type: 'success',
             message: `AI service reconnected successfully after ${attempt} attempts`,
@@ -493,16 +507,21 @@ class NvidiaNimService {
         if (!isRetryable || delay >= MAX_RETRY_DELAY) {
           // Update connection status to failed
           const state = useAppStore.getState();
-          const activeSessionId = state.activeSessionId;
-          useAppStore.setState((state: any) => ({
-            sessions: {
-              ...state.sessions,
-              [activeSessionId]: {
-                ...state.sessions[activeSessionId],
-                connectionStatus: 'failed',
+          useAppStore.setState((state: any) => {
+            const sessionId = requestSessionId ?? state.activeSessionId;
+            const session = state.sessions[sessionId];
+            if (!session) return state;
+
+            return {
+              sessions: {
+                ...state.sessions,
+                [sessionId]: {
+                  ...session,
+                  connectionStatus: 'failed',
+                },
               },
-            },
-          }));
+            };
+          });
           throw error;
         }
       }
