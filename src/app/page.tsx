@@ -179,7 +179,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen text-neutral-100">
-      <header className="app-header border-b border-neutral-800/90 bg-neutral-950/85 backdrop-blur-xl">
+      <header className="app-header relative z-10 border-b border-neutral-800/90 bg-neutral-950/85 backdrop-blur-xl">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center">
           <div>
             <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Workspace</p>
