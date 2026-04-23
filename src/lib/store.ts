@@ -342,6 +342,9 @@ interface AppState {
     centerVertical: number;
   };
 
+  // Language
+  locale: string;
+
   // Actions
   setCurrentProject: (project: Project | null) => void;
   addProject: (project: Project) => void;
@@ -406,6 +409,9 @@ interface AppState {
   // Workspace actions
   setPanelSizes: (sizes: Partial<AppState['panelSizes']>) => void;
 
+  // Language actions
+  setLocale: (locale: string) => void;
+
   // Logging and bug tracking
   addLog: (log: LogEntry) => void;
   addBug: (bug: BugReport) => void;
@@ -469,6 +475,8 @@ export const useAppStore = create<AppState>()(
       statsPanel: 12, // percentage - Statistics panel
       centerVertical: 60, // percentage of code panel for code editor
     },
+    locale: loadLocale(),
+
     generalPrompt: `## Core Development Principles & Code Analysis Guidelines
 
 **Code Quality & Best Practices:**
@@ -975,6 +983,12 @@ export const useAppStore = create<AppState>()(
     setPanelSizes: (sizes) => set((state) => ({
       panelSizes: { ...state.panelSizes, ...sizes }
     })),
+
+    // Language actions
+    setLocale: (locale) => {
+      saveLocale(locale);
+      set({ locale });
+    },
 
     // Logging and bug tracking
     addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),

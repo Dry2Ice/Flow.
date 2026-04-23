@@ -7,6 +7,7 @@ import { X, Check, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
+import { embeddingService } from '@/lib/embedding-service';
 
 interface SettingsModalProps {
   isOpen?: boolean;
@@ -156,6 +157,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     setProjectPath,
     generalPrompt,
     setGeneralPrompt,
+    locale,
+    setLocale,
   } = useAppStore();
 
   // Load settings from localStorage on mount
@@ -320,6 +323,13 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
           stopSequences: stopSequences ? stopSequences.split(',').map(s => s.trim()) : [],
         });
 
+        // Configure embedding service
+        embeddingService.setConfig({
+          apiKey,
+          baseUrl,
+          model,
+        });
+
         // Update store
         setProjectPath(projectPath);
 
@@ -375,6 +385,36 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   Reset Workspace Layout
                 </button>
                 <p className="text-xs text-neutral-500 mt-2">Restore default panel sizes and layout</p>
+              </div>
+
+              {/* Language Settings */}
+              <div className="border-b border-neutral-600 pb-4">
+                <h4 className="text-md font-medium text-neutral-200 mb-3">Language</h4>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="language"
+                      value="en"
+                      checked={locale === 'en'}
+                      onChange={(e) => setLocale(e.target.value)}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm text-neutral-300">English</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="language"
+                      value="ru"
+                      checked={locale === 'ru'}
+                      onChange={(e) => setLocale(e.target.value)}
+                      className="text-blue-600"
+                    />
+                    <span className="text-sm text-neutral-300">Русский</span>
+                  </label>
+                </div>
+                <p className="text-xs text-neutral-500 mt-2">Choose your preferred interface language</p>
               </div>
 
               {/* API Configuration Section */}

@@ -41,22 +41,23 @@ export function AIChat() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-neutral-950/30">
+    <div className="flex h-full flex-col bg-background/80">
       {/* Header */}
-      <div className="border-b border-neutral-800">
+      <div className="border-b border-border">
         <div className="flex items-center justify-between px-3 py-2.5">
-          <h3 className="text-sm font-medium text-neutral-200">
+          <h3 className="text-sm font-medium text-foreground">
             AI Assistant
           </h3>
-          <div className="text-xs text-neutral-500">
+          <div className="text-xs text-muted-foreground">
             {messages.length} messages
           </div>
         </div>
         <div className="flex items-center gap-2 px-2 pb-2">
           <select
+            key={Object.keys(sessions).length} // Force re-render when sessions change
             value={activeSessionId}
             onChange={(e) => setActiveSession(e.target.value)}
-            className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="flex-1 rounded-md border border-border bg-card px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {Object.keys(sessions).map((sessionId) => (
               <option key={sessionId} value={sessionId}>
@@ -66,7 +67,7 @@ export function AIChat() {
           </select>
 
           {/* Connection status indicator */}
-          <div className="flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs">
+          <div className="flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs">
             {connectionStatus === 'connected' && (
               <>
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -109,11 +110,11 @@ export function AIChat() {
         {/* Chat Messages */}
         <div className="space-y-3">
             {messages.length === 0 ? (
-              <div className="text-center text-neutral-500 py-8">
-                <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">Start a conversation with the AI assistant</p>
-                <p className="text-xs mt-2">Ask questions, request code changes, or get help with your project</p>
-              </div>
+          <div className="text-center text-muted-foreground py-8">
+            <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-sm">Start a conversation with the AI assistant</p>
+            <p className="text-xs mt-2">Ask questions, request code changes, or get help with your project</p>
+          </div>
             ) : (
               messages.map((message) => (
                 <div
@@ -125,8 +126,8 @@ export function AIChat() {
                   <div
                     className={`max-w-[80%] rounded-lg p-2 ${
                       message.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-neutral-700 text-neutral-200'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -151,35 +152,35 @@ export function AIChat() {
                             code({ node, className, children, ...props }: any) {
                               const isBlock = className?.includes('language-');
                               return isBlock ? (
-                                <pre className="overflow-x-auto rounded-lg bg-neutral-900 border border-neutral-700 p-3 my-2">
-                                  <code className={`text-xs font-mono text-neutral-200 ${className ?? ''}`} {...props}>
+                                <pre className="overflow-x-auto rounded-lg bg-muted border border-border p-3 my-2">
+                                  <code className={`text-xs font-mono text-foreground ${className ?? ''}`} {...props}>
                                     {children}
                                   </code>
                                 </pre>
                               ) : (
-                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-blue-300" {...props}>
+                                <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-primary" {...props}>
                                   {children}
                                 </code>
                               );
                             },
                             p({ children }: any) {
-                              return <p className="mb-2 last:mb-0 text-neutral-200">{children}</p>;
+                              return <p className="mb-2 last:mb-0 text-foreground">{children}</p>;
                             },
                             ul({ children }: any) {
-                              return <ul className="mb-2 ml-4 list-disc space-y-1 text-neutral-200">{children}</ul>;
+                              return <ul className="mb-2 ml-4 list-disc space-y-1 text-foreground">{children}</ul>;
                             },
                             ol({ children }: any) {
-                              return <ol className="mb-2 ml-4 list-decimal space-y-1 text-neutral-200">{children}</ol>;
+                              return <ol className="mb-2 ml-4 list-decimal space-y-1 text-foreground">{children}</ol>;
                             },
-                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold text-neutral-100">{children}</h1>; },
-                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold text-neutral-100">{children}</h2>; },
-                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium text-neutral-200">{children}</h3>; },
-                            strong({ children }: any) { return <strong className="font-semibold text-neutral-100">{children}</strong>; },
+                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold text-foreground">{children}</h1>; },
+                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold text-foreground">{children}</h2>; },
+                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium text-foreground">{children}</h3>; },
+                            strong({ children }: any) { return <strong className="font-semibold text-foreground">{children}</strong>; },
                             a({ href, children }: any) {
-                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline hover:text-blue-300">{children}</a>;
+                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">{children}</a>;
                             },
                             blockquote({ children }: any) {
-                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic text-neutral-400">{children}</blockquote>;
+                              return <blockquote className="border-l-2 border-border pl-3 italic text-muted-foreground">{children}</blockquote>;
                             },
                           }}
                         >
@@ -193,13 +194,13 @@ export function AIChat() {
                     )}
 
                     {message.changes && message.changes.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-neutral-600">
-                        <div className="text-xs text-neutral-400 mb-2">Code Changes:</div>
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <div className="text-xs text-muted-foreground mb-2">Code Changes:</div>
                         <div className="space-y-1">
                           {message.changes.map((change, index) => (
-                            <div key={index} className="text-xs bg-neutral-800 p-2 rounded">
-                              <div className="font-medium text-green-400">{change.filePath}</div>
-                              <div className="text-neutral-300 mt-1">
+                            <div key={index} className="text-xs bg-muted p-2 rounded">
+                              <div className="font-medium text-green-600 dark:text-green-400">{change.filePath}</div>
+                              <div className="text-muted-foreground mt-1">
                                 {change.newContent.length > 100
                                   ? `${change.newContent.substring(0, 100)}...`
                                   : change.newContent}
@@ -213,7 +214,7 @@ export function AIChat() {
                     {message.role === 'assistant' && (
                       <button
                         onClick={() => copyToClipboard(message.content, message.id)}
-                        className="mt-1 p-1 opacity-60 hover:opacity-100 transition-opacity rounded hover:bg-neutral-700"
+                        className="mt-1 p-1 opacity-60 hover:opacity-100 transition-opacity rounded hover:bg-muted"
                         title={copiedMessageId === message.id ? 'Copied!' : 'Copy message'}
                       >
                         {copiedMessageId === message.id ? (
@@ -230,17 +231,17 @@ export function AIChat() {
 
             {isGenerating && (
               <div className="flex justify-start">
-                <div className="bg-neutral-700 rounded-lg p-3 max-w-[80%]">
+                <div className="bg-muted rounded-lg p-3 max-w-[80%]">
                   <div className="flex items-center gap-2 mb-2">
                     <Bot className="w-4 h-4" />
-                    <span className="text-xs text-neutral-400">AI Assistant</span>
+                    <span className="text-xs text-muted-foreground">AI Assistant</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="text-sm text-neutral-300">Thinking</div>
+                    <div className="text-sm text-foreground">Thinking</div>
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                     </div>
                   </div>
                 </div>
