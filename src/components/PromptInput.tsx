@@ -157,6 +157,7 @@ export function PromptInput() {
   };
 
   const runRequest = async (requestInput: { prompt: string; requestType?: AIRequest['type']; retryFromJobId?: string; presetId?: string }) => {
+    const requestSessionId = activeSessionId;
     const jobId = crypto.randomUUID();
     const requestId = crypto.randomUUID();
     const streamingMessageId = crypto.randomUUID();
@@ -164,7 +165,7 @@ export function PromptInput() {
     const aiRequest: AIRequest = {
       id: requestId,
       jobId,
-      sessionId: activeSessionId,
+      sessionId: requestSessionId,
       type: requestInput.requestType ?? 'implementation',
       prompt: requestInput.prompt,
       context: {
@@ -182,17 +183,17 @@ export function PromptInput() {
     updateAIRequest(requestId, { status: 'running', startedAt: new Date() });
 
     const userMessageId = crypto.randomUUID();
-    addMessage(activeSessionId, {
+    addMessage(requestSessionId, {
       id: userMessageId,
-      sessionId: activeSessionId,
+      sessionId: requestSessionId,
       jobId,
       role: 'user',
       content: requestInput.prompt,
       timestamp: new Date(),
     });
 
-    incrementSessionRequests(activeSessionId);
-    setGenerating(activeSessionId, true);
+    incrementSessionRequests(requestSessionId);
+    setGenerating(requestSessionId, true);
     setStreamingContent('');
     setActiveStreamingJobId(jobId);
     const controller = executionManager.createController(jobId);
@@ -319,14 +320,14 @@ export function PromptInput() {
           projectFiles,
           projectId: currentProject?.id,
           projectContext,
-          sessionId: activeSessionId,
+          sessionId: requestSessionId,
           jobId,
         },
       };
 
-      addMessage(activeSessionId, {
+      addMessage(requestSessionId, {
         id: streamingMessageId,
-        sessionId: activeSessionId,
+        sessionId: requestSessionId,
         jobId,
         role: 'assistant',
         content: '',
@@ -340,13 +341,13 @@ export function PromptInput() {
           setStreamingContent((previous) => {
             const nextContent = previous + chunk;
             useAppStore.setState((state) => {
-              const session = state.sessions[activeSessionId];
+              const session = state.sessions[requestSessionId];
               if (!session) return state;
 
               return {
                 sessions: {
                   ...state.sessions,
-                  [activeSessionId]: {
+                  [requestSessionId]: {
                     ...session,
                     messages: session.messages.map((message) =>
                       message.id === streamingMessageId
@@ -371,7 +372,7 @@ export function PromptInput() {
 
       addLog({
         id: crypto.randomUUID(),
-        sessionId: activeSessionId,
+        sessionId: requestSessionId,
         jobId,
         timestamp: new Date(),
         type: 'success',
@@ -380,13 +381,13 @@ export function PromptInput() {
       });
 
       useAppStore.setState((state) => {
-        const session = state.sessions[activeSessionId];
+        const session = state.sessions[requestSessionId];
         if (!session) return state;
 
         return {
           sessions: {
             ...state.sessions,
-            [activeSessionId]: {
+            [requestSessionId]: {
               ...session,
               messages: session.messages.map((message) =>
                 message.id === streamingMessageId
@@ -405,7 +406,7 @@ export function PromptInput() {
       if (requestInput.retryFromJobId) {
         addLog({
           id: crypto.randomUUID(),
-          sessionId: activeSessionId,
+          sessionId: requestSessionId,
           jobId,
           timestamp: new Date(),
           type: 'info',
@@ -417,12 +418,12 @@ export function PromptInput() {
       const isAbort = error instanceof Error && (error.name === 'CanceledError' || error.name === 'AbortError');
 
       useAppStore.setState((state) => {
-        const session = state.sessions[activeSessionId];
+        const session = state.sessions[requestSessionId];
         if (!session) return state;
         return {
           sessions: {
             ...state.sessions,
-            [activeSessionId]: {
+            [requestSessionId]: {
               ...session,
               messages: session.messages.filter((message) => message.id !== streamingMessageId),
             },
@@ -438,7 +439,7 @@ export function PromptInput() {
 
       addLog({
         id: crypto.randomUUID(),
-        sessionId: activeSessionId,
+        sessionId: requestSessionId,
         jobId,
         timestamp: new Date(),
         type: isAbort ? 'warning' : 'error',
@@ -464,9 +465,9 @@ export function PromptInput() {
         });
       }
 
-      addMessage(activeSessionId, {
+      addMessage(requestSessionId, {
         id: crypto.randomUUID(),
-        sessionId: activeSessionId,
+        sessionId: requestSessionId,
         jobId,
         role: 'assistant',
         content: isAbort
@@ -478,7 +479,7 @@ export function PromptInput() {
       executionManager.clear(jobId);
       setStreamingContent('');
       setActiveStreamingJobId((current) => (current === jobId ? null : current));
-      decrementSessionRequests(activeSessionId);
+      decrementSessionRequests(requestSessionId);
     }
   };
 
