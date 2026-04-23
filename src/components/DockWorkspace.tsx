@@ -308,71 +308,108 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
   }, []);
 
   const loadLayout = useCallback((api: DockviewApi) => {
-    const isValidLayout = (layout: unknown): layout is { panels: Record<string, { component?: unknown }> } => {
-      if (!layout || typeof layout !== 'object') {
-        return false;
-      }
+    const isValidLayout = (layout: unknown): boolean => {
+      if (!layout || typeof layout !== 'object') return false;
 
-      const panelEntries = Object.values((layout as { panels?: Record<string, { component?: unknown }> }).panels ?? {});
-      if (panelEntries.length === 0) {
-        return false;
-      }
+      const l = layout as Record<string, unknown>;
+      if (!l.grid || typeof l.grid !== 'object') return false;
+      if (!l.panels || typeof l.panels !== 'object') return false;
 
-      return panelEntries.every((panel) => (
-        typeof panel?.component === 'string' && COMPONENT_IDS.has(panel.component)
+      const panels = l.panels as Record<string, Record<string, unknown>>;
+      const entries = Object.values(panels);
+      if (entries.length === 0) return false;
+
+      return entries.every((panel) => (
+        (typeof panel?.component === 'string' && COMPONENT_IDS.has(panel.component)) ||
+        (typeof panel?.contentComponent === 'string' && COMPONENT_IDS.has(panel.contentComponent))
       ));
     };
 
-    const tryLoad = (json: any) => {
+    const tryLoad = (json: any): boolean => {
       if (!isValidLayout(json)) {
-        throw new Error('Invalid layout JSON: unknown or missing panel component mapping.');
+        return false;
       }
-      api.clear();
-      api.fromJSON(json);
+
+      // Defer fromJSON to the next task so React can flush the updateOptions
+      // effect that registers the component factory (useEffect([props.components])).
+      // Calling fromJSON synchronously inside onReady (which runs inside
+      // useEffect([], [])) means the factory hasn't been updated yet.
+      setTimeout(() => {
+        try {
+          api.clear();
+          api.fromJSON(json);
+        } catch (err) {
+          console.error('[DockWorkspace] fromJSON failed:', err);
+        }
+      }, 0);
+
+      return true;
     };
 
-    try {
-      const saved = localStorage.getItem(LAYOUT_KEY);
-      if (saved) {
-        try {
-          tryLoad(JSON.parse(saved));
-          return;
-        } catch (err) {
-          console.warn('[DockWorkspace] Saved layout failed to load, falling back to default:', err);
-          localStorage.removeItem(LAYOUT_KEY);
-        }
+    const saved = localStorage.getItem(LAYOUT_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (tryLoad(parsed)) return;
+        console.warn('[DockWorkspace] Saved layout invalid, falling back to default');
+        localStorage.removeItem(LAYOUT_KEY);
+      } catch (err) {
+        console.warn('[DockWorkspace] Saved layout failed to parse, falling back to default:', err);
+        localStorage.removeItem(LAYOUT_KEY);
       }
-      tryLoad(DEFAULT_LAYOUT);
-    } catch (err) {
-      console.error('[DockWorkspace] Default layout also failed to load:', err);
     }
+
+    tryLoad(DEFAULT_LAYOUT);
   }, []);
 
   const resetLayout = useCallback(() => {
     if (!apiRef.current) return;
     localStorage.removeItem(LAYOUT_KEY);
-    try {
-      apiRef.current.clear();
-    } catch {
-      // ignore clear errors
-    }
-    apiRef.current.fromJSON(DEFAULT_LAYOUT as any);
+    const api = apiRef.current;
+
+    setTimeout(() => {
+      try {
+        api.clear();
+        api.fromJSON(DEFAULT_LAYOUT as any);
+      } catch (err) {
+        console.error('[DockWorkspace] resetLayout fromJSON failed:', err);
+      }
+    }, 0);
   }, []);
 
   const addPanel = useCallback((panelId: string) => {
     if (!apiRef.current) return;
 
     const config = DEFAULT_LAYOUT.panels[panelId as keyof typeof DEFAULT_LAYOUT.panels];
-    const targetGroup = apiRef.current.activeGroup ?? apiRef.current.groups[0];
+    if (!config) return;
 
-    if (targetGroup) {
-      apiRef.current.addPanel({
-        id: config.id,
-        title: config.title,
-        component: config.id,
-        position: { referenceGroup: targetGroup },
-      });
+    const api = apiRef.current;
+    const groups = api.groups;
+
+    if (groups.length === 0) {
+      // No groups exist yet — add as a floating panel or wait for layout to load
+      // Use setTimeout to retry after the deferred fromJSON has run
+      setTimeout(() => {
+        const retryGroups = apiRef.current?.groups ?? [];
+        if (retryGroups.length > 0) {
+          apiRef.current!.addPanel({
+            id: config.id,
+            title: config.title,
+            component: config.id,
+            position: { referenceGroup: retryGroups[0] },
+          });
+        }
+      }, 50);
+      return;
     }
+
+    const targetGroup = api.activeGroup ?? groups[0];
+    api.addPanel({
+      id: config.id,
+      title: config.title,
+      component: config.id,
+      position: { referenceGroup: targetGroup },
+    });
   }, []);
 
   const closedPanels = useMemo(
