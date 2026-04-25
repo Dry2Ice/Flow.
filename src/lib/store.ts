@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
 import { CodeChunk, EmbeddingConfig, embeddingService } from '@/lib/embedding-service';
+import { normalizeMessageContent } from '@/lib/message-content';
 
 export interface SessionState {
   messages: AIMessage[];
@@ -147,7 +148,6 @@ const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
 const initialActivePreset = initialPromptPresets.find((preset) => preset.id === initialActivePresetId) ?? null;
 const WINDOWS_DRIVE_PATH_PATTERN = /^[a-zA-Z]:[\\/]/;
-
 const isAbsoluteProjectPath = (projectPath: string): boolean => {
   if (!projectPath.trim()) return false;
 
@@ -534,6 +534,7 @@ export const useAppStore = create<AppState>()(
     addMessage: (sessionId, message) => {
       const normalisedMessage = {
         ...message,
+        content: normalizeMessageContent(message.content),
         timestamp: message.timestamp instanceof Date
           ? message.timestamp
           : new Date(message.timestamp ?? Date.now()),
@@ -612,6 +613,7 @@ export const useAppStore = create<AppState>()(
             ...existing,
             messages: existing.messages.map((m) => ({
               ...m,
+              content: normalizeMessageContent(m.content),
               timestamp: m.timestamp instanceof Date ? m.timestamp : new Date(m.timestamp ?? Date.now()),
             })),
           }
@@ -1068,6 +1070,7 @@ if (isClient) {
         // Restore timestamps as Date objects
         const restoredMessages = parsed.messages.map((message: any) => ({
           ...message,
+          content: normalizeMessageContent(message.content),
           timestamp: new Date(message.timestamp),
         }));
         // Set into the default session

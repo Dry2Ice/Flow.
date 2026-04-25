@@ -144,6 +144,12 @@ export interface ConversationTurn {
   content: string;
 }
 
+export type Message = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export interface FileWithMetadata {
   path: string;
   content: string;
@@ -175,12 +181,9 @@ export interface PromptRequest {
   };
 }
 
-export interface AIMessage {
-  id: string;
+export interface AIMessage extends Message {
   sessionId: string;
   jobId?: string;
-  role: 'user' | 'assistant';
-  content: string;
   timestamp: Date;
   changes?: CodeChange[];
 }
