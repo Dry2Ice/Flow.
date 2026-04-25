@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const MODELS_TIMEOUT_MS = 5_000;
+const HEALTH_TIMEOUT_MS = 5_000;
 
 function buildModelsUrl(baseUrl: string): string {
   return baseUrl.endsWith('/')
@@ -11,6 +11,7 @@ function buildModelsUrl(baseUrl: string): string {
 function jsonError(error: string, status: number, details?: string) {
   return NextResponse.json(
     {
+      healthy: false,
       error,
       ...(details ? { details } : {}),
       status,
@@ -19,20 +20,17 @@ function jsonError(error: string, status: number, details?: string) {
   );
 }
 
-export async function POST(request: NextRequest) {
-  let upstreamResponseBody = '';
-
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const apiKey = typeof body?.apiKey === 'string' ? body.apiKey.trim() : '';
-    const baseUrl = typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '';
+    const apiKey = (request.headers.get('x-nim-key') || process.env.NIM_API_KEY || '').trim();
+    const baseUrl = (request.headers.get('x-nim-baseurl') || process.env.NIM_BASE_URL || '').trim();
 
     if (!apiKey || !baseUrl) {
-      return jsonError('apiKey and baseUrl are required', 400);
+      return jsonError('Missing NIM credentials (apiKey/baseUrl)', 400);
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS);
 
     try {
       const response = await fetch(buildModelsUrl(baseUrl), {
@@ -44,34 +42,25 @@ export async function POST(request: NextRequest) {
       });
 
       if (!response.ok) {
-        upstreamResponseBody = await response.text();
-        console.error('NIM models upstream error body:', upstreamResponseBody);
-
+        const upstreamBody = await response.text();
+        console.error('NIM health upstream error body:', upstreamBody);
         return jsonError(
           `Upstream error: ${response.status} ${response.statusText}`,
           502,
-          upstreamResponseBody || 'No response body from upstream'
+          upstreamBody || 'No response body from upstream'
         );
       }
 
-      const data = await response.json();
-      return NextResponse.json(data);
+      return NextResponse.json({ healthy: true, status: 200 }, { status: 200 });
     } finally {
       clearTimeout(timeout);
     }
   } catch (error: any) {
-    const isTimeout = error?.name === 'AbortError';
-
-    if (upstreamResponseBody) {
-      console.error('NIM models upstream error body (catch):', upstreamResponseBody);
-    }
-
-    console.error('Failed to fetch NIM models:', error);
-
-    if (isTimeout) {
+    if (error?.name === 'AbortError') {
       return jsonError('Upstream request timed out after 5 seconds', 502);
     }
 
+    console.error('NIM health check failed:', error);
     return jsonError('Failed to reach the API endpoint', 502);
   }
 }
