@@ -678,7 +678,7 @@ export function PromptInput() {
               <div className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
               <span className="text-xs font-medium text-yellow-300">Ultra Mode Active</span>
             </div>
-            <span className="rounded bg-neutral-900/70 px-2 py-0.5 text-xs text-neutral-300">
+            <span className="rounded bg-neutral-900/70 px-2 py-0.5 text-xs text-neutral-300 light:text-neutral-700">
               {ultraModeStep} / {ultraModeTotalSteps}
             </span>
           </div>
@@ -688,7 +688,7 @@ export function PromptInput() {
               style={{ width: `${(ultraModeStep / ultraModeTotalSteps) * 100}%` }}
             />
           </div>
-          <p className="mb-3 text-xs text-neutral-300">{ultraModeCurrentStep}</p>
+          <p className="mb-3 text-xs text-neutral-300 light:text-neutral-700">{ultraModeCurrentStep}</p>
 
           <div className="space-y-1.5 rounded-md border border-neutral-700/70 bg-neutral-900/40 p-2">
             {ultraSteps.map((step, index) => {
@@ -698,7 +698,7 @@ export function PromptInput() {
               return (
                 <div key={step.name} className="flex items-center gap-2 text-xs">
                   {isDone ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400 light:text-green-700" />
                   ) : isCurrent ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin text-yellow-300" />
                   ) : (
@@ -768,7 +768,7 @@ export function PromptInput() {
                         setPrompt((previous) => (previous ? `${previous}\n\n${template.text}` : template.text));
                         setShowTemplates(false);
                       }}
-                      className="w-full px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                      className="w-full px-3 py-1.5 text-left text-xs text-neutral-300 light:text-neutral-700 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
                     >
                       {template.label}
                     </button>

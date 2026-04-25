@@ -18,13 +18,13 @@ export function SystemLogsPanel() {
   const icon = (type: string) => {
     switch (type) {
       case 'error':
-        return <AlertTriangle className="h-4 w-4 text-rose-400" />;
+        return <AlertTriangle className="h-4 w-4 text-rose-400 light:text-rose-700" />;
       case 'warning':
-        return <ShieldAlert className="h-4 w-4 text-amber-400" />;
+        return <ShieldAlert className="h-4 w-4 text-amber-400 light:text-amber-700" />;
       case 'success':
-        return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 light:text-emerald-700" />;
       default:
-        return <Info className="h-4 w-4 text-sky-400" />;
+        return <Info className="h-4 w-4 text-sky-400 light:text-sky-700" />;
     }
   };
 
@@ -96,7 +96,7 @@ export function ErrorsPanel() {
             <span className="ml-auto text-neutral-400">{bug.status}</span>
           </div>
           <h4 className="text-sm font-semibold">{bug.title}</h4>
-          <p className="mt-1 text-sm text-neutral-300">{bug.description}</p>
+          <p className="mt-1 text-sm text-neutral-300 light:text-neutral-700">{bug.description}</p>
           <div className="mt-2 flex gap-2">
             <button
               onClick={() => handleCheckBug(bug)}

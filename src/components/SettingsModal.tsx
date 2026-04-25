@@ -753,14 +753,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   <button
                     type="button"
                     onClick={() => setLocale('en')}
-                    className={`rounded px-2 py-1 text-xs ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
+                    className={`rounded px-2 py-1 text-xs ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 light:text-neutral-700'}`}
                   >
                     EN
                   </button>
                   <button
                     type="button"
                     onClick={() => setLocale('ru')}
-                    className={`rounded px-2 py-1 text-xs ${locale === 'ru' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
+                    className={`rounded px-2 py-1 text-xs ${locale === 'ru' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 light:text-neutral-700'}`}
                   >
                     RU
                   </button>
@@ -774,7 +774,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       {t('settings.apiKey')}
                     </label>
                     <input
@@ -788,7 +788,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       {t('settings.baseUrl')}
                     </label>
                     <input
@@ -805,7 +805,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                    <div className="md:col-span-2">
-                     <label className="block text-sm font-medium text-neutral-300 mb-1">
+                     <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                        Model
                      </label>
                      <div className="flex gap-2">
@@ -843,7 +843,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                    </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       Project Directory
                     </label>
                     <input
@@ -872,7 +872,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               <div className="border-b border-neutral-600 pb-4">
                 <h4 className="text-md font-medium text-neutral-200 mb-3 light:text-neutral-900">Embedding Model</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="flex items-center gap-2 text-sm text-neutral-300 md:col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-neutral-300 light:text-neutral-700 md:col-span-2">
                     <input
                       type="checkbox"
                       checked={embedUseSameApiKey}
@@ -884,7 +884,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
 
                   {!embedUseSameApiKey && (
                     <div>
-                      <label className="block text-sm font-medium text-neutral-300 mb-1">
+                      <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                         Embed API Key
                       </label>
                       <input
@@ -898,7 +898,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   )}
 
                   <div className={!embedUseSameApiKey ? '' : 'md:col-span-1'}>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       Embed Base URL
                     </label>
                     <input
@@ -911,7 +911,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       Embed Model
                     </label>
                     <div className="flex gap-2">
@@ -952,7 +952,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     </div>
                   </div>
 
-                  <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300 light:border-neutral-300 light:bg-neutral-100 light:text-neutral-700">
+                  <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300 light:text-neutral-700 light:border-neutral-300 light:bg-neutral-100 light:text-neutral-700">
                     <div>
                       Indexing status:{' '}
                       {isIndexingProject
@@ -1055,7 +1055,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Temperature
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Управляет креативностью: ниже — стабильнее, выше — разнообразнее." />
@@ -1072,7 +1072,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Top-p
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Nucleus sampling: ограничивает выбор токенов по суммарной вероятности." />
@@ -1089,7 +1089,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Top-k
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Разрешает выбор только из K самых вероятных токенов." />
@@ -1106,7 +1106,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Frequency penalty
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Снижает повторения уже часто встречавшихся токенов." />
@@ -1123,7 +1123,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Presence penalty
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Поощряет появление новых тем, штрафуя уже встреченные токены." />
@@ -1140,7 +1140,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Context Tokens ({contextTokens === 0 ? 'Unlimited' : contextTokens.toLocaleString()})
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Ограничение размера входного контекста; 0 означает без лимита." />
@@ -1157,7 +1157,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Max Response Tokens ({maxTokens.toLocaleString()})
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Максимальная длина ответа модели в токенах." />
@@ -1174,7 +1174,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-300 mb-1">
+                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 mb-1">
                       <span className="inline-flex items-center gap-1">
                         Stop Sequences
                         <Info className="w-3.5 h-3.5 text-neutral-500" title="Последовательности, при появлении которых генерация будет остановлена." />
@@ -1230,14 +1230,14 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   ) : (
                     <div>
                       <div className="p-3 bg-neutral-800 rounded border border-neutral-600 max-h-48 overflow-y-auto">
-                        <pre className="text-xs text-neutral-300 whitespace-pre-wrap">
+                        <pre className="text-xs text-neutral-300 light:text-neutral-700 whitespace-pre-wrap">
                           {generalPrompt}
                         </pre>
                       </div>
                       <button
                         type="button"
                         onClick={handleEditGeneralPrompt}
-                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 light:text-blue-700 transition-colors"
                       >
                         Edit General Prompt
                       </button>
@@ -1306,7 +1306,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                             <div>
                               <details className="text-xs text-neutral-500">
                                 <summary className="cursor-pointer hover:text-neutral-400">View system prompt</summary>
-                                <div className="mt-2 p-3 bg-neutral-800 rounded text-neutral-300 whitespace-pre-wrap">
+                                <div className="mt-2 p-3 bg-neutral-800 rounded text-neutral-300 light:text-neutral-700 whitespace-pre-wrap">
                                   {preset.systemPrompt}
                                 </div>
                               </details>
@@ -1316,7 +1316,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                                   e.stopPropagation();
                                   handleEditPreset(preset.id);
                                 }}
-                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 light:text-blue-700 transition-colors"
                               >
                                 Edit Prompt
                               </button>
@@ -1329,7 +1329,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 </div>
                 {activePreset && (
                   <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded">
-                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-sm">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400 light:text-green-700 text-sm">
                       <Check className="w-4 h-4" />
                       Active preset: <strong>{activePreset.name}</strong>
                     </div>
@@ -1338,7 +1338,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               </div>
 
               {message && (
-                <div className={`text-sm ${message.includes('successfully') ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                <div className={`text-sm ${message.includes('successfully') ? 'text-green-700 dark:text-green-400 light:text-green-700' : 'text-red-700 dark:text-red-400 light:text-red-700'}`}>
                   {message}
                 </div>
               )}
