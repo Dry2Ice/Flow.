@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { FileNode, Project, CodeChange, DevelopmentTask, DevelopmentPlan, LogEntry, BugReport, ProjectContext, AIRequest, AIMessage, PromptPreset } from '@/types';
 import { CodeChunk, EmbeddingConfig, embeddingService } from '@/lib/embedding-service';
-import { normalizeMessageContent } from '@/lib/message-content';
+import { normalizeMessageContent, normalizeMessageId } from '@/lib/message-content';
 
 export interface SessionState {
   messages: AIMessage[];
@@ -148,6 +148,33 @@ const initialPromptPresets = loadPromptPresets();
 const initialActivePresetId = loadActivePresetId();
 const initialActivePreset = initialPromptPresets.find((preset) => preset.id === initialActivePresetId) ?? null;
 const WINDOWS_DRIVE_PATH_PATTERN = /^[a-zA-Z]:[\\/]/;
+
+const normalizeStoredMessage = (message: Partial<AIMessage>): AIMessage => ({
+  ...message,
+  id: normalizeMessageId(message.id),
+  role: message.role === 'assistant' ? 'assistant' : 'user',
+  content: normalizeMessageContent(message.content),
+  timestamp: message.timestamp instanceof Date
+    ? message.timestamp
+    : new Date(message.timestamp ?? Date.now()),
+  isError: Boolean(message.isError),
+  sessionId: typeof message.sessionId === 'string' ? message.sessionId : DEFAULT_SESSION_ID,
+});
+
+const withStableMessageIds = (messages: Partial<AIMessage>[]): AIMessage[] => {
+  const usedIds = new Set<string>();
+  return messages.map((message) => {
+    const normalized = normalizeStoredMessage(message);
+    let stableId = normalized.id;
+
+    while (usedIds.has(stableId)) {
+      stableId = `${stableId}-dup`;
+    }
+
+    usedIds.add(stableId);
+    return { ...normalized, id: stableId };
+  });
+};
 const isAbsoluteProjectPath = (projectPath: string): boolean => {
   if (!projectPath.trim()) return false;
 
@@ -532,16 +559,19 @@ export const useAppStore = create<AppState>()(
     setCurrentTask: (task) => set({ currentTask: task }),
 
     addMessage: (sessionId, message) => {
-      const normalisedMessage = {
-        ...message,
-        content: normalizeMessageContent(message.content),
-        timestamp: message.timestamp instanceof Date
-          ? message.timestamp
-          : new Date(message.timestamp ?? Date.now()),
-      };
-
       set((state) => {
         const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
+        const usedIds = new Set(session.messages.map((existingMessage) => existingMessage.id));
+        let messageId = normalizeMessageId(message.id);
+        while (usedIds.has(messageId)) {
+          messageId = `${messageId}-dup`;
+        }
+        const normalisedMessage = normalizeStoredMessage({
+          ...message,
+          id: messageId,
+          sessionId,
+        });
+
         return {
           sessions: {
             ...state.sessions,
@@ -611,11 +641,7 @@ export const useAppStore = create<AppState>()(
       const normalisedSession = existing
         ? {
             ...existing,
-            messages: existing.messages.map((m) => ({
-              ...m,
-              content: normalizeMessageContent(m.content),
-              timestamp: m.timestamp instanceof Date ? m.timestamp : new Date(m.timestamp ?? Date.now()),
-            })),
+            messages: withStableMessageIds(existing.messages),
           }
         : { messages: [], isGenerating: false, activeRequests: 0 };
 
@@ -1069,10 +1095,11 @@ if (isClient) {
       if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
         // Restore timestamps as Date objects
         const restoredMessages = parsed.messages.map((message: any) => ({
-          ...message,
-          content: normalizeMessageContent(message.content),
+          ...normalizeStoredMessage(message),
+          sessionId: DEFAULT_SESSION_ID,
           timestamp: new Date(message.timestamp),
         }));
+        const normalizedRestoredMessages = withStableMessageIds(restoredMessages);
         // Set into the default session
         setTimeout(() => {
           useAppStore.setState((state) => ({
@@ -1080,7 +1107,7 @@ if (isClient) {
               ...state.sessions,
               [DEFAULT_SESSION_ID]: {
                 ...state.sessions[DEFAULT_SESSION_ID],
-                messages: restoredMessages,
+                messages: normalizedRestoredMessages,
               },
             },
           }));

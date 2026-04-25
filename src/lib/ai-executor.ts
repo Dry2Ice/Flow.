@@ -266,19 +266,29 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
     }
 
     // Update the streaming message with final content and changes
-    useAppStore.setState((state) => ({
-      sessions: {
-        ...state.sessions,
-        [activeSessionId]: {
-          ...state.sessions[activeSessionId],
-          messages: state.sessions[activeSessionId].messages.map((m) =>
-            m.id === streamingMessageId
-              ? { ...m, content: normalizeMessageContent(response.explanation), changes: enrichedChanges }
-              : m
-          ),
+    useAppStore.setState((state) => {
+      const session = state.sessions[activeSessionId];
+      if (!session) {
+        return state;
+      }
+
+      const finalContent = normalizeMessageContent(response.explanation);
+      return {
+        sessions: {
+          ...state.sessions,
+          [activeSessionId]: {
+            ...session,
+            messages: finalContent.trim().length === 0
+              ? session.messages.filter((message) => message.id !== streamingMessageId)
+              : session.messages.map((message) =>
+                  message.id === streamingMessageId
+                    ? { ...message, content: finalContent, changes: enrichedChanges, isError: false }
+                    : message
+                ),
+          },
         },
-      },
-    }));
+      };
+    });
 
     if (response.tasks) {
       response.tasks.forEach((task) => addTask(task));
@@ -346,6 +356,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       content: normalizeMessageContent(isAbort
         ? 'Request cancelled.'
         : 'Sorry, I encountered an error while generating code. Please try again.'),
+      isError: true,
       timestamp: new Date(),
     });
 
