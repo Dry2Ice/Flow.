@@ -3,6 +3,7 @@ import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { AIRequest, PromptPreset } from '@/types';
 import { aiService } from '@/lib/ai-service';
 import { executionManager } from '@/lib/execution-manager';
+import { normalizeMessageContent } from '@/lib/message-content';
 
 export interface ExecuteAIRequestInput {
   prompt: string;
@@ -96,7 +97,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
     sessionId: activeSessionId,
     jobId,
     role: 'user',
-    content: input.prompt,
+    content: normalizeMessageContent(input.prompt),
     timestamp: new Date(),
   });
 
@@ -116,8 +117,8 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
         role: message.role as 'user' | 'assistant',
         // Strip FILE blocks from assistant messages to save tokens
         content: message.role === 'assistant'
-          ? message.content.replace(/<<<FILE:[\s\S]*?<<<END_FILE>>>/g, '[file changes applied]').trim()
-          : message.content,
+          ? normalizeMessageContent(message.content).replace(/<<<FILE:[\s\S]*?<<<END_FILE>>>/g, '[file changes applied]').trim()
+          : normalizeMessageContent(message.content),
       }));
 
     let projectFiles = openFiles.map((file) => ({
@@ -180,7 +181,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       sessionId: activeSessionId,
       jobId,
       role: 'assistant',
-      content: '',
+      content: normalizeMessageContent(''),
       timestamp: new Date(),
     });
 
@@ -218,7 +219,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
             [activeSessionId]: {
               ...state.sessions[activeSessionId],
               messages: state.sessions[activeSessionId].messages.map((m) =>
-                m.id === streamingMessageId ? { ...m, content: streamedContent } : m
+                m.id === streamingMessageId ? { ...m, content: normalizeMessageContent(streamedContent) } : m
               ),
             },
           },
@@ -272,7 +273,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
           ...state.sessions[activeSessionId],
           messages: state.sessions[activeSessionId].messages.map((m) =>
             m.id === streamingMessageId
-              ? { ...m, content: response.explanation, changes: enrichedChanges }
+              ? { ...m, content: normalizeMessageContent(response.explanation), changes: enrichedChanges }
               : m
           ),
         },
@@ -342,9 +343,9 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       sessionId: activeSessionId,
       jobId,
       role: 'assistant',
-      content: isAbort
+      content: normalizeMessageContent(isAbort
         ? 'Request cancelled.'
-        : 'Sorry, I encountered an error while generating code. Please try again.',
+        : 'Sorry, I encountered an error while generating code. Please try again.'),
       timestamp: new Date(),
     });
 

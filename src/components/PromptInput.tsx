@@ -11,6 +11,7 @@ import { executionManager } from '@/lib/execution-manager';
 import { aiService } from '@/lib/ai-service';
 import { codeExecutor } from '@/lib/code-executor';
 import { embeddingService } from '@/lib/embedding-service';
+import { normalizeMessageContent } from '@/lib/message-content';
 
 const PROMPT_TEMPLATES = [
   { label: 'Add error handling', text: 'Add proper error handling to this file. Use try/catch for async operations and provide meaningful error messages.' },
@@ -188,7 +189,7 @@ export function PromptInput() {
       sessionId: requestSessionId,
       jobId,
       role: 'user',
-      content: requestInput.prompt,
+      content: normalizeMessageContent(requestInput.prompt),
       timestamp: new Date(),
     });
 
@@ -330,7 +331,7 @@ export function PromptInput() {
         sessionId: requestSessionId,
         jobId,
         role: 'assistant',
-        content: '',
+        content: normalizeMessageContent(''),
         timestamp: new Date(),
       });
 
@@ -351,7 +352,7 @@ export function PromptInput() {
                     ...session,
                     messages: session.messages.map((message) =>
                       message.id === streamingMessageId
-                        ? { ...message, content: nextContent }
+                        ? { ...message, content: normalizeMessageContent(nextContent) }
                         : message
                     ),
                   },
@@ -391,7 +392,7 @@ export function PromptInput() {
               ...session,
               messages: session.messages.map((message) =>
                 message.id === streamingMessageId
-                  ? { ...message, content: response.explanation, changes: response.changes }
+                  ? { ...message, content: normalizeMessageContent(response.explanation), changes: response.changes }
                   : message
               ),
             },
@@ -470,9 +471,9 @@ export function PromptInput() {
         sessionId: requestSessionId,
         jobId,
         role: 'assistant',
-        content: isAbort
+        content: normalizeMessageContent(isAbort
           ? 'Request cancelled.'
-          : 'Sorry, I encountered an error while generating code. Please try again.',
+          : 'Sorry, I encountered an error while generating code. Please try again.'),
         timestamp: new Date(),
       });
     } finally {

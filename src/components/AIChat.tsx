@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAppStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
+import { normalizeMessageContent } from '@/lib/message-content';
 
 const formatTimestamp = (ts: Date | string | undefined): string => {
   if (!ts) return '';
@@ -36,7 +37,10 @@ export function AIChat() {
   const connectionStatus = activeSession.connectionStatus;
   const reconnectDelay = activeSession.reconnectDelay;
   const lastAssistantMessageId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
-  const visibleMessages = messages.filter((message, index) => {
+  const visibleMessages = messages.map((message) => ({
+    ...message,
+    content: normalizeMessageContent(message.content),
+  })).filter((message, index) => {
     // Remove empty assistant messages that are not the last message in the session
     // (the last one may still be actively streaming)
     if (
@@ -91,7 +95,10 @@ export function AIChat() {
       t('chat.exportSession', { id: activeSessionId }),
       t('chat.exportedAt', { date: new Date().toISOString() }),
       ``,
-      ...messages.map((message) => `## ${message.role === 'user' ? t('chat.exportRoleUser') : t('chat.exportRoleAssistant')} (${formatTimestampLong(message.timestamp)})\n\n${message.content}`),
+      ...messages.map((message) => {
+        const safeContent = normalizeMessageContent(message.content);
+        return `## ${message.role === 'user' ? t('chat.exportRoleUser') : t('chat.exportRoleAssistant')} (${formatTimestampLong(message.timestamp)})\n\n${safeContent}`;
+      }),
     ].join('\n');
 
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
@@ -197,13 +204,15 @@ export function AIChat() {
               <p className="text-xs mt-2">{t('chat.emptyDescription')}</p>
             </div>
           ) : (
-            visibleMessages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
+            visibleMessages.map((message) => {
+              const safeContent = normalizeMessageContent(message.content);
+              return (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
+                >
                 <div
                   className={`max-w-[80%] rounded-lg p-2 ${
                     message.role === 'user'
@@ -265,15 +274,15 @@ export function AIChat() {
                           },
                         }}
                       >
-                        {message.content}
-                        {isGenerating && message.id === lastAssistantMessageId && (
-                          <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-300 align-middle" aria-hidden="true" />
-                        )}
+                        {safeContent}
                       </ReactMarkdown>
+                      {isGenerating && message.id === lastAssistantMessageId && (
+                        <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-300 align-middle" aria-hidden="true" />
+                      )}
                     </div>
                   ) : (
                     <div className="text-sm whitespace-pre-wrap">
-                      {message.content}
+                      {safeContent}
                     </div>
                   )}
 
@@ -297,7 +306,7 @@ export function AIChat() {
 
                     {message.role === 'assistant' && (
                       <button
-                        onClick={() => copyToClipboard(message.content, message.id)}
+                        onClick={() => copyToClipboard(safeContent, message.id)}
                         className="mt-1 rounded p-1 opacity-60 transition-opacity hover:bg-neutral-700 hover:opacity-100 light:hover:bg-neutral-200"
                         title={copiedMessageId === message.id ? t('chat.copied') : t('chat.copyMessage')}
                       >
@@ -310,7 +319,8 @@ export function AIChat() {
                     )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
 
           {isGenerating && (
