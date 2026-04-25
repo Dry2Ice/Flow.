@@ -904,12 +904,14 @@ export const useAppStore = create<AppState>()(
     setAutoCommitAfterAI: (enabled) => set({ autoCommitAfterAI: enabled }),
     setIndexStale: (stale) => set({ isIndexStale: stale }),
     indexProjectForEmbedding: async () => {
-      const state = get();
+      const state = useAppStore.getState();
       if (!state.embeddingConfig || !state.projectPath.trim()) {
         set({ projectChunks: [], isIndexingProject: false, indexedAt: null, isIndexStale: false });
         return;
       }
 
+      // CRITICAL: Configure embedding service before any indexing call.
+      embeddingService.setConfig(state.embeddingConfig);
       set({ isIndexingProject: true });
       try {
         const projectResponse = await fetch('/api/project/files', {
@@ -920,7 +922,6 @@ export const useAppStore = create<AppState>()(
         const projectData = await projectResponse.json();
         const projectFiles = Array.isArray(projectData?.files) ? projectData.files : [];
 
-        embeddingService.setConfig(state.embeddingConfig);
         const chunks = await embeddingService.indexProject(projectFiles);
         set({ projectChunks: chunks, indexedAt: new Date() });
         set({ isIndexStale: false });
