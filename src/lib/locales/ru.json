@@ -202,5 +202,37 @@
       "saved": "Настройки сохранены.",
       "untrustedPath": "Путь не в списке доверенных. Нажмите «Доверять этому пути» для разрешения доступа"
     }
+  },
+  "plan": {
+    "plans": "Планы",
+    "tasks": "Задачи",
+    "errors": "Ошибки",
+    "newPlan": "Новый план",
+    "collapsePlanForm": "Свернуть форму плана",
+    "createPlan": "+ Создать план",
+    "newTask": "Новая задача",
+    "collapseTaskForm": "Свернуть",
+    "expandTaskForm": "Раскрыть",
+    "addTask": "+ Добавить задачу",
+    "titleRequired": "Заголовок обязателен",
+    "planTitlePlaceholder": "Название плана...",
+    "planDescriptionPlaceholder": "Описание (необязательно)...",
+    "taskTitlePlaceholder": "Название задачи...",
+    "taskDescriptionPlaceholder": "Описание (необязательно)...",
+    "priority": "Приоритет",
+    "high": "Высокий",
+    "medium": "Средний",
+    "low": "Низкий",
+    "noPlans": "Планов пока нет. Создайте один выше или попросите ИИ проанализировать проект.",
+    "executePlan": "Выполнить план",
+    "executing": "Выполняется...",
+    "analyzeProject": "Анализировать проект",
+    "runTask": "Запустить",
+    "editTask": "Изменить",
+    "deleteTask": "Удалить",
+    "confirmDelete": "Удалить эту задачу?",
+    "autoAddErrors": "Авто-добавить из логов + действий ИИ",
+    "noBugs": "Отслеживаемых ошибок нет. Добавьте вручную или обнаружьте автоматически.",
+    "planStepProgress": "Шаг {current} из {total}"
   }
 }
