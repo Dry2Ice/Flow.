@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { Code, Eye, ExternalLink, Play, RefreshCw, SplitSquareVertical, Zap } from 'lucide-react';
@@ -212,7 +212,62 @@ const createCssPreviewDocument = (css: string) => `<!doctype html>
   </body>
 </html>`;
 
-const createReactSandboxDocument = (source: string, isTsx: boolean) => {
+const createPreviewBridgeScript = (channelId: string) => `
+  <script>
+    (() => {
+      const channelId = ${JSON.stringify(channelId)};
+      const send = (type, payload = {}) => {
+        window.parent.postMessage(
+          {
+            source: 'code-preview',
+            channelId,
+            type,
+            ...payload,
+          },
+          '*',
+        );
+      };
+
+      window.addEventListener('error', (event) => {
+        send('error', {
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+        });
+      });
+
+      window.addEventListener('unhandledrejection', (event) => {
+        const reason =
+          event.reason instanceof Error
+            ? event.reason.message
+            : typeof event.reason === 'string'
+              ? event.reason
+              : JSON.stringify(event.reason);
+        send('error', { message: 'Unhandled rejection: ' + reason });
+      });
+
+      const originalConsoleError = console.error.bind(console);
+      console.error = (...args) => {
+        send('console-error', {
+          message: args.map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg))).join(' '),
+        });
+        originalConsoleError(...args);
+      };
+    })();
+  </script>
+`;
+
+const injectPreviewBridge = (html: string, channelId: string) => {
+  const bridgeScript = createPreviewBridgeScript(channelId);
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head([^>]*)>/i, `<head$1>\n${bridgeScript}`);
+  }
+
+  return html.replace(/<html([^>]*)>/i, `<html$1>\n<head>${bridgeScript}</head>`);
+};
+
+const createReactSandboxDocument = (source: string, isTsx: boolean, channelId: string) => {
   const safeSource = source.replaceAll('</script>', '<\\/script>');
 
   return `<!doctype html>
@@ -230,6 +285,7 @@ const createReactSandboxDocument = (source: string, isTsx: boolean) => {
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    ${createPreviewBridgeScript(channelId)}
   </head>
   <body>
     <div id="root"></div>
@@ -257,7 +313,6 @@ const createReactSandboxDocument = (source: string, isTsx: boolean) => {
 export function CodePreview() {
   const { openFiles, activeFile, addLog, activeSessionId } = useAppStore();
 
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('code');
   const [reactPreviewMode, setReactPreviewMode] = useState<ReactPreviewMode>('message');
   const [previewContent, setPreviewContent] = useState('');
@@ -266,6 +321,7 @@ export function CodePreview() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [allowTrustedSameOrigin, setAllowTrustedSameOrigin] = useState(false);
 
   const currentFile = openFiles.find((file) => file.path === activeFile);
 
@@ -273,6 +329,7 @@ export function CodePreview() {
   const isHtmlFile = MARKUP_EXTENSIONS.has(extension);
   const isCssFile = extension === 'css';
   const isReactFile = REACT_EXTENSIONS.has(extension);
+  const previewChannelId = `${currentFile?.path ?? 'none'}:${refreshNonce}:${reactPreviewMode}`;
 
   useEffect(() => {
     if (!currentFile) {
@@ -314,12 +371,14 @@ export function CodePreview() {
     setIsLoading(true);
     try {
       if (isHtmlFile) {
-        setPreviewContent(inlineHtmlLocalAssets(file.content, file.path, openFiles));
+        const html = inlineHtmlLocalAssets(file.content, file.path, openFiles);
+        setPreviewContent(injectPreviewBridge(html, previewChannelId));
       } else if (isCssFile) {
-        setPreviewContent(createCssPreviewDocument(file.content));
+        const cssDoc = createCssPreviewDocument(file.content);
+        setPreviewContent(injectPreviewBridge(cssDoc, previewChannelId));
       } else if (isReactFile) {
         if (reactPreviewMode === 'sandbox') {
-          setPreviewContent(createReactSandboxDocument(file.content, extension === 'tsx'));
+          setPreviewContent(createReactSandboxDocument(file.content, extension === 'tsx', previewChannelId));
         } else {
           setPreviewContent(
             "React-компоненты требуют компиляции. Используйте 'Run' для запуска через сервер, или откройте localhost:3000 в браузере",
@@ -342,19 +401,50 @@ export function CodePreview() {
     }
   };
 
-  const handleIframeLoad = () => {
-    iframeRef.current?.contentWindow?.addEventListener('error', (event) => {
-      addLog({
-        id: crypto.randomUUID(),
-        sessionId: activeSessionId,
-        timestamp: new Date(),
-        type: 'error',
-        message: `Preview error: ${event.message}`,
-        details: `${event.filename}:${event.lineno}:${event.colno}`,
-        source: 'program_run',
-      });
-    });
-  };
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== 'object' || event.data.source !== 'code-preview') {
+        return;
+      }
+
+      if (event.data.channelId !== previewChannelId) {
+        return;
+      }
+
+      if (event.data.type === 'error' || event.data.type === 'console-error') {
+        addLog({
+          id: crypto.randomUUID(),
+          sessionId: activeSessionId,
+          timestamp: new Date(),
+          type: 'error',
+          message: `Preview error: ${event.data.message ?? 'Unknown preview error'}`,
+          details: [event.data.filename, event.data.lineno, event.data.colno].filter(Boolean).join(':'),
+          source: 'program_run',
+        });
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [activeSessionId, addLog, previewChannelId]);
+
+  const htmlPreviewSandboxPolicy =
+    // Scripts are required for interactive examples and runtime errors surfaced via postMessage.
+    // Forms are allowed so demos that submit in-frame still behave naturally.
+    'allow-scripts allow-forms';
+
+  const reactSandboxPolicy =
+    // React sandbox runs Babel + React in-frame, so scripts are mandatory.
+    // Forms remain enabled for controlled/uncontrolled form interaction tests.
+    'allow-scripts allow-forms';
+
+  const urlPreviewSandboxPolicy = allowTrustedSameOrigin
+    ? // Dedicated "trusted origin" mode for dev servers that require same-origin APIs (cookies, storage, service workers).
+      // This increases iframe privileges and is intentionally behind an explicit user toggle.
+      'allow-scripts allow-forms allow-same-origin'
+    : // Default least-privilege policy for arbitrary URLs.
+      // Keeps script execution and form UX, but denies same-origin escalation by default.
+      'allow-scripts allow-forms';
 
   const openInNewTab = () => {
     if (previewUrl) {
@@ -431,7 +521,7 @@ export function CodePreview() {
           src={previewUrl}
           className="h-full w-full border-0 bg-white"
           title="Dev Server Preview"
-          sandbox="allow-scripts allow-same-origin allow-forms"
+          sandbox={urlPreviewSandboxPolicy}
         />
       );
     }
@@ -440,12 +530,10 @@ export function CodePreview() {
       return (
         <iframe
           key={`${currentFile?.path}-${refreshNonce}`}
-          ref={iframeRef}
           srcDoc={previewContent}
-          onLoad={handleIframeLoad}
           className="h-full w-full border-0 bg-white"
           title="Code Preview"
-          sandbox="allow-scripts allow-same-origin allow-forms"
+          sandbox={isReactFile && reactPreviewMode === 'sandbox' ? reactSandboxPolicy : htmlPreviewSandboxPolicy}
         />
       );
     }
@@ -557,12 +645,32 @@ export function CodePreview() {
             onClick={() => {
               setPreviewUrl('');
               setPreviewUrlInput('');
+              setAllowTrustedSameOrigin(false);
             }}
             className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
           >
             Clear
           </button>
+          {previewUrl && (
+            <button
+              onClick={() => setAllowTrustedSameOrigin((enabled) => !enabled)}
+              className={`rounded-md px-2 py-1 text-xs ${
+                allowTrustedSameOrigin
+                  ? 'border border-amber-500/70 bg-amber-500/10 text-amber-200'
+                  : 'border border-neutral-700 text-neutral-300'
+              }`}
+              title="Toggle trusted same-origin mode for previews that require cookie/storage APIs"
+            >
+              {allowTrustedSameOrigin ? 'Trusted Origin: On' : 'Trusted Origin: Off'}
+            </button>
+          )}
         </div>
+        {previewUrl && allowTrustedSameOrigin && (
+          <p className="mt-2 text-[11px] text-amber-300">
+            Warning: trusted mode enables <code>allow-same-origin</code> for this iframe. Use only for known dev
+            servers that need cookie/storage or same-origin browser APIs.
+          </p>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden p-3">
