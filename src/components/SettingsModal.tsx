@@ -261,29 +261,38 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     }
 
     setEmbeddingTestStatus('testing');
+    setMessage(t('settings.messages.testingConnection'));
     try {
       const response = await fetch('/api/nim/embed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(120_000),
         body: JSON.stringify({
-          texts: ['console.log("hello flow")'],
+          texts: ['test embedding'],
           model: embedModel,
           apiKey: resolvedApiKey,
           baseUrl: embedBaseUrl,
         }),
       });
-      const data = await response.json().catch(() => ({}));
-      if (response.ok && Array.isArray(data.embeddings) && data.embeddings.length > 0) {
-        setEmbeddingTestStatus('success');
-        setMessage(t('settings.messages.embeddingSuccess', { dimensions: data.embeddings[0]?.length ?? 0 }));
-      } else {
+      const data = await response.json();
+      if (!response.ok) {
+        const cause = data?.cause ? ` — ${JSON.stringify(data.cause).slice(0, 120)}` : '';
         setEmbeddingTestStatus('error');
-        setMessage(data?.error || t('settings.messages.embeddingFailed'));
+        setMessage(`Embedding failed: HTTP ${response.status}${cause}`);
+        return;
       }
+      const dimensions = data.embeddings?.[0]?.length ?? 0;
+      setEmbeddingTestStatus('success');
+      setMessage(t('settings.messages.embeddingSuccess', { dimensions }));
     } catch (error) {
       console.error('Embedding test failed:', error);
       setEmbeddingTestStatus('error');
-      setMessage(t('settings.messages.embeddingNetworkFailed'));
+      const errorMessage = error instanceof Error ? error.message : '';
+      setMessage(
+        errorMessage.includes('timeout')
+          ? 'Embedding timed out after 120 seconds. Check the endpoint URL.'
+          : t('settings.messages.embeddingNetworkFailed')
+      );
     } finally {
       setTimeout(() => setEmbeddingTestStatus('idle'), 3000);
     }
@@ -955,6 +964,11 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                           : 'Not indexed'}
                     </div>
                     {indexedAt && <div className="text-neutral-400 mt-1">Last indexed: {indexedAt.toLocaleString()}</div>}
+                    <div className="text-xs text-neutral-400 mt-1">
+                      {embeddingConfig
+                        ? `Endpoint: ${embeddingConfig.baseUrl} · Model: ${embeddingConfig.model}`
+                        : 'Not configured — fill in fields above and save settings'}
+                    </div>
                     <button
                       type="button"
                       onClick={() => void indexProjectForEmbedding()}
