@@ -202,5 +202,37 @@
       "saved": "Settings saved.",
       "untrustedPath": "Path is not trusted. Click 'Trust this path' to allow access"
     }
+  },
+  "plan": {
+    "plans": "Plans",
+    "tasks": "Tasks",
+    "errors": "Errors",
+    "newPlan": "New Plan",
+    "collapsePlanForm": "Collapse plan form",
+    "createPlan": "+ Create Plan",
+    "newTask": "New Task",
+    "collapseTaskForm": "Collapse",
+    "expandTaskForm": "Expand",
+    "addTask": "+ Add Task",
+    "titleRequired": "Title is required",
+    "planTitlePlaceholder": "Plan title...",
+    "planDescriptionPlaceholder": "Description (optional)...",
+    "taskTitlePlaceholder": "Task title...",
+    "taskDescriptionPlaceholder": "Description (optional)...",
+    "priority": "Priority",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "noPlans": "No plans yet. Create one above or ask the AI to analyze the project.",
+    "executePlan": "Execute Plan",
+    "executing": "Executing...",
+    "analyzeProject": "Analyze Project",
+    "runTask": "Run",
+    "editTask": "Edit",
+    "deleteTask": "Delete",
+    "confirmDelete": "Delete this task?",
+    "autoAddErrors": "Auto-add from logs + AI actions",
+    "noBugs": "No tracked bugs. Add one manually or auto-detect from logs.",
+    "planStepProgress": "Step {current} of {total}"
   }
 }

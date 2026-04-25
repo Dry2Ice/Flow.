@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { executeAIRequest } from '@/lib/ai-executor';
 import { aiService } from '@/lib/ai-service';
+import { useI18n } from '@/lib/i18n';
 import { useAppStore } from '@/lib/store';
 import { DevelopmentTask } from '@/types';
 import type { DevelopmentPlan, TaskItem } from '@/types';
@@ -27,6 +28,7 @@ interface DevelopmentPlanProps {
 
 export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = {}) {
   void initialTab;
+  const { t } = useI18n();
   const {
     plans,
     tasks,
@@ -264,7 +266,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
 
     const title = newTaskTitle.trim();
     if (!title) {
-      setTaskFormError('Title is required');
+      setTaskFormError(t('plan.titleRequired'));
       return;
     }
 
@@ -309,28 +311,28 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
         <div className="space-y-4">
           <section className="space-y-2 rounded-xl border border-neutral-700 bg-neutral-900/60 p-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-neutral-100">Планы</h3>
+              <h3 className="text-sm font-semibold text-neutral-100">{t('plan.plans')}</h3>
               <button
                 onClick={() => setIsNewPlanFormOpen((value) => !value)}
                 className="rounded-md border border-neutral-700 bg-neutral-950 px-2.5 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-900"
               >
-                {isNewPlanFormOpen ? 'Свернуть форму плана' : 'Новый план'}
+                {t(isNewPlanFormOpen ? 'plan.collapsePlanForm' : 'plan.newPlan')}
               </button>
             </div>
 
             {isNewPlanFormOpen && (
               <div className="space-y-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">Новый план</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">{t('plan.newPlan')}</h4>
                 <input
                   value={newPlanTitle}
                   onChange={(event) => setNewPlanTitle(event.target.value)}
-                  placeholder="Title"
+                  placeholder={t('plan.planTitlePlaceholder')}
                   className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
                 />
                 <textarea
                   value={newPlanDescription}
                   onChange={(event) => setNewPlanDescription(event.target.value)}
-                  placeholder="Description"
+                  placeholder={t('plan.planDescriptionPlaceholder')}
                   className="min-h-20 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
                 />
                 <button
@@ -338,7 +340,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                   className="inline-flex items-center gap-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  + Создать план
+                  {t('plan.createPlan')}
                 </button>
               </div>
             )}
@@ -346,7 +348,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
 
           {plans.length === 0 ? (
             <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400">
-              No development plans yet.
+              {t('plan.noPlans')}
             </div>
           ) : (
             <>
@@ -400,7 +402,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                           className="flex items-center gap-1.5 rounded-lg border border-indigo-500/50 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-400 transition-colors hover:bg-indigo-500/20"
                         >
                           <Sparkles className="h-3.5 w-3.5" />
-                          Analyze Project
+                          {t('plan.analyzeProject')}
                         </button>
                         <button
                           onClick={() => {
@@ -415,7 +417,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                       </div>
                       {executingPlanId === activePlan.id && planExecutionProgress.total > 0 && (
                         <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-700 dark:text-blue-300 light:text-blue-700">
-                          {planExecutionProgress.current}/{planExecutionProgress.total}
+                          {t('plan.planStepProgress', { current: planExecutionProgress.current, total: planExecutionProgress.total })}
                         </span>
                       )}
                     </header>
@@ -432,18 +434,18 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                         disabled={executingPlanId === activePlan.id}
                         className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
                       >
-                        Execute plan
+                        {executingPlanId === activePlan.id ? t('plan.executing') : t('plan.executePlan')}
                       </button>
                     </div>
 
                     <div className="space-y-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">Новая задача</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">{t('plan.newTask')}</h4>
                         <button
                           onClick={() => setIsNewTaskFormOpen((value) => !value)}
                           className="rounded-md border border-neutral-700 bg-neutral-950 px-2.5 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-900"
                         >
-                          {isNewTaskFormOpen ? 'Свернуть' : 'Раскрыть'}
+                          {t(isNewTaskFormOpen ? 'plan.collapseTaskForm' : 'plan.expandTaskForm')}
                         </button>
                       </div>
 
@@ -455,13 +457,13 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                               setNewTaskTitle(event.target.value);
                               if (taskFormError) setTaskFormError('');
                             }}
-                            placeholder="Title (required)"
+                            placeholder={t('plan.taskTitlePlaceholder')}
                             className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
                           />
                           <textarea
                             value={newTaskDescription}
                             onChange={(event) => setNewTaskDescription(event.target.value)}
-                            placeholder="Description"
+                            placeholder={t('plan.taskDescriptionPlaceholder')}
                             className="min-h-20 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
                           />
                           <select
@@ -469,9 +471,9 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                             onChange={(event) => setNewTaskPriority(event.target.value as DevelopmentTask['priority'])}
                             className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100"
                           >
-                            <option value="high">high</option>
-                            <option value="medium">medium</option>
-                            <option value="low">low</option>
+                            <option value="high">{t('plan.high')}</option>
+                            <option value="medium">{t('plan.medium')}</option>
+                            <option value="low">{t('plan.low')}</option>
                           </select>
                           {taskFormError && <p className="text-xs text-rose-300">{taskFormError}</p>}
                           <button
@@ -479,7 +481,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                             className="inline-flex items-center gap-2 rounded-md border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 light:text-blue-700 hover:bg-blue-500/20"
                           >
                             <PlusCircle className="h-4 w-4" />
-                            + Добавить задачу
+                            {t('plan.addTask')}
                           </button>
                         </div>
                       )}
@@ -502,28 +504,32 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                                 <button
                                   onClick={() => handleCheckTask(task)}
                                   className="rounded p-1 text-neutral-400 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-300"
-                                  title="Check task status"
+                                  title={t('plan.runTask')}
                                 >
                                   <Search className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleExecuteTask(task)}
                                   className="rounded p-1 text-neutral-400 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300"
-                                  title={task.status === 'partially_completed' || task.status === 'in_progress' ? 'Continue task' : 'Execute task'}
+                                  title={t('plan.runTask')}
                                 >
                                   <Play className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => startEditDescription(task)}
                                   className="rounded p-1 text-neutral-400 hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-300"
-                                  title="Edit task description"
+                                  title={t('plan.editTask')}
                                 >
                                   <Edit3 className="h-4 w-4" />
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteTask(task.id)}
+                                  onClick={() => {
+                                    if (window.confirm(t('plan.confirmDelete'))) {
+                                      handleDeleteTask(task.id);
+                                    }
+                                  }}
                                   className="rounded p-1 text-neutral-400 hover:bg-rose-500/10 hover:text-rose-300"
-                                  title="Delete task"
+                                  title={t('plan.deleteTask')}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>

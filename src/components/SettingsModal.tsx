@@ -472,7 +472,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     link.download = 'flow-settings.json';
     link.click();
     URL.revokeObjectURL(url);
-    setMessage('Настройки экспортированы в JSON.');
+    setMessage(t('settings.messages.settingsExported'));
     setTimeout(() => setMessage(''), 2500);
   };
 
@@ -489,10 +489,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       }
       applySettings(parsed);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(parsed));
-      setMessage('Настройки успешно импортированы.');
+      setMessage(t('settings.messages.settingsImported'));
     } catch (error) {
       console.error('Import settings failed:', error);
-      setMessage('Не удалось импортировать настройки: проверьте JSON файл.');
+      setMessage(t('settings.messages.settingsImportFailed'));
     } finally {
       event.target.value = '';
       setTimeout(() => setMessage(''), 3000);
@@ -610,7 +610,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
               return;
             }
 
-            setMessage(trustError?.response?.data?.error || 'Не удалось добавить путь в доверенные');
+            setMessage(trustError?.response?.data?.error || t('settings.messages.failedTrustPath'));
             return;
           }
         }
@@ -663,9 +663,9 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         projectPath: projectPath.trim(),
         confirm: true,
       });
-      setMessage('Путь добавлен в доверенные');
+      setMessage(t('settings.messages.pathTrusted'));
     } catch (error: any) {
-      setMessage(error?.response?.data?.error || 'Не удалось добавить путь в доверенные');
+      setMessage(error?.response?.data?.error || t('settings.messages.failedTrustPath'));
     } finally {
       setIsTrustingPath(false);
     }
