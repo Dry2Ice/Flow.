@@ -679,7 +679,7 @@ export function PromptInput() {
               <div className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
               <span className="text-xs font-medium text-yellow-300">Ultra Mode Active</span>
             </div>
-            <span className="rounded bg-neutral-900/70 px-2 py-0.5 text-xs text-neutral-300 light:text-neutral-700">
+            <span className="rounded bg-neutral-900/70 px-2 py-0.5 text-xs text-neutral-300 text-neutral-700">
               {ultraModeStep} / {ultraModeTotalSteps}
             </span>
           </div>
@@ -689,7 +689,7 @@ export function PromptInput() {
               style={{ width: `${(ultraModeStep / ultraModeTotalSteps) * 100}%` }}
             />
           </div>
-          <p className="mb-3 text-xs text-neutral-300 light:text-neutral-700">{ultraModeCurrentStep}</p>
+          <p className="mb-3 text-xs text-neutral-300 text-neutral-700">{ultraModeCurrentStep}</p>
 
           <div className="space-y-1.5 rounded-md border border-neutral-700/70 bg-neutral-900/40 p-2">
             {ultraSteps.map((step, index) => {
@@ -699,13 +699,13 @@ export function PromptInput() {
               return (
                 <div key={step.name} className="flex items-center gap-2 text-xs">
                   {isDone ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400 light:text-green-700" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400 text-green-700" />
                   ) : isCurrent ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin text-yellow-300" />
                   ) : (
                     <Circle className="h-3.5 w-3.5 text-neutral-500" />
                   )}
-                  <span className={`${isCurrent ? 'text-yellow-200 dark:text-yellow-200 light:text-yellow-800' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
+                  <span className={`${isCurrent ? 'text-yellow-200 text-yellow-800 dark:text-yellow-200' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
                     {stepNumber}. {step.name}
                   </span>
                 </div>
@@ -769,7 +769,7 @@ export function PromptInput() {
                         setPrompt((previous) => (previous ? `${previous}\n\n${template.text}` : template.text));
                         setShowTemplates(false);
                       }}
-                      className="w-full px-3 py-1.5 text-left text-xs text-neutral-300 light:text-neutral-700 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                      className="w-full px-3 py-1.5 text-left text-xs text-neutral-300 text-neutral-700 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
                     >
                       {template.label}
                     </button>
@@ -849,7 +849,7 @@ export function PromptInput() {
             type="button"
             onClick={() => executionManager.abort(activeStreamingJobId)}
             aria-label="Stop current AI generation"
-            className="h-9 rounded-lg border border-rose-400 bg-rose-50 px-2.5 text-xs font-medium light:text-rose-700 text-rose-700 dark:text-rose-200 dark:border-rose-500/70 dark:bg-rose-500/15 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+            className="h-9 rounded-lg border border-rose-400 bg-rose-50 px-2.5 text-xs font-medium text-rose-700 text-rose-700 dark:text-rose-200 dark:border-rose-500/70 dark:bg-rose-500/15 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
           >
             Стоп
           </button>

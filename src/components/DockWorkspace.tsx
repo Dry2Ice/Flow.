@@ -531,7 +531,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
             <button
               type="button"
               onClick={() => setShowAddPanel(value => !value)}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/90 px-3 py-1.5 text-xs font-medium text-neutral-300 shadow-lg backdrop-blur-sm transition-all hover:border-neutral-500 hover:text-neutral-100 light:border-neutral-300 light:bg-white/95 light:text-neutral-700 light:hover:border-neutral-400 light:hover:text-neutral-900"
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900/90 px-3 py-1.5 text-xs font-medium text-neutral-300 shadow-lg backdrop-blur-sm transition-all hover:border-neutral-500 hover:text-neutral-100 border-neutral-300 bg-white/95 text-neutral-700 hover:border-neutral-400 hover:text-neutral-900"
               title={t('dock.addPanelTitle')}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -539,7 +539,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
             </button>
 
             {showAddPanel && (
-              <div className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-lg border border-neutral-700 bg-neutral-900/95 py-1 shadow-xl backdrop-blur-sm light:border-neutral-300 light:bg-white/95">
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-44 rounded-lg border border-neutral-700 bg-neutral-900/95 py-1 shadow-xl backdrop-blur-sm border-neutral-300 bg-white/95">
                 {closedPanels.map(panelId => (
                   <button
                     key={panelId}
@@ -548,7 +548,7 @@ export function DockWorkspace({ onResetLayout }: DockWorkspaceProps) {
                       addPanel(panelId);
                       setShowAddPanel(false);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100 light:text-neutral-700 light:hover:bg-neutral-100 light:hover:text-neutral-900"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                   >
                     {t(`dock.panelTitles.${panelId}`)}
                   </button>

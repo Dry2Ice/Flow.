@@ -68,13 +68,13 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
   const getStatusIcon = (status: DevelopmentTask['status'] | DevelopmentPlan['status']) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-emerald-400 light:text-emerald-700" aria-hidden="true" />;
+        return <CheckCircle className="h-4 w-4 text-emerald-400 text-emerald-700" aria-hidden="true" />;
       case 'partially_completed':
-        return <Clock className="h-4 w-4 text-amber-400 light:text-amber-700" aria-hidden="true" />;
+        return <Clock className="h-4 w-4 text-amber-400 text-amber-700" aria-hidden="true" />;
       case 'in_progress':
-        return <Clock className="h-4 w-4 text-sky-400 light:text-sky-700" aria-hidden="true" />;
+        return <Clock className="h-4 w-4 text-sky-400 text-sky-700" aria-hidden="true" />;
       case 'cancelled':
-        return <AlertTriangle className="h-4 w-4 text-rose-400 light:text-rose-700" aria-hidden="true" />;
+        return <AlertTriangle className="h-4 w-4 text-rose-400 text-rose-700" aria-hidden="true" />;
       default:
         return <Circle className="h-4 w-4 text-neutral-500" aria-hidden="true" />;
     }
@@ -416,7 +416,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                         </button>
                       </div>
                       {executingPlanId === activePlan.id && planExecutionProgress.total > 0 && (
-                        <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-700 dark:text-blue-300 light:text-blue-700">
+                        <span className="rounded-md bg-blue-500/10 px-2 py-1 text-xs text-blue-700 text-blue-700 dark:text-blue-300">
                           {t('plan.planStepProgress', { current: planExecutionProgress.current, total: planExecutionProgress.total })}
                         </span>
                       )}
@@ -425,7 +425,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => handleCheckAllTasks(activePlan)}
-                        className="rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 light:text-blue-700 hover:bg-blue-500/20"
+                        className="rounded-lg border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20"
                       >
                         Check all tasks
                       </button>
@@ -478,7 +478,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                           {taskFormError && <p className="text-xs text-rose-300">{taskFormError}</p>}
                           <button
                             onClick={handleAddTask}
-                            className="inline-flex items-center gap-2 rounded-md border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-300 light:text-blue-700 hover:bg-blue-500/20"
+                            className="inline-flex items-center gap-2 rounded-md border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20"
                           >
                             <PlusCircle className="h-4 w-4" />
                             {t('plan.addTask')}
@@ -570,7 +570,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                                 <p className="text-xs text-neutral-600">No subtasks.</p>
                               ) : (
                                 task.items.map((item) => (
-                                  <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-neutral-300 light:text-neutral-700">
+                                  <label key={item.id} className="flex cursor-pointer items-center gap-2 text-xs text-neutral-300 text-neutral-700">
                                     <button
                                       type="button"
                                       onClick={() => handleToggleSubtask(task, item.id)}
