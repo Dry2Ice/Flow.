@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: message }],
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     } else if (cause.includes('CERT_') || cause.includes('SELF_SIGNED_CERT') || cause.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
       friendlyError = 'Ошибка SSL';
     } else if (cause.includes('TIMEOUT') || cause.includes('ABORT')) {
-      friendlyError = 'Превышено время ожидания (15 секунд)';
+      friendlyError = 'Превышено время ожидания (30 секунд)';
     }
 
     return NextResponse.json(
