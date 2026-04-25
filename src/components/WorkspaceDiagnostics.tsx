@@ -87,7 +87,7 @@ export function ErrorsPanel() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-3 space-y-2">
+    <div className="h-full space-y-2 overflow-y-auto p-3">
       {bugs.slice().reverse().map((bug) => (
         <article key={bug.id} className="rounded-lg border border-rose-700/40 bg-rose-950/25 p-3">
           <div className="mb-1 flex items-center gap-2 text-xs text-rose-300">
@@ -121,6 +121,41 @@ export function ErrorsPanel() {
           </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+export function LogsAndErrorsPanel() {
+  const [activeTab, setActiveTab] = useState<'logs' | 'errors'>('logs');
+  const { bugs } = useAppStore();
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex shrink-0 border-b border-neutral-700 light:border-neutral-300">
+        <button
+          onClick={() => setActiveTab('logs')}
+          className={`px-4 py-2.5 text-xs font-semibold transition ${
+            activeTab === 'logs'
+              ? 'border-b-2 border-blue-500 text-blue-400 light:text-blue-700'
+              : 'text-neutral-400 hover:text-neutral-200 light:hover:text-neutral-700'
+          }`}
+        >
+          Logs
+        </button>
+        <button
+          onClick={() => setActiveTab('errors')}
+          className={`px-4 py-2.5 text-xs font-semibold transition ${
+            activeTab === 'errors'
+              ? 'border-b-2 border-rose-500 text-rose-400 light:text-rose-700'
+              : 'text-neutral-400 hover:text-neutral-200 light:hover:text-neutral-700'
+          }`}
+        >
+          Errors {bugs.length > 0 && `(${bugs.length})`}
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {activeTab === 'logs' ? <SystemLogsPanel /> : <ErrorsPanel />}
+      </div>
     </div>
   );
 }

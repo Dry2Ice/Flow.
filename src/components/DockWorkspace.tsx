@@ -11,7 +11,7 @@ import {
 import { FileBrowser } from '@/components/FileBrowser';
 import { ProjectManager } from '@/components/ProjectManager';
 import { AIChat } from '@/components/AIChat';
-import { SystemLogsPanel } from '@/components/WorkspaceDiagnostics';
+import { LogsAndErrorsPanel } from '@/components/WorkspaceDiagnostics';
 import { DevelopmentPlan } from '@/components/DevelopmentPlan';
 import { PromptInput } from '@/components/PromptInput';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
@@ -139,7 +139,7 @@ const ChatPanel = React.memo(function ChatPanel() {
 });
 
 const LogsPanel = React.memo(function LogsPanel() {
-  return createAccessibleComponent(<SystemLogsPanel />, 'logs');
+  return createAccessibleComponent(<LogsAndErrorsPanel />, 'logs');
 });
 
 const PlanPanel = React.memo(function PlanPanel() {
