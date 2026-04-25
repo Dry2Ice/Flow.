@@ -16,6 +16,127 @@ type ReactPreviewMode = 'message' | 'sandbox';
 const REACT_EXTENSIONS = new Set(['jsx', 'tsx']);
 const MARKUP_EXTENSIONS = new Set(['html', 'htm']);
 
+const ABSOLUTE_URL_PATTERN = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
+
+const isHttpUrl = (value: string) => /^https?:\/\//i.test(value);
+
+const isRelativeProjectPath = (value: string) => {
+  if (!value) return false;
+  if (value.startsWith('/')) return false;
+  if (value.startsWith('#')) return false;
+  if (value.startsWith('//')) return false;
+  if (ABSOLUTE_URL_PATTERN.test(value)) return false;
+  return true;
+};
+
+const normalizeProjectPath = (baseFilePath: string, targetPath: string) => {
+  const cleanTarget = targetPath.split('#')[0]?.split('?')[0] ?? '';
+  const baseSegments = baseFilePath.split('/').slice(0, -1);
+  const targetSegments = cleanTarget.split('/');
+  const merged = [...baseSegments, ...targetSegments];
+  const normalized: string[] = [];
+
+  for (const segment of merged) {
+    if (!segment || segment === '.') {
+      continue;
+    }
+
+    if (segment === '..') {
+      if (normalized.length > 0) {
+        normalized.pop();
+      }
+      continue;
+    }
+
+    normalized.push(segment);
+  }
+
+  return normalized.join('/');
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+const inlineHtmlLocalAssets = (
+  htmlContent: string,
+  htmlFilePath: string,
+  files: Array<{ path: string; content: string }>,
+) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, 'text/html');
+  const fileMap = new Map(files.map((file) => [file.path, file.content]));
+  const missingFiles = new Set<string>();
+
+  const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]'));
+  for (const link of stylesheetLinks) {
+    const href = link.getAttribute('href')?.trim() ?? '';
+    if (!isRelativeProjectPath(href) || isHttpUrl(href)) {
+      continue;
+    }
+
+    const resolvedPath = normalizeProjectPath(htmlFilePath, href);
+    const cssContent = fileMap.get(resolvedPath);
+
+    if (cssContent === undefined) {
+      missingFiles.add(resolvedPath);
+      continue;
+    }
+
+    const styleElement = doc.createElement('style');
+    styleElement.setAttribute('data-inlined-from', resolvedPath);
+    styleElement.textContent = cssContent;
+    link.replaceWith(styleElement);
+  }
+
+  const scripts = Array.from(doc.querySelectorAll('script[src]'));
+  for (const script of scripts) {
+    const src = script.getAttribute('src')?.trim() ?? '';
+    if (!isRelativeProjectPath(src) || isHttpUrl(src)) {
+      continue;
+    }
+
+    const resolvedPath = normalizeProjectPath(htmlFilePath, src);
+    const scriptContent = fileMap.get(resolvedPath);
+
+    if (scriptContent === undefined) {
+      missingFiles.add(resolvedPath);
+      continue;
+    }
+
+    const inlineScript = doc.createElement('script');
+    inlineScript.setAttribute('data-inlined-from', resolvedPath);
+    inlineScript.textContent = scriptContent;
+    script.replaceWith(inlineScript);
+  }
+
+  if (missingFiles.size > 0) {
+    const warning = doc.createElement('div');
+    warning.setAttribute('role', 'alert');
+    warning.setAttribute(
+      'style',
+      'position:sticky;top:0;z-index:9999;margin:0;padding:10px 12px;background:#fff7ed;color:#9a3412;border-bottom:1px solid #fdba74;font:500 12px/1.4 "Segoe UI",sans-serif;',
+    );
+    warning.innerHTML = `<strong>Preview warning:</strong> Missing local asset${missingFiles.size > 1 ? 's' : ''}: ${Array.from(
+      missingFiles,
+    )
+      .map((filePath) => `<code>${escapeHtml(filePath)}</code>`)
+      .join(', ')}`;
+
+    if (doc.body.firstChild) {
+      doc.body.insertBefore(warning, doc.body.firstChild);
+    } else {
+      doc.body.appendChild(warning);
+    }
+  }
+
+  return '<!doctype html>\n' + doc.documentElement.outerHTML;
+};
+
 const normalizePreviewUrl = (rawValue: string) => {
   const trimmed = rawValue.trim();
   if (!trimmed) return '';
@@ -193,7 +314,7 @@ export function CodePreview() {
     setIsLoading(true);
     try {
       if (isHtmlFile) {
-        setPreviewContent(file.content);
+        setPreviewContent(inlineHtmlLocalAssets(file.content, file.path, openFiles));
       } else if (isCssFile) {
         setPreviewContent(createCssPreviewDocument(file.content));
       } else if (isReactFile) {
