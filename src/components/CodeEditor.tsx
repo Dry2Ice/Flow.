@@ -5,6 +5,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Save, RefreshCcw } from 'lucide-react';
 import Editor from '@monaco-editor/react';
+import loader from '@monaco-editor/loader';
 import { useAppStore } from '@/lib/store';
 
 // Export functions for external use
@@ -29,8 +30,39 @@ export function CodeEditor() {
   const [isReloading, setIsReloading] = useState(false);
   const [originalContent, setOriginalContent] = useState<string>('');
   const [editorTheme, setEditorTheme] = useState<'vs' | 'vs-dark'>('vs-dark');
+  const [isMonacoReady, setIsMonacoReady] = useState(false);
+  const [monacoError, setMonacoError] = useState<string | null>(null);
 
   const currentFile = openFiles.find(f => f.path === activeFile);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    loader.config({
+      paths: {
+        vs: '/monaco/vs',
+      },
+    });
+
+    loader
+      .init()
+      .then(() => {
+        if (!isCancelled) {
+          setIsMonacoReady(true);
+          setMonacoError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to initialize Monaco loader', error);
+        if (!isCancelled) {
+          setMonacoError('Monaco failed to initialize. Verify local assets at /public/monaco/vs.');
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // Initialize original content when file changes
   useEffect(() => {
@@ -264,58 +296,68 @@ export function CodeEditor() {
             </div>
           </div>
           <div className="min-h-0 flex-1">
-            <Editor
-              height="100%"
-              language={getLanguage(currentFile.path)}
-              value={currentFile.content}
-              onChange={handleChange}
-              onMount={handleEditorDidMount}
-              theme={editorTheme}
-              options={{
-                minimap: { enabled: true, size: 'proportional' },
-                fontSize: 14,
-                lineNumbers: 'on',
-                wordWrap: 'on',
-                automaticLayout: true,
-                scrollBeyondLastLine: false,
-                renderWhitespace: 'selection',
-                bracketPairColorization: { enabled: true },
-                guides: {
-                  bracketPairs: true,
-                  indentation: true
-                },
-                suggest: {
-                  showKeywords: true,
-                  showSnippets: true
-                },
-                quickSuggestions: {
-                  other: true,
-                  comments: true,
-                  strings: true
-                },
-                parameterHints: { enabled: true },
-                hover: { enabled: true },
-                contextmenu: true,
-                mouseWheelZoom: true,
-                smoothScrolling: true,
-                cursorBlinking: 'smooth',
-                cursorSmoothCaretAnimation: 'on',
-                renderLineHighlight: 'all',
-                selectionHighlight: true,
-                occurrencesHighlight: 'singleFile',
-                codeLens: true,
-                folding: true,
-                foldingHighlight: true,
-                showFoldingControls: 'mouseover',
-                matchBrackets: 'always',
-                autoClosingBrackets: 'always',
-                autoClosingQuotes: 'always',
-                autoSurround: 'languageDefined',
-                trimAutoWhitespace: true,
-                formatOnPaste: true,
-                formatOnType: true
-              }}
-            />
+            {monacoError ? (
+              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-red-400 text-red-700">
+                {monacoError}
+              </div>
+            ) : isMonacoReady ? (
+              <Editor
+                height="100%"
+                language={getLanguage(currentFile.path)}
+                value={currentFile.content}
+                onChange={handleChange}
+                onMount={handleEditorDidMount}
+                theme={editorTheme}
+                options={{
+                  minimap: { enabled: true, size: 'proportional' },
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  wordWrap: 'on',
+                  automaticLayout: true,
+                  scrollBeyondLastLine: false,
+                  renderWhitespace: 'selection',
+                  bracketPairColorization: { enabled: true },
+                  guides: {
+                    bracketPairs: true,
+                    indentation: true
+                  },
+                  suggest: {
+                    showKeywords: true,
+                    showSnippets: true
+                  },
+                  quickSuggestions: {
+                    other: true,
+                    comments: true,
+                    strings: true
+                  },
+                  parameterHints: { enabled: true },
+                  hover: { enabled: true },
+                  contextmenu: true,
+                  mouseWheelZoom: true,
+                  smoothScrolling: true,
+                  cursorBlinking: 'smooth',
+                  cursorSmoothCaretAnimation: 'on',
+                  renderLineHighlight: 'all',
+                  selectionHighlight: true,
+                  occurrencesHighlight: 'singleFile',
+                  codeLens: true,
+                  folding: true,
+                  foldingHighlight: true,
+                  showFoldingControls: 'mouseover',
+                  matchBrackets: 'always',
+                  autoClosingBrackets: 'always',
+                  autoClosingQuotes: 'always',
+                  autoSurround: 'languageDefined',
+                  trimAutoWhitespace: true,
+                  formatOnPaste: true,
+                  formatOnType: true
+                }}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-neutral-500">
+                Initializing editor…
+              </div>
+            )}
           </div>
         </div>
       ) : (

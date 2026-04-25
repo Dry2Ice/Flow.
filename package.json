@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "sync:monaco-assets": "node scripts/sync-monaco-assets.mjs",
+    "predev": "npm run sync:monaco-assets",
+    "prebuild": "npm run sync:monaco-assets",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -10,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@monaco-editor/loader": "^1.7.0",
     "@monaco-editor/react": "^4.7.0",
     "allotment": "^1.20.5",
     "axios": "^1.15.0",
