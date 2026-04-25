@@ -37,21 +37,23 @@ export function AIChat() {
   const connectionStatus = activeSession.connectionStatus;
   const reconnectDelay = activeSession.reconnectDelay;
   const lastAssistantMessageId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
-  const visibleMessages = messages.map((message) => ({
-    ...message,
-    content: normalizeMessageContent(message.content),
-  })).filter((message, index) => {
-    // Remove empty assistant messages that are not the last message in the session
-    // (the last one may still be actively streaming)
-    if (
-      message.role === 'assistant' &&
-      message.content.trim() === '' &&
-      index < messages.length - 1
-    ) {
-      return false;
-    }
-    return true;
-  });
+  const visibleMessages = messages
+    .map((message) => ({
+      ...message,
+      content: normalizeMessageContent(message.content),
+    }))
+    .filter((message) => {
+      if (message.role !== 'assistant') {
+        return true;
+      }
+
+      const isStreamingMessage = isGenerating && message.id === lastAssistantMessageId;
+      if (isStreamingMessage) {
+        return true;
+      }
+
+      return message.content.trim().length > 0;
+    });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -205,7 +207,10 @@ export function AIChat() {
             </div>
           ) : (
             visibleMessages.map((message) => {
-              const safeContent = normalizeMessageContent(message.content);
+              const normalizedContent = normalizeMessageContent(message.content);
+              const safeContent = typeof normalizedContent === 'string'
+                ? normalizedContent
+                : String(message.content);
               return (
                 <div
                   key={message.id}
@@ -217,7 +222,9 @@ export function AIChat() {
                   className={`max-w-[80%] rounded-lg p-2 ${
                     message.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-neutral-800 text-neutral-200 bg-white text-neutral-900 border border-neutral-300'
+                      : message.isError
+                        ? 'border border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-100'
+                        : 'bg-neutral-800 text-neutral-200 bg-white text-neutral-900 border border-neutral-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">

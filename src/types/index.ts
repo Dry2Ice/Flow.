@@ -185,5 +185,6 @@ export interface AIMessage extends Message {
   sessionId: string;
   jobId?: string;
   timestamp: Date;
+  isError?: boolean;
   changes?: CodeChange[];
 }

@@ -384,17 +384,20 @@ export function PromptInput() {
       useAppStore.setState((state) => {
         const session = state.sessions[requestSessionId];
         if (!session) return state;
+        const finalContent = normalizeMessageContent(response.explanation);
 
         return {
           sessions: {
             ...state.sessions,
             [requestSessionId]: {
               ...session,
-              messages: session.messages.map((message) =>
-                message.id === streamingMessageId
-                  ? { ...message, content: normalizeMessageContent(response.explanation), changes: response.changes }
-                  : message
-              ),
+              messages: finalContent.trim().length === 0
+                ? session.messages.filter((message) => message.id !== streamingMessageId)
+                : session.messages.map((message) =>
+                    message.id === streamingMessageId
+                      ? { ...message, content: finalContent, changes: response.changes, isError: false }
+                      : message
+                  ),
             },
           },
         };
@@ -474,6 +477,7 @@ export function PromptInput() {
         content: normalizeMessageContent(isAbort
           ? 'Request cancelled.'
           : 'Sorry, I encountered an error while generating code. Please try again.'),
+        isError: true,
         timestamp: new Date(),
       });
     } finally {
