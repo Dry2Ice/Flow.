@@ -40,7 +40,7 @@ export function ThemeToggle() {
       onClick={() => setIsDark(!isDark)}
       type="button"
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-      className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/60 dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:hover:border-neutral-500/70 dark:hover:bg-neutral-800/85 light:border-gray-300/70 light:bg-white/85 light:hover:border-gray-400/80 light:hover:bg-gray-50"
+      className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/60 dark:border-neutral-700/70 dark:bg-neutral-900/70 dark:hover:border-neutral-500/70 border-gray-300/70 bg-white/85 hover:border-gray-400/80 hover:bg-gray-50 dark:hover:bg-neutral-800/85"
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
       <div className="relative flex h-5 w-5 items-center justify-center">
@@ -53,7 +53,7 @@ export function ThemeToggle() {
       </div>
 
       {/* Tooltip */}
-      <div className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-[11px] opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white light:border-gray-200 light:bg-white light:text-gray-900">
+      <div className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-[11px] opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:border-neutral-700 dark:bg-neutral-900 border-gray-200 bg-white text-gray-900 dark:text-white">
         {isDark ? 'Switch to Light' : 'Switch to Dark'}
       </div>
     </button>

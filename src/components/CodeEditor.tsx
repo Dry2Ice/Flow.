@@ -233,11 +233,11 @@ export function CodeEditor() {
     <div className="h-full w-full">
       {currentFile ? (
         <div className="h-full flex flex-col">
-          <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2 text-xs text-neutral-300 light:border-neutral-300 light:text-neutral-700">
+          <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2 text-xs text-neutral-300 border-neutral-300 text-neutral-700">
             <div className="truncate">{currentFile.path}</div>
             <div className="flex items-center gap-2">
               {saveMessage && (
-                <span className={saveState === 'error' ? 'text-red-400 light:text-red-700' : 'text-emerald-400 light:text-emerald-700'}>
+                <span className={saveState === 'error' ? 'text-red-400 text-red-700' : 'text-emerald-400 text-emerald-700'}>
                   {saveMessage}
                 </span>
               )}
@@ -245,7 +245,7 @@ export function CodeEditor() {
                 type="button"
                 onClick={reloadFile}
                 disabled={isReloading}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900/70 px-2 py-1 hover:border-neutral-500 disabled:opacity-50 light:border-neutral-300 light:bg-white light:hover:border-neutral-400"
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900/70 px-2 py-1 hover:border-neutral-500 disabled:opacity-50 border-neutral-300 bg-white hover:border-neutral-400"
                 title="Reload from disk"
               >
                 <RefreshCcw className="h-3.5 w-3.5" />
@@ -255,7 +255,7 @@ export function CodeEditor() {
                 type="button"
                 onClick={saveFile}
                 disabled={saveState === 'saving'}
-                className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1 text-sky-100 hover:bg-sky-500/25 disabled:opacity-50 light:text-sky-700"
+                className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/15 px-2 py-1 text-sky-100 hover:bg-sky-500/25 disabled:opacity-50 text-sky-700"
                 title="Save file (Ctrl/Cmd+S)"
               >
                 <Save className="h-3.5 w-3.5" />
@@ -300,12 +300,12 @@ export function CodeEditor() {
                 smoothScrolling: true,
                 cursorBlinking: 'smooth',
                 cursorSmoothCaretAnimation: 'on',
-                renderLineHighlight: 'all',
-                selectionHighlight: true,
-                occurrencesHighlight: 'singleFile',
+                renderLineHigh 'all',
+                selectionHigh true,
+                occurrencesHigh 'singleFile',
                 codeLens: true,
                 folding: true,
-                foldingHighlight: true,
+                foldingHigh true,
                 showFoldingControls: 'mouseover',
                 matchBrackets: 'always',
                 autoClosingBrackets: 'always',
