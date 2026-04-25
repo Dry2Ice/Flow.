@@ -532,6 +532,13 @@ export const useAppStore = create<AppState>()(
     setCurrentTask: (task) => set({ currentTask: task }),
 
     addMessage: (sessionId, message) => {
+      const normalisedMessage = {
+        ...message,
+        timestamp: message.timestamp instanceof Date
+          ? message.timestamp
+          : new Date(message.timestamp ?? Date.now()),
+      };
+
       set((state) => {
         const session = state.sessions[sessionId] ?? { messages: [], isGenerating: false, activeRequests: 0 };
         return {
@@ -539,7 +546,7 @@ export const useAppStore = create<AppState>()(
             ...state.sessions,
             [sessionId]: {
               ...session,
-              messages: [...session.messages, message]
+              messages: [...session.messages, normalisedMessage]
             }
           }
         };
@@ -599,16 +606,20 @@ export const useAppStore = create<AppState>()(
       };
     }),
     setActiveSession: (sessionId) => set((state) => {
-      if (state.sessions[sessionId]) {
-        return { activeSessionId: sessionId };
-      }
+      const existing = state.sessions[sessionId];
+      const normalisedSession = existing
+        ? {
+            ...existing,
+            messages: existing.messages.map((m) => ({
+              ...m,
+              timestamp: m.timestamp instanceof Date ? m.timestamp : new Date(m.timestamp ?? Date.now()),
+            })),
+          }
+        : { messages: [], isGenerating: false, activeRequests: 0 };
 
       return {
         activeSessionId: sessionId,
-        sessions: {
-          ...state.sessions,
-          [sessionId]: { messages: [], isGenerating: false, activeRequests: 0 }
-        }
+        sessions: { ...state.sessions, [sessionId]: normalisedSession },
       };
     }),
     createSession: (sessionId = crypto.randomUUID()) => {

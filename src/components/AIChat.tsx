@@ -9,6 +9,18 @@ import remarkGfm from 'remark-gfm';
 import { useAppStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
 
+const formatTimestamp = (ts: Date | string | undefined): string => {
+  if (!ts) return '';
+  const d = ts instanceof Date ? ts : new Date(ts);
+  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString();
+};
+
+const formatTimestampLong = (ts: Date | string | undefined): string => {
+  if (!ts) return '';
+  const d = ts instanceof Date ? ts : new Date(ts);
+  return isNaN(d.getTime()) ? '' : d.toLocaleString();
+};
+
 export function AIChat() {
   const { t } = useI18n();
   const {
@@ -79,7 +91,7 @@ export function AIChat() {
       t('chat.exportSession', { id: activeSessionId }),
       t('chat.exportedAt', { date: new Date().toISOString() }),
       ``,
-      ...messages.map((message) => `## ${message.role === 'user' ? t('chat.exportRoleUser') : t('chat.exportRoleAssistant')} (${message.timestamp.toLocaleString()})\n\n${message.content}`),
+      ...messages.map((message) => `## ${message.role === 'user' ? t('chat.exportRoleUser') : t('chat.exportRoleAssistant')} (${formatTimestampLong(message.timestamp)})\n\n${message.content}`),
     ].join('\n');
 
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
@@ -209,7 +221,7 @@ export function AIChat() {
                       {message.role === 'user' ? t('chat.you') : t('chat.assistant')}
                     </span>
                     <span className="text-xs opacity-50 ml-auto">
-                      {message.timestamp.toLocaleTimeString()}
+                      {formatTimestamp(message.timestamp)}
                     </span>
                   </div>
 
