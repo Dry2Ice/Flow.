@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { buildNimUrl, normalizeNimBaseUrl } from '../url-utils';
+
 const MODELS_TIMEOUT_MS = 5_000;
 
-function buildModelsUrl(baseUrl: string): string {
-  return baseUrl.endsWith('/')
-    ? `${baseUrl}v1/models`
-    : `${baseUrl}/v1/models`;
-}
-
-function jsonError(error: string, status: number, details?: string) {
+function jsonError(error: string, status: number, details?: string, extra?: Record<string, unknown>) {
   return NextResponse.json(
     {
       error,
       ...(details ? { details } : {}),
+      ...(extra ?? {}),
       status,
     },
     { status }
@@ -31,11 +28,16 @@ export async function POST(request: NextRequest) {
       return jsonError('apiKey and baseUrl are required', 400);
     }
 
+    const normalizedBaseUrl = normalizeNimBaseUrl(baseUrl);
+    if (!normalizedBaseUrl.ok) {
+      return jsonError(normalizedBaseUrl.error, 400);
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
 
     try {
-      const response = await fetch(buildModelsUrl(baseUrl), {
+      const response = await fetch(buildNimUrl(normalizedBaseUrl.value, '/models'), {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
@@ -50,7 +52,11 @@ export async function POST(request: NextRequest) {
         return jsonError(
           `Upstream error: ${response.status} ${response.statusText}`,
           502,
-          upstreamResponseBody || 'No response body from upstream'
+          upstreamResponseBody || 'No response body from upstream',
+          {
+            upstreamStatus: response.status,
+            upstreamStatusText: response.statusText,
+          }
         );
       }
 
