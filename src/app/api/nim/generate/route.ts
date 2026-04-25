@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildNimUrl, normalizeNimBaseUrl } from '../url-utils';
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   try {
     const url = new URL(request.url);
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!upstreamResponse.ok) {

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         input: texts,
         model,
       }),
+      signal: AbortSignal.timeout(120_000),
     });
 
     const data = await response.json().catch(() => ({}));
