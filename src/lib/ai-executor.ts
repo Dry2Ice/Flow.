@@ -4,6 +4,92 @@ import { AIRequest, PromptPreset } from '@/types';
 import { aiService } from '@/lib/ai-service';
 import { executionManager } from '@/lib/execution-manager';
 import { normalizeMessageContent } from '@/lib/message-content';
+import type { OpenFile } from '@/lib/store';
+import type { CodeChunk } from '@/lib/embedding-service';
+
+export const DEFAULT_CONTEXT_BUDGET = 80_000;
+
+interface ContextFile {
+  path: string;
+  content: string;
+  priority: number;
+}
+
+function buildProjectContext(params: {
+  openFiles: OpenFile[];
+  activeFile: string | null;
+  projectFiles: Array<{ path: string; content: string }>;
+  mentionedFiles: string[];
+  embeddingResults: CodeChunk[];
+  maxChars?: number;
+}): ContextFile[] {
+  const maxChars = params.maxChars ?? DEFAULT_CONTEXT_BUDGET;
+  const contextFiles: ContextFile[] = [];
+  const usedPaths = new Set<string>();
+  let usedChars = 0;
+
+  const truncateToBudget = (content: string, budget: number): string => {
+    if (budget <= 0) return '';
+    if (content.length <= budget) return content;
+    const truncated = content.slice(0, budget);
+    const safeCut = truncated.lastIndexOf('\n');
+    return `${(safeCut > 0 ? truncated.slice(0, safeCut) : truncated)}\n[TRUNCATED]`;
+  };
+
+  const firstLines = (content: string, lines: number) => content.split('\n').slice(0, lines).join('\n');
+
+  const addFile = (path: string, content: string, priority: number, preferPartial = true) => {
+    if (!path || usedPaths.has(path) || usedChars >= maxChars) return;
+    const remaining = maxChars - usedChars;
+    let nextContent = content;
+
+    if (content.length > remaining) {
+      if (!preferPartial) return;
+      nextContent = truncateToBudget(content, remaining);
+      if (!nextContent.trim()) return;
+    }
+
+    contextFiles.push({ path, content: nextContent, priority });
+    usedPaths.add(path);
+    usedChars += nextContent.length;
+  };
+
+  const projectFileMap = new Map<string, string>();
+  for (const file of params.projectFiles) {
+    if (!projectFileMap.has(file.path)) {
+      projectFileMap.set(file.path, file.content);
+    }
+  }
+  for (const file of params.openFiles) {
+    projectFileMap.set(file.path, file.content);
+  }
+
+  if (params.activeFile && projectFileMap.has(params.activeFile)) {
+    addFile(params.activeFile, projectFileMap.get(params.activeFile)!, 100, true);
+  }
+
+  for (const mention of params.mentionedFiles) {
+    const matched = [...projectFileMap.keys()].find((key) => key === mention || key.endsWith(`/${mention}`));
+    if (!matched) continue;
+    addFile(matched, projectFileMap.get(matched)!, 90, true);
+  }
+
+  for (const openFile of params.openFiles) {
+    if (openFile.path === params.activeFile) continue;
+    addFile(openFile.path, openFile.content, 80, true);
+  }
+
+  for (const chunk of params.embeddingResults) {
+    addFile(`${chunk.filePath}#L${chunk.startLine}-L${chunk.endLine}`, chunk.content, 70, true);
+  }
+
+  for (const [path, content] of projectFileMap.entries()) {
+    if (usedPaths.has(path)) continue;
+    addFile(path, firstLines(content, 30), 60, true);
+  }
+
+  return contextFiles;
+}
 
 export interface ExecuteAIRequestInput {
   prompt: string;
@@ -63,6 +149,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
     currentProject,
     getProjectContext,
     sessions,
+    projectChunks,
   } = state;
 
   const selectedPreset = input.presetId
@@ -121,7 +208,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
           : normalizeMessageContent(message.content),
       }));
 
-    let projectFiles = openFiles.map((file) => ({
+    let projectFiles: Array<{ path: string; content: string }> = openFiles.map((file) => ({
       path: file.path,
       content: file.content,
     }));
@@ -174,6 +261,15 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
       ? getProjectContext(currentProject.id) ?? await aiService.buildProjectContext(currentProject.id)
       : undefined;
 
+    const contextFiles = buildProjectContext({
+      openFiles,
+      activeFile,
+      projectFiles,
+      mentionedFiles: mentions,
+      embeddingResults: projectChunks,
+      maxChars: DEFAULT_CONTEXT_BUDGET,
+    });
+
     // Add empty assistant message placeholder for streaming
     const streamingMessageId = crypto.randomUUID();
     addMessage(activeSessionId, {
@@ -203,7 +299,7 @@ export async function executeAIRequest(input: ExecuteAIRequestInput): Promise<Ex
         context: {
           currentFile: activeFile || undefined,
           selectedCode: currentFile?.content,
-          projectFiles,
+          projectFiles: contextFiles.map(({ path, content }) => ({ path, content })),
           projectId: currentProject?.id,
           projectContext,
           sessionId: activeSessionId,
