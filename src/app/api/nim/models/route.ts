@@ -21,11 +21,23 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const apiKey = typeof body?.apiKey === 'string' ? body.apiKey.trim() : '';
-    const baseUrl = typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '';
+    const apiKey = process.env.NIM_API_KEY;
+    const envBaseUrl = process.env.NIM_BASE_URL?.trim() ?? '';
+    const bodyBaseUrl = typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '';
+    const baseUrl = envBaseUrl || bodyBaseUrl;
 
-    if (!apiKey || !baseUrl) {
-      return jsonError('apiKey and baseUrl are required', 400);
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          error: 'NIM_API_KEY not configured on server',
+          hint: 'Add NIM_API_KEY to .env.local',
+        },
+        { status: 503 }
+      );
+    }
+
+    if (!baseUrl) {
+      return jsonError('baseUrl is required', 400);
     }
 
     const normalizedBaseUrl = normalizeNimBaseUrl(baseUrl);
