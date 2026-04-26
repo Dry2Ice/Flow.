@@ -179,7 +179,7 @@ export function AIChat() {
               }));
             }}
             title={t('chat.newSession')}
-            className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200 border-neutral-300 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+            className="flex items-center gap-1 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 light:text-neutral-600 transition-colors hover:bg-neutral-800 hover:text-neutral-200 border-neutral-300 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
           >
             <Plus className="h-3 w-3" /> {t('chat.new')}
           </button>
@@ -275,7 +275,7 @@ export function AIChat() {
                             h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium">{children}</h3>; },
                             strong({ children }: any) { return <strong className="font-semibold">{children}</strong>; },
                             a({ href, children }: any) {
-                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 dark:hover:text-blue-300 underline">{children}</a>;
+                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 light:text-blue-700 dark:hover:text-blue-300 underline">{children}</a>;
                             },
                             blockquote({ children }: any) {
                               return <blockquote className="border-l-2 border-neutral-600 pl-3 italic border-neutral-400">{children}</blockquote>;
@@ -297,7 +297,7 @@ export function AIChat() {
 
                     {message.changes && message.changes.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-neutral-600 border-neutral-300">
-                        <div className="text-xs text-neutral-400 mb-2 text-neutral-600">{t('chat.codeChanges')}</div>
+                        <div className="text-xs text-neutral-400 light:text-neutral-600 mb-2 text-neutral-600">{t('chat.codeChanges')}</div>
                         <div className="space-y-1">
                           {message.changes.map((change, index) => (
                             <div key={index} className="text-xs bg-neutral-800 p-2 rounded bg-neutral-100">
@@ -322,7 +322,7 @@ export function AIChat() {
                         {copiedMessageId === message.id ? (
                           <Check className="w-3 h-3 text-green-400" />
                         ) : (
-                          <Copy className="w-3 h-3 text-neutral-400" />
+                          <Copy className="w-3 h-3 text-neutral-400 light:text-neutral-600" />
                         )}
                       </button>
                     )}
@@ -337,7 +337,7 @@ export function AIChat() {
               <div className="bg-neutral-700 rounded-lg p-3 max-w-[80%] bg-neutral-100 border border-neutral-300">
                 <div className="flex items-center gap-2 mb-2">
                   <Bot className="w-4 h-4" />
-                  <span className="text-xs text-neutral-400 text-neutral-600">{t('chat.assistant')}</span>
+                  <span className="text-xs text-neutral-400 light:text-neutral-600 text-neutral-600">{t('chat.assistant')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="text-sm text-neutral-300 text-neutral-700">{t('chat.thinking')}</div>
