@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildNimUrl, normalizeNimBaseUrl } from '../url-utils';
+import { nimRateLimiter } from '@/lib/rate-limiter';
 
 export const maxDuration = 120;
+
+const MAX_REQUESTS_PER_MINUTE = 20;
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +37,30 @@ export async function POST(request: NextRequest) {
     const normalizedBaseUrl = normalizeNimBaseUrl(baseUrl);
     if (!normalizedBaseUrl.ok) {
       return NextResponse.json({ error: normalizedBaseUrl.error }, { status: 400 });
+    }
+
+    const clientIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      'unknown';
+
+    const limit = nimRateLimiter.check(clientIp, {
+      maxRequests: MAX_REQUESTS_PER_MINUTE,
+      windowMs: 60_000,
+    });
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests', resetAt: limit.resetAt },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+            'X-RateLimit-Limit': String(MAX_REQUESTS_PER_MINUTE),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      );
     }
 
     const body = await request.json();
