@@ -132,6 +132,28 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
         setActivePreset(preset);
       }
     }
+
+    // Immediately configure the NIM service so it's ready without requiring
+    // the user to open Settings and click Save after every page reload
+    if (settings.apiKey && settings.baseUrl && settings.model) {
+      nvidiaNimService.setConfig({
+        apiKey: settings.apiKey,
+        baseUrl: settings.baseUrl,
+        model: settings.model,
+        temperature: settings.temperature ?? DEFAULT_SETTINGS.temperature,
+        topP: settings.topP ?? DEFAULT_SETTINGS.topP,
+        topK: settings.topK ?? DEFAULT_SETTINGS.topK,
+        maxTokens: settings.maxTokens ?? DEFAULT_SETTINGS.maxTokens,
+        contextTokens: settings.contextTokens ?? DEFAULT_SETTINGS.contextTokens,
+        presencePenalty: settings.presencePenalty ?? DEFAULT_SETTINGS.presencePenalty,
+        frequencyPenalty: settings.frequencyPenalty ?? DEFAULT_SETTINGS.frequencyPenalty,
+        stopSequences: Array.isArray(settings.stopSequences)
+          ? settings.stopSequences
+          : (settings.stopSequences
+              ? String(settings.stopSequences).split(',').map((s: string) => s.trim())
+              : []),
+      });
+    }
   };
 
   const resetSettingsToDefault = (notify = true) => {

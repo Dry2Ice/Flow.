@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
 
     let friendlyError = 'Failed to reach the API endpoint';
     if (cause.includes('ECONNREFUSED')) {
-      friendlyError = 'Сервер недоступен';
+      friendlyError = 'Server is not reachable (ECONNREFUSED)';
     } else if (cause.includes('ENOTFOUND')) {
-      friendlyError = 'Неверный хост';
+      friendlyError = 'Invalid hostname — check the Base URL';
     } else if (cause.includes('CERT_') || cause.includes('SELF_SIGNED_CERT') || cause.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')) {
-      friendlyError = 'Ошибка SSL';
+      friendlyError = 'SSL/TLS certificate error';
     } else if (cause.includes('TIMEOUT') || cause.includes('ABORT')) {
-      friendlyError = 'Превышено время ожидания (30 секунд)';
+      friendlyError = 'Connection timed out after 30 seconds';
     }
 
     return NextResponse.json(

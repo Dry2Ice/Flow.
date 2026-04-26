@@ -243,49 +243,51 @@ export function AIChat() {
 
                   {message.role === 'assistant' ? (
                     <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          code({ node, className, children, ...props }: any) {
-                            const isBlock = className?.includes('language-');
-                            return isBlock ? (
-                              <pre className="overflow-x-auto rounded-lg bg-neutral-900 border border-neutral-700 p-3 my-2 bg-neutral-100 border-neutral-300">
-                                <code className={`text-xs font-mono text-neutral-200 text-neutral-800 ${className ?? ''}`} {...props}>
+                      <>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code({ node, className, children, ...props }: any) {
+                              const isBlock = className?.includes('language-');
+                              return isBlock ? (
+                                <pre className="overflow-x-auto rounded-lg bg-neutral-900 border border-neutral-700 p-3 my-2 bg-neutral-100 border-neutral-300">
+                                  <code className={`text-xs font-mono text-neutral-200 text-neutral-800 ${className ?? ''}`} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              ) : (
+                                <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-indigo-600 bg-neutral-200 dark:text-blue-300" {...props}>
                                   {children}
                                 </code>
-                              </pre>
-                            ) : (
-                              <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-indigo-600 bg-neutral-200 dark:text-blue-300" {...props}>
-                                {children}
-                              </code>
-                            );
-                          },
-                          p({ children }: any) {
-                            return <p className="mb-2 last:mb-0">{children}</p>;
-                          },
-                          ul({ children }: any) {
-                            return <ul className="mb-2 ml-4 list-disc space-y-1">{children}</ul>;
-                          },
-                          ol({ children }: any) {
-                            return <ol className="mb-2 ml-4 list-decimal space-y-1">{children}</ol>;
-                          },
-                          h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold">{children}</h1>; },
-                          h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold">{children}</h2>; },
-                          h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium">{children}</h3>; },
-                          strong({ children }: any) { return <strong className="font-semibold">{children}</strong>; },
-                          a({ href, children }: any) {
-                            return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 dark:hover:text-blue-300 underline">{children}</a>;
-                          },
-                          blockquote({ children }: any) {
-                            return <blockquote className="border-l-2 border-neutral-600 pl-3 italic border-neutral-400">{children}</blockquote>;
-                          },
-                        }}
-                      >
-                        {safeContent}
-                      </ReactMarkdown>
-                      {isGenerating && message.id === lastAssistantMessageId && (
-                        <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-300 align-middle" aria-hidden="true" />
-                      )}
+                              );
+                            },
+                            p({ children }: any) {
+                              return <p className="mb-2 last:mb-0">{children}</p>;
+                            },
+                            ul({ children }: any) {
+                              return <ul className="mb-2 ml-4 list-disc space-y-1">{children}</ul>;
+                            },
+                            ol({ children }: any) {
+                              return <ol className="mb-2 ml-4 list-decimal space-y-1">{children}</ol>;
+                            },
+                            h1({ children }: any) { return <h1 className="mb-2 text-base font-semibold">{children}</h1>; },
+                            h2({ children }: any) { return <h2 className="mb-1.5 text-sm font-semibold">{children}</h2>; },
+                            h3({ children }: any) { return <h3 className="mb-1 text-sm font-medium">{children}</h3>; },
+                            strong({ children }: any) { return <strong className="font-semibold">{children}</strong>; },
+                            a({ href, children }: any) {
+                              return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 dark:text-blue-400 dark:hover:text-blue-300 underline">{children}</a>;
+                            },
+                            blockquote({ children }: any) {
+                              return <blockquote className="border-l-2 border-neutral-600 pl-3 italic border-neutral-400">{children}</blockquote>;
+                            },
+                          }}
+                        >
+                          {safeContent}
+                        </ReactMarkdown>
+                        {isGenerating && message.id === lastAssistantMessageId && (
+                          <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-blue-300 align-middle" aria-hidden="true" />
+                        )}
+                      </>
                     </div>
                   ) : (
                     <div className="text-sm whitespace-pre-wrap">
