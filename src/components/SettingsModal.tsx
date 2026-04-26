@@ -8,6 +8,7 @@ import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { useI18n } from '@/lib/i18n';
+import { AIConnectionTab, WorkspaceTab } from '@/components/settings';
 
 interface SettingsModalProps {
   isOpen?: boolean;
@@ -77,6 +78,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   const [editedPrompt, setEditedPrompt] = useState('');
   const [editingGeneralPrompt, setEditingGeneralPrompt] = useState(false);
   const [generalPromptText, setGeneralPromptText] = useState('');
+  const [activeTab, setActiveTab] = useState<'ai' | 'embedding' | 'presets' | 'workspace' | 'appearance'>('ai');
   const {
     activePreset,
     promptPresets,
@@ -712,6 +714,28 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-6 max-h-[calc(90vh-80px)] overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ['ai', 'AI'],
+                  ['embedding', 'Embedding'],
+                  ['presets', 'Presets'],
+                  ['workspace', 'Workspace'],
+                  ['appearance', 'Appearance'],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setActiveTab(value as typeof activeTab)}
+                    className={`rounded px-3 py-1 text-xs ${
+                      activeTab === value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-neutral-700 text-neutral-300 light:text-neutral-700 text-neutral-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               {/* Quick Actions */}
               <div className="border-b border-neutral-600 pb-4 border-neutral-300">
                 <h4 className="mb-3 text-md font-medium text-neutral-200 text-neutral-900">{t('settings.quickActions')}</h4>
@@ -726,7 +750,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   </button>
                   <button
                     type="button"
-                    onClick={resetSettingsToDefault}
+                    onClick={() => resetSettingsToDefault()}
                     className="flex items-center gap-2 px-4 py-2 bg-rose-700/80 hover:bg-rose-600 rounded text-sm transition-colors"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -789,109 +813,40 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 </div>
               </div>
 
-              {/* API Configuration Section */}
-              <div>
-                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 border-neutral-300 text-neutral-900">
-                  {t('settings.apiConfiguration')}
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                      {t('settings.apiKey')}
-                    </label>
-                    <input
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={t('settings.apiKeyPlaceholder')}
-                      required
-                    />
-                  </div>
+              {activeTab === 'ai' && (
+                <AIConnectionTab
+                  apiKey={apiKey}
+                  baseUrl={baseUrl}
+                  model={model}
+                  availableModels={availableModels}
+                  isLoadingModels={isLoadingModels}
+                  connectionStatus={connectionStatus}
+                  testMessageStatus={testMessageStatus}
+                  message={message}
+                  onApiKeyChange={setApiKey}
+                  onBaseUrlChange={setBaseUrl}
+                  onModelChange={setModel}
+                  onLoadModels={loadAvailableModels}
+                  onTestConnection={testConnection}
+                  onSendTestMessage={sendTestMessage}
+                />
+              )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                      {t('settings.baseUrl')}
-                    </label>
-                    <input
-                      type="url"
-                      value={baseUrl}
-                      onChange={(e) => setBaseUrl(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://api.nvidia.com/v1"
-                      required
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">
-                      {t('settings.baseUrlHint')}
-                    </div>
-                  </div>
-
-                   <div className="md:col-span-2">
-                     <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                       Model
-                     </label>
-                     <div className="flex gap-2">
-                       <select
-                         value={model}
-                         onChange={(e) => setModel(e.target.value)}
-                         className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                         required
-                       >
-                         <option value="">Select a model...</option>
-                         {availableModels.map((modelName) => (
-                           <option key={modelName} value={modelName}>
-                             {modelName}
-                           </option>
-                         ))}
-                       </select>
-                       <button
-                         type="button"
-                         onClick={loadAvailableModels}
-                         disabled={isLoadingModels || !apiKey || !baseUrl}
-                         className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 rounded text-sm font-medium transition-colors flex items-center gap-1"
-                       >
-                         {isLoadingModels ? (
-                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                         ) : (
-                           'Load Models'
-                         )}
-                       </button>
-                     </div>
-                     {availableModels.length === 0 && !isLoadingModels && (
-                        <div className="text-xs text-neutral-400 mt-1">
-                          Click &quot;Load Models&quot; to fetch available models from your API
-                        </div>
-                     )}
-                   </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                      Project Directory
-                    </label>
-                    <input
-                      type="text"
-                      value={projectPath}
-                      onChange={(e) => setProjectPathLocal(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="/path/to/your/project"
-                    />
-                    <div className="text-xs text-neutral-400 mt-1">Path to your local project directory for file operations</div>
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={handleTrustPath}
-                        disabled={isTrustingPath || !projectPath.trim()}
-                        className="px-3 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-neutral-600 rounded text-xs font-medium transition-colors"
-                      >
-                        {isTrustingPath ? 'Подтверждаем доверие...' : 'Доверять этому пути'}
-                      </button>
-                    </div>
-                  </div>
-               </div>
-               </div>
+              {activeTab === 'workspace' && (
+                <WorkspaceTab
+                  projectPath={projectPath}
+                  isTrustingPath={isTrustingPath}
+                  onProjectPathChange={setProjectPathLocal}
+                  onTrustPath={handleTrustPath}
+                  autoValidateAfterAI={autoValidateAfterAI}
+                  autoCommitAfterAI={autoCommitAfterAI}
+                  onAutoValidateChange={setAutoValidateAfterAI}
+                  onAutoCommitChange={setAutoCommitAfterAI}
+                />
+              )}
 
               {/* Embedding Model Section */}
-              <div className="border-b border-neutral-600 pb-4">
+              {activeTab === 'embedding' && <div className="border-b border-neutral-600 pb-4">
                 <h4 className="text-md font-medium text-neutral-200 mb-3 text-neutral-900">Embedding Model</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="flex items-center gap-2 text-sm text-neutral-300 light:text-neutral-700 text-neutral-700 md:col-span-2">
@@ -1001,77 +956,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     </button>
                   </div>
                 </div>
-              </div>
-
-               {/* Connection Testing Section */}
-               <div className="border-b border-neutral-600 pb-4">
-                 <h4 className="text-md font-medium text-neutral-200 mb-3 text-neutral-900">
-                   Connection & Testing
-                 </h4>
-                 <div className="flex gap-3 flex-wrap">
-                   <button
-                     type="button"
-                     onClick={testConnection}
-                     disabled={!apiKey || !baseUrl || !model || connectionStatus === 'connecting'}
-                     className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
-                       connectionStatus === 'connected'
-                         ? 'bg-green-600 hover:bg-green-700'
-                         : connectionStatus === 'error'
-                         ? 'bg-red-600 hover:bg-red-700'
-                         : 'bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600'
-                     }`}
-                   >
-                     {connectionStatus === 'connecting' ? (
-                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                     ) : connectionStatus === 'connected' ? (
-                       <Check className="w-4 h-4" />
-                     ) : connectionStatus === 'error' ? (
-                       <X className="w-4 h-4" />
-                     ) : (
-                       'Test Connection'
-                     )}
-                   </button>
-
-                   <button
-                     type="button"
-                     onClick={sendTestMessage}
-                     disabled={!apiKey || !baseUrl || !model || testMessageStatus === 'sending'}
-                     className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${
-                       testMessageStatus === 'success'
-                         ? 'bg-green-600 hover:bg-green-700'
-                         : testMessageStatus === 'error'
-                         ? 'bg-red-600 hover:bg-red-700'
-                         : 'bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600'
-                     }`}
-                   >
-                     {testMessageStatus === 'sending' ? (
-                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                     ) : testMessageStatus === 'success' ? (
-                       <Check className="w-4 h-4" />
-                     ) : testMessageStatus === 'error' ? (
-                       <X className="w-4 h-4" />
-                     ) : (
-                       'Send Test Message'
-                     )}
-                   </button>
-                 </div>
-                 <div className="text-xs text-neutral-400 mt-2">
-                   Test your API connection and send a simple test message to verify everything works
-                 </div>
-                 {(connectionStatus === 'connecting' || testMessageStatus === 'sending') && (
-                   <div className="text-xs text-amber-300 mt-2">
-                     Timeout: 15 seconds
-                   </div>
-                 )}
-                 {message && (
-                   <div className="mt-2 rounded border border-neutral-600 bg-neutral-700/60 px-3 py-2 text-sm text-neutral-200 border-neutral-300 bg-neutral-100 text-neutral-800">
-                     {message}
-                   </div>
-                 )}
-               </div>
+              </div>}
 
                {/* Generation Parameters Section */}
-              <div>
+              {activeTab === 'ai' && <div>
                 <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 border-neutral-300 text-neutral-900">
                   Generation Parameters
                 </h4>
@@ -1212,10 +1100,10 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     <div className="text-xs text-neutral-400 mt-1">Sequences where generation should stop (comma-separated)</div>
                   </div>
                 </div>
-              </div>
+              </div>}
 
               {/* General Prompt Section */}
-              <div>
+              {activeTab === 'presets' && <div>
                 <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 border-neutral-300 text-neutral-900">
                   General System Prompt
                 </h4>
@@ -1266,7 +1154,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                     </div>
                   )}
                 </div>
-              </div>
+              </div>}
 
               {/* Prompt Presets Section */}
               <div>

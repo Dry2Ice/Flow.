@@ -28,7 +28,7 @@ export const createEmbeddingSlice = (set: StoreSet, get: StoreGet): EmbeddingSli
       const projectData = await projectResponse.json();
       const projectFiles = Array.isArray(projectData?.files) ? projectData.files : [];
 
-      const chunks = await embeddingService.indexProject(projectFiles);
+      const chunks = await embeddingService.indexProject(projectFiles, state.projectPath);
       set({ projectChunks: chunks, indexedAt: new Date(), isIndexStale: false });
     } catch (error) {
       console.error('Failed to index project for embeddings:', error);
