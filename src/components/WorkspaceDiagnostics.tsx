@@ -20,23 +20,23 @@ export function SystemLogsPanel() {
       case 'error':
         return <AlertTriangle className="h-4 w-4 text-rose-400 text-rose-700" />;
       case 'warning':
-        return <ShieldAlert className="h-4 w-4 text-amber-400 text-amber-700" />;
+        return <ShieldAlert className="h-4 w-4 text-amber-400 light:text-amber-700 text-amber-700" />;
       case 'success':
-        return <CheckCircle2 className="h-4 w-4 text-emerald-600 text-emerald-700 dark:text-emerald-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-emerald-600 text-emerald-700 dark:text-emerald-400 light:text-emerald-700" />;
       default:
         return <Info className="h-4 w-4 text-sky-400 text-sky-700" />;
     }
   };
 
   if (sessionLogs.length === 0) {
-    return <p className="p-4 text-sm text-neutral-400 text-neutral-600">No logs yet for this session.</p>;
+    return <p className="p-4 text-sm text-neutral-400 light:text-neutral-600 text-neutral-600">No logs yet for this session.</p>;
   }
 
   return (
     <div className="h-full space-y-2 overflow-y-auto p-3">
       {sessionLogs.map((log) => (
         <article key={log.id} className="rounded-lg border border-neutral-700 bg-neutral-900/65 p-3 border-neutral-300 bg-white">
-          <div className="mb-1 flex items-center gap-2 text-xs text-neutral-400 text-neutral-600">
+          <div className="mb-1 flex items-center gap-2 text-xs text-neutral-400 light:text-neutral-600 text-neutral-600">
             {icon(log.type)}
             <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
             <span className="ml-auto uppercase tracking-wider">{log.type}</span>
@@ -83,7 +83,7 @@ export function ErrorsPanel() {
   };
 
   if (bugs.length === 0) {
-    return <p className="p-4 text-sm text-neutral-400 text-neutral-600">No tracked errors right now.</p>;
+    return <p className="p-4 text-sm text-neutral-400 light:text-neutral-600 text-neutral-600">No tracked errors right now.</p>;
   }
 
   return (
@@ -93,10 +93,10 @@ export function ErrorsPanel() {
           <div className="mb-1 flex items-center gap-2 text-xs text-rose-300">
             <Bug className="h-4 w-4" />
             <span className="font-semibold uppercase">{bug.severity}</span>
-            <span className="ml-auto text-neutral-400">{bug.status}</span>
+            <span className="ml-auto text-neutral-400 light:text-neutral-600">{bug.status}</span>
           </div>
           <h4 className="text-sm font-semibold">{bug.title}</h4>
-          <p className="mt-1 text-sm text-neutral-300 text-neutral-700">{bug.description}</p>
+          <p className="mt-1 text-sm text-neutral-300 light:text-neutral-700 text-neutral-700">{bug.description}</p>
           <div className="mt-2 flex gap-2">
             <button
               onClick={() => handleCheckBug(bug)}
@@ -114,7 +114,7 @@ export function ErrorsPanel() {
             </button>
             <button
               onClick={() => deleteBug(bug.id)}
-              className="ml-auto rounded border border-neutral-700 bg-neutral-800/50 px-2 py-1 text-xs text-neutral-400 transition hover:text-rose-300"
+              className="ml-auto rounded border border-neutral-700 bg-neutral-800/50 px-2 py-1 text-xs text-neutral-400 light:text-neutral-600 transition hover:text-rose-300"
             >
               Dismiss
             </button>
@@ -136,8 +136,8 @@ export function LogsAndErrorsPanel() {
           onClick={() => setActiveTab('logs')}
           className={`px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === 'logs'
-              ? 'border-b-2 border-blue-500 text-blue-400 text-blue-700'
-              : 'text-neutral-400 hover:text-neutral-200 hover:text-neutral-700'
+              ? 'border-b-2 border-blue-500 text-blue-400 light:text-blue-700 text-blue-700'
+              : 'text-neutral-400 light:text-neutral-600 hover:text-neutral-200 hover:text-neutral-700'
           }`}
         >
           Logs
@@ -147,7 +147,7 @@ export function LogsAndErrorsPanel() {
           className={`px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === 'errors'
               ? 'border-b-2 border-rose-500 text-rose-400 text-rose-700'
-              : 'text-neutral-400 hover:text-neutral-200 hover:text-neutral-700'
+              : 'text-neutral-400 light:text-neutral-600 hover:text-neutral-200 hover:text-neutral-700'
           }`}
         >
           Errors {bugs.length > 0 && `(${bugs.length})`}

@@ -70,7 +70,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
       case 'completed':
         return <CheckCircle className="h-4 w-4 text-emerald-400 text-emerald-700" aria-hidden="true" />;
       case 'partially_completed':
-        return <Clock className="h-4 w-4 text-amber-400 text-amber-700" aria-hidden="true" />;
+        return <Clock className="h-4 w-4 text-amber-400 light:text-amber-700 text-amber-700" aria-hidden="true" />;
       case 'in_progress':
         return <Clock className="h-4 w-4 text-sky-400 text-sky-700" aria-hidden="true" />;
       case 'cancelled':
@@ -322,7 +322,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
 
             {isNewPlanFormOpen && (
               <div className="space-y-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">{t('plan.newPlan')}</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400 light:text-neutral-600">{t('plan.newPlan')}</h4>
                 <input
                   value={newPlanTitle}
                   onChange={(event) => setNewPlanTitle(event.target.value)}
@@ -337,7 +337,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                 />
                 <button
                   onClick={handleCreatePlan}
-                  className="inline-flex items-center gap-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+                  className="inline-flex items-center gap-2 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 light:text-emerald-700 hover:bg-emerald-500/20"
                 >
                   <PlusCircle className="h-4 w-4" />
                   {t('plan.createPlan')}
@@ -347,7 +347,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
           </section>
 
           {plans.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400">
+            <div className="rounded-xl border border-dashed border-neutral-700 p-6 text-center text-sm text-neutral-400 light:text-neutral-600">
               {t('plan.noPlans')}
             </div>
           ) : (
@@ -372,7 +372,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                     <header className="flex items-center justify-between gap-3">
                       <div>
                         <h3 className="text-base font-semibold text-neutral-100">{activePlan.title}</h3>
-                        <p className="text-xs text-neutral-400">Status: {getStatusText(activePlan.status)}</p>
+                        <p className="text-xs text-neutral-400 light:text-neutral-600">Status: {getStatusText(activePlan.status)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -432,7 +432,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                       <button
                         onClick={() => handleExecutePlan(activePlan)}
                         disabled={executingPlanId === activePlan.id}
-                        className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60"
+                        className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 light:text-emerald-700 hover:bg-emerald-500/20 disabled:opacity-60"
                       >
                         {executingPlanId === activePlan.id ? t('plan.executing') : t('plan.executePlan')}
                       </button>
@@ -440,7 +440,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
 
                     <div className="space-y-2 rounded-lg border border-neutral-700 bg-neutral-950 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">{t('plan.newTask')}</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400 light:text-neutral-600">{t('plan.newTask')}</h4>
                         <button
                           onClick={() => setIsNewTaskFormOpen((value) => !value)}
                           className="rounded-md border border-neutral-700 bg-neutral-950 px-2.5 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-900"
@@ -503,21 +503,21 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleCheckTask(task)}
-                                  className="rounded p-1 text-neutral-400 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-300"
+                                  className="rounded p-1 text-neutral-400 light:text-neutral-600 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-300"
                                   title={t('plan.runTask')}
                                 >
                                   <Search className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleExecuteTask(task)}
-                                  className="rounded p-1 text-neutral-400 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300"
+                                  className="rounded p-1 text-neutral-400 light:text-neutral-600 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-300 light:text-emerald-700"
                                   title={t('plan.runTask')}
                                 >
                                   <Play className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => startEditDescription(task)}
-                                  className="rounded p-1 text-neutral-400 hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-300"
+                                  className="rounded p-1 text-neutral-400 light:text-neutral-600 hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-300 light:text-violet-700"
                                   title={t('plan.editTask')}
                                 >
                                   <Edit3 className="h-4 w-4" />
@@ -528,7 +528,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                                       handleDeleteTask(task.id);
                                     }
                                   }}
-                                  className="rounded p-1 text-neutral-400 hover:bg-rose-500/10 hover:text-rose-300"
+                                  className="rounded p-1 text-neutral-400 light:text-neutral-600 hover:bg-rose-500/10 hover:text-rose-300"
                                   title={t('plan.deleteTask')}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -536,7 +536,7 @@ export function DevelopmentPlan({ initialTab = 'plan' }: DevelopmentPlanProps = 
                               </div>
                             </div>
 
-                            <p className="mb-2 text-xs text-neutral-400">{getStatusText(task.status)}</p>
+                            <p className="mb-2 text-xs text-neutral-400 light:text-neutral-600">{getStatusText(task.status)}</p>
 
                             {editingTaskId === task.id ? (
                               <div className="mb-3 space-y-2">

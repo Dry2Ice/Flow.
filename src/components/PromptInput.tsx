@@ -709,7 +709,7 @@ export function PromptInput() {
                   ) : (
                     <Circle className="h-3.5 w-3.5 text-neutral-500" />
                   )}
-                  <span className={`${isCurrent ? 'text-yellow-200 text-yellow-800 dark:text-yellow-200' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
+                  <span className={`${isCurrent ? 'text-yellow-200 light:text-yellow-800 text-yellow-800 dark:text-yellow-200 light:text-yellow-800' : isDone ? 'text-neutral-200' : 'text-neutral-400'}`}>
                     {stepNumber}. {step.name}
                   </span>
                 </div>
@@ -831,7 +831,7 @@ export function PromptInput() {
           onClick={() => executeUltraMode(prompt)}
           disabled={ultraModeActive || !projectPath || !prompt.trim()}
           aria-label="Run Ultra Mode"
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-xs font-medium text-purple-700 dark:text-purple-200 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 items-center gap-1.5 rounded-lg border border-purple-500/60 bg-purple-500/15 px-2.5 text-xs font-medium text-purple-700 dark:text-purple-200 light:text-purple-700 transition hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Zap className="h-4 w-4" />
           Ultra
@@ -853,19 +853,19 @@ export function PromptInput() {
             type="button"
             onClick={() => executionManager.abort(activeStreamingJobId)}
             aria-label="Stop current AI generation"
-            className="h-9 rounded-lg border border-rose-400 bg-rose-50 px-2.5 text-xs font-medium text-rose-700 text-rose-700 dark:text-rose-200 dark:border-rose-500/70 dark:bg-rose-500/15 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+            className="h-9 rounded-lg border border-rose-400 bg-rose-50 px-2.5 text-xs font-medium text-rose-700 text-rose-700 dark:text-rose-200 light:text-rose-700 dark:border-rose-500/70 dark:bg-rose-500/15 transition hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
           >
             Стоп
           </button>
         )}
       </form>
       {contextStats && (
-        <div className="mt-2 text-[11px] text-cyan-700 dark:text-cyan-300">
+        <div className="mt-2 text-[11px] text-cyan-700 dark:text-cyan-300 light:text-cyan-700">
           Контекст: {contextStats.totalFiles} файлов → {contextStats.relevantChunks} релевантных фрагментов
         </div>
       )}
       {activeStreamingJobId && (
-        <div className="mt-2 flex items-center justify-between rounded-md border border-blue-500/20 bg-blue-500/5 px-2 py-1 text-[11px] text-blue-700 dark:text-blue-200">
+        <div className="mt-2 flex items-center justify-between rounded-md border border-blue-500/20 bg-blue-500/5 px-2 py-1 text-[11px] text-blue-700 dark:text-blue-200 light:text-blue-700">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-300" />
             Streaming response…
