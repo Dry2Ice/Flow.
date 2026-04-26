@@ -1,3 +1,5 @@
+import { embeddingCache, hashContent } from '@/lib/embedding-cache';
+
 export interface EmbeddingConfig {
   apiKey: string;
   baseUrl: string;
@@ -161,18 +163,53 @@ export class EmbeddingService {
     activeEmbeddingConfig = config;
   }
 
-  async indexProject(projectFiles: Array<{ path: string; content: string }>): Promise<CodeChunk[]> {
+  async indexProject(projectFiles: Array<{ path: string; content: string }>, projectPath = ''): Promise<CodeChunk[]> {
     if (!this.config) {
       return [];
     }
 
     const chunks = projectFiles.flatMap((file) => chunkFile(file.path, file.content));
     if (chunks.length === 0) return [];
+    const resolvedProjectPath = projectPath.trim() || '/';
 
-    const embeddings = await getEmbedding(chunks.map((chunk) => chunk.content));
-    return chunks.map((chunk, index) => ({
-      ...chunk,
-      embedding: embeddings[index],
+    const enriched = await Promise.all(chunks.map(async (chunk) => {
+      const chunkKey = `${chunk.filePath}:${chunk.startLine}-${chunk.endLine}`;
+      const contentHash = hashContent(chunk.content);
+      const embedding = await embeddingCache.get(resolvedProjectPath, chunkKey, contentHash);
+      return { chunk, chunkKey, contentHash, embedding };
+    }));
+
+    const misses = enriched.filter((item) => !item.embedding);
+    const missEmbeddings = misses.length > 0
+      ? await getEmbedding(misses.map((item) => item.chunk.content))
+      : [];
+
+    const cacheWrites = misses.map((item, index) => ({
+      filePath: item.chunkKey,
+      content: item.chunk.content,
+      contentHash: item.contentHash,
+      startLine: item.chunk.startLine,
+      endLine: item.chunk.endLine,
+      embedding: missEmbeddings[index] ?? [],
+      indexedAt: Date.now(),
+      projectPath: resolvedProjectPath,
+    }));
+
+    if (cacheWrites.length > 0) {
+      await embeddingCache.setMany(cacheWrites);
+    }
+
+    const fileCount = new Set(chunks.map((chunk) => chunk.filePath)).size;
+    const hitFileCount = new Set(
+      enriched.filter((item) => item.embedding).map((item) => item.chunk.filePath),
+    ).size;
+    console.info(
+      `Cache hit: ${hitFileCount}/${fileCount} files, requesting embeddings for ${new Set(misses.map((item) => item.chunk.filePath)).size} files`,
+    );
+
+    return enriched.map((item, index) => ({
+      ...item.chunk,
+      embedding: item.embedding ?? missEmbeddings[misses.findIndex((miss) => miss === item)],
     }));
   }
 
