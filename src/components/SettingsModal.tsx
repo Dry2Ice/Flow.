@@ -3,12 +3,18 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Check, RotateCcw, Download, Upload, Info } from 'lucide-react';
+import { X, RotateCcw, Download, Upload, Info } from 'lucide-react';
 import axios from 'axios';
 import { useAppStore } from '@/lib/store';
 import { nvidiaNimService } from '@/lib/nvidia-nim';
 import { useI18n } from '@/lib/i18n';
-import { AIConnectionTab, WorkspaceTab } from '@/components/settings';
+import {
+  AIConnectionTab,
+  WorkspaceTab,
+  EmbeddingTab,
+  PresetsTab,
+  AppearanceTab,
+} from '@/components/settings';
 
 interface SettingsModalProps {
   isOpen?: boolean;
@@ -416,17 +422,18 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
     }
   };
 
-  const handleEditPreset = (presetId: string) => {
+  const handleEditPreset = (presetId: string, prompt?: string) => {
     const preset = promptPresets.find(p => p.id === presetId);
     if (preset) {
       setEditingPreset(presetId);
-      setEditedPrompt(preset.systemPrompt);
+      setEditedPrompt(prompt ?? preset.systemPrompt);
     }
   };
 
-  const handleSavePreset = () => {
-    if (editingPreset) {
-      updatePromptPreset(editingPreset, { systemPrompt: editedPrompt });
+  const handleSavePreset = (presetId: string) => {
+    const targetPresetId = presetId || editingPreset;
+    if (targetPresetId) {
+      updatePromptPreset(targetPresetId, { systemPrompt: editedPrompt });
       setEditingPreset(null);
       setEditedPrompt('');
       setMessage('Preset updated successfully!');
@@ -794,23 +801,6 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                   {t('settings.autoCommit')}
                 </label>
                 <p className="mt-2 text-xs text-neutral-500 text-neutral-600">{t('settings.restoreDefaults')}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <label className="text-xs text-neutral-300 light:text-neutral-700 text-neutral-700">{t('settings.language')}</label>
-                  <button
-                    type="button"
-                    onClick={() => setLocale('en')}
-                    className={`rounded px-2 py-1 text-xs ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 light:text-neutral-700 text-neutral-700'}`}
-                  >
-                    EN
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLocale('ru')}
-                    className={`rounded px-2 py-1 text-xs ${locale === 'ru' ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 light:text-neutral-700 text-neutral-700'}`}
-                  >
-                    RU
-                  </button>
-                </div>
               </div>
 
               {activeTab === 'ai' && (
@@ -845,119 +835,28 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 />
               )}
 
-              {/* Embedding Model Section */}
-              {activeTab === 'embedding' && <div className="border-b border-neutral-600 pb-4">
-                <h4 className="text-md font-medium text-neutral-200 mb-3 text-neutral-900">Embedding Model</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="flex items-center gap-2 text-sm text-neutral-300 light:text-neutral-700 text-neutral-700 md:col-span-2">
-                    <input
-                      type="checkbox"
-                      checked={embedUseSameApiKey}
-                      onChange={(e) => setEmbedUseSameApiKey(e.target.checked)}
-                      className="rounded border-neutral-600 bg-neutral-700"
-                    />
-                    Use same API key
-                  </label>
-
-                  {!embedUseSameApiKey && (
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                        Embed API Key
-                      </label>
-                      <input
-                        type="password"
-                        value={embedApiKey}
-                        onChange={(e) => setEmbedApiKey(e.target.value)}
-                        className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Embedding API key"
-                      />
-                    </div>
-                  )}
-
-                  <div className={!embedUseSameApiKey ? '' : 'md:col-span-1'}>
-                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                      Embed Base URL
-                    </label>
-                    <input
-                      type="url"
-                      value={embedBaseUrl}
-                      onChange={(e) => setEmbedBaseUrl(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://api.nvidia.com/v1"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-neutral-300 light:text-neutral-700 text-neutral-700 mb-1">
-                      Embed Model
-                    </label>
-                    <div className="flex gap-2">
-                      <select
-                        value={embedModel}
-                        onChange={(e) => setEmbedModel(e.target.value)}
-                        className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select embedding model...</option>
-                        {availableEmbedModels.map((modelName) => (
-                          <option key={modelName} value={modelName}>
-                            {modelName}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={loadEmbedModels}
-                        disabled={isLoadingEmbedModels || !(embedUseSameApiKey ? apiKey : embedApiKey) || !embedBaseUrl}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-600 rounded text-sm font-medium transition-colors"
-                      >
-                        {isLoadingEmbedModels ? 'Loading…' : 'Load Embed Models'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={testEmbedding}
-                        disabled={embeddingTestStatus === 'testing' || !embedModel}
-                        className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                          embeddingTestStatus === 'success'
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : embeddingTestStatus === 'error'
-                            ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-purple-600 hover:bg-purple-700 disabled:bg-neutral-600'
-                        }`}
-                      >
-                        {embeddingTestStatus === 'testing' ? 'Testing…' : 'Test Embedding'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2 rounded border border-neutral-700 bg-neutral-900/60 p-3 text-xs text-neutral-300 light:text-neutral-700 text-neutral-700 border-neutral-300 bg-neutral-100 text-neutral-700">
-                    <div>
-                      Indexing status:{' '}
-                      {isIndexingProject
-                        ? 'Indexing…'
-                        : projectChunks.length > 0
-                          ? isIndexStale
-                            ? <span className="text-yellow-400 text-yellow-600 dark:text-yellow-400">⚠ Index is stale — re-index recommended</span>
-                            : `Ready (${projectChunks.length} chunks)`
-                          : 'Not indexed'}
-                    </div>
-                    {indexedAt && <div className="text-neutral-400 mt-1">Last indexed: {indexedAt.toLocaleString()}</div>}
-                    <div className="text-xs text-neutral-400 mt-1">
-                      {embeddingConfig
-                        ? `Endpoint: ${embeddingConfig.baseUrl} · Model: ${embeddingConfig.model}`
-                        : 'Not configured — fill in fields above and save settings'}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void indexProjectForEmbedding()}
-                      disabled={isIndexingProject || !embeddingConfig}
-                      className="mt-2 px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-neutral-600 rounded text-xs font-medium transition-colors"
-                    >
-                      {isIndexingProject ? 'Re-indexing…' : 'Re-index Project'}
-                    </button>
-                  </div>
-                </div>
-              </div>}
-
+              {activeTab === 'embedding' && (
+                <EmbeddingTab
+                  embedUseSameApiKey={embedUseSameApiKey}
+                  embedApiKey={embedApiKey}
+                  embedBaseUrl={embedBaseUrl}
+                  embedModel={embedModel}
+                  availableEmbedModels={availableEmbedModels}
+                  isLoadingEmbedModels={isLoadingEmbedModels}
+                  embeddingTestStatus={embeddingTestStatus}
+                  onEmbedUseSameApiKeyChange={setEmbedUseSameApiKey}
+                  onEmbedApiKeyChange={setEmbedApiKey}
+                  onEmbedBaseUrlChange={setEmbedBaseUrl}
+                  onEmbedModelChange={setEmbedModel}
+                  onLoadEmbedModels={() => {
+                    if (!(embedUseSameApiKey ? apiKey : embedApiKey) || !embedBaseUrl) return;
+                    void loadEmbedModels();
+                  }}
+                  onTestEmbedding={() => {
+                    void testEmbedding();
+                  }}
+                />
+              )}
                {/* Generation Parameters Section */}
               {activeTab === 'ai' && <div>
                 <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 border-neutral-300 text-neutral-900">
@@ -1102,151 +1001,33 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
                 </div>
               </div>}
 
-              {/* General Prompt Section */}
-              {activeTab === 'presets' && <div>
-                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 border-neutral-300 text-neutral-900">
-                  General System Prompt
-                </h4>
-                <p className="text-sm text-neutral-400 mb-3">
-                  Global system prompt appended to every request, regardless of selected preset.
-                </p>
-                <div className="space-y-3">
-                  {editingGeneralPrompt ? (
-                    <div>
-                      <textarea
-                        value={generalPromptText}
-                        onChange={(e) => setGeneralPromptText(e.target.value)}
-                        className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={12}
-                        placeholder="Enter general system prompt..."
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          type="button"
-                          onClick={handleSaveGeneralPrompt}
-                          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelGeneralPromptEdit}
-                          className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="p-3 bg-neutral-800 rounded border border-neutral-600 max-h-48 overflow-y-auto">
-                        <pre className="text-xs text-neutral-300 light:text-neutral-700 text-neutral-700 whitespace-pre-wrap">
-                          {generalPrompt}
-                        </pre>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleEditGeneralPrompt}
-                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 light:text-blue-700 text-blue-700 dark:hover:text-blue-300 transition-colors"
-                      >
-                        Edit General Prompt
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>}
+              {activeTab === 'presets' && (
+                <PresetsTab
+                  generalPrompt={generalPrompt}
+                  editingGeneralPrompt={editingGeneralPrompt}
+                  generalPromptText={generalPromptText}
+                  promptPresets={promptPresets}
+                  editingPreset={editingPreset}
+                  editedPrompt={editedPrompt}
+                  activePreset={activePreset}
+                  onEditGeneralPrompt={handleEditGeneralPrompt}
+                  onGeneralPromptTextChange={setGeneralPromptText}
+                  onSaveGeneralPrompt={handleSaveGeneralPrompt}
+                  onCancelGeneralPromptEdit={handleCancelGeneralPromptEdit}
+                  onEditPreset={handleEditPreset}
+                  onEditedPromptChange={setEditedPrompt}
+                  onSavePreset={handleSavePreset}
+                  onCancelPresetEdit={handleCancelEdit}
+                  onSetActivePreset={setActivePreset}
+                />
+              )}
 
-              {/* Prompt Presets Section */}
-              <div>
-                <h4 className="mb-3 border-b border-neutral-600 pb-2 text-md font-medium text-neutral-200 border-neutral-300 text-neutral-900">
-                  Prompt Presets (3 editable)
-                </h4>
-                <div className="space-y-3">
-                  {promptPresets.slice(0, 3).map((preset) => (
-                    <div
-                      key={preset.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        activePreset?.id === preset.id
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-neutral-600 hover:border-neutral-500 hover:bg-neutral-700/50'
-                      }`}
-                      onClick={() => !editingPreset && setActivePreset(preset)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                          activePreset?.id === preset.id
-                            ? 'border-blue-500'
-                            : 'border-neutral-400'
-                        }`}>
-                          {activePreset?.id === preset.id && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="mb-1 font-medium text-neutral-200 text-neutral-900">{preset.name}</h5>
-                          <p className="text-sm text-neutral-400 mb-2">{preset.description}</p>
-
-                          {editingPreset === preset.id ? (
-                            <div className="space-y-3">
-                              <textarea
-                                value={editedPrompt}
-                                onChange={(e) => setEditedPrompt(e.target.value)}
-                                className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                rows={8}
-                                placeholder="Enter system prompt..."
-                              />
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={handleSavePreset}
-                                  className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm transition-colors"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={handleCancelEdit}
-                                  className="px-3 py-1 bg-neutral-600 hover:bg-neutral-700 rounded text-sm transition-colors"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div>
-                              <details className="text-xs text-neutral-500">
-                                <summary className="cursor-pointer hover:text-neutral-400">View system prompt</summary>
-                                <div className="mt-2 p-3 bg-neutral-800 rounded text-neutral-300 light:text-neutral-700 text-neutral-700 whitespace-pre-wrap">
-                                  {preset.systemPrompt}
-                                </div>
-                              </details>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditPreset(preset.id);
-                                }}
-                                className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 light:text-blue-700 text-blue-700 dark:hover:text-blue-300 transition-colors"
-                              >
-                                Edit Prompt
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {activePreset && (
-                  <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded">
-                    <div className="flex items-center gap-2 text-green-700 text-green-700 dark:text-green-400 text-sm">
-                      <Check className="w-4 h-4" />
-                      Active preset: <strong>{activePreset.name}</strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-
+              {activeTab === 'appearance' && (
+                <AppearanceTab
+                  locale={locale}
+                  onLocaleChange={setLocale}
+                />
+              )}
               {message && (
                 <div className={`text-sm ${message.includes('successfully') ? 'text-green-700 text-green-700 dark:text-green-400' : 'text-red-700 text-red-700 dark:text-red-400 light:text-red-700'}`}>
                   {message}
