@@ -339,8 +339,6 @@ class NvidiaNimService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-NIM-Key': this.config.apiKey,
-          'X-NIM-BaseUrl': this.config.baseUrl,
         },
         body: JSON.stringify(requestBody),
         signal: request.signal,
@@ -423,8 +421,6 @@ class NvidiaNimService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-NIM-Key': this.config.apiKey,
-            'X-NIM-BaseUrl': this.config.baseUrl,
           },
           body: JSON.stringify({ ...requestBody, stream: true }),
           signal,

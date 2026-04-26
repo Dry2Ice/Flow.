@@ -8,17 +8,27 @@ export async function POST(request: NextRequest) {
     const url = new URL(request.url);
     const shouldStream = url.searchParams.get('stream') === 'true';
 
-    const nimKeyFromHeader = request.headers.get('x-nim-key');
-    const baseUrlFromHeader = request.headers.get('x-nim-baseurl');
-    const apiKey = nimKeyFromHeader || process.env.NIM_API_KEY;
-    const baseUrl = baseUrlFromHeader || process.env.NIM_BASE_URL;
+    const apiKey = process.env.NIM_API_KEY;
+    const baseUrl = process.env.NIM_BASE_URL;
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'Missing NIM API key' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'NIM_API_KEY not configured on server',
+          hint: 'Add NIM_API_KEY to .env.local',
+        },
+        { status: 503 }
+      );
     }
 
     if (!baseUrl) {
-      return NextResponse.json({ error: 'Missing NIM base URL' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'NIM_BASE_URL not configured on server',
+          hint: 'Add NIM_BASE_URL to .env.local',
+        },
+        { status: 503 }
+      );
     }
 
     const normalizedBaseUrl = normalizeNimBaseUrl(baseUrl);
