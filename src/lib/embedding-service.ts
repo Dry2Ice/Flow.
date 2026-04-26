@@ -2,6 +2,7 @@ export interface EmbeddingConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  embeddingsPath?: string;
 }
 
 export interface CodeChunk {
@@ -97,8 +98,8 @@ export async function getEmbedding(texts: string[]): Promise<number[][]> {
     body: JSON.stringify({
       texts,
       model: activeEmbeddingConfig.model,
-      apiKey: activeEmbeddingConfig.apiKey,
       baseUrl: sanitizeBaseUrl(activeEmbeddingConfig.baseUrl),
+      embeddingsPath: activeEmbeddingConfig.embeddingsPath,
     }),
   });
 

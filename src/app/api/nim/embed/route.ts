@@ -3,11 +3,22 @@ import { buildNimUrl, normalizeEndpointPath, normalizeNimBaseUrl } from '../url-
 
 export async function POST(request: NextRequest) {
   try {
-    const { texts, model, apiKey, baseUrl, embeddingsPath, endpointPath } = await request.json();
+    const { texts, model, baseUrl, embeddingsPath, endpointPath } = await request.json();
+    const apiKey = process.env.NIM_API_KEY;
 
-    if (!Array.isArray(texts) || texts.length === 0 || !model || !apiKey || !baseUrl) {
+    if (!apiKey) {
       return NextResponse.json(
-        { error: 'texts, model, apiKey, and baseUrl are required' },
+        {
+          error: 'NIM_API_KEY not configured on server',
+          hint: 'Add NIM_API_KEY to .env.local',
+        },
+        { status: 503 }
+      );
+    }
+
+    if (!Array.isArray(texts) || texts.length === 0 || !model || !baseUrl) {
+      return NextResponse.json(
+        { error: 'texts, model, and baseUrl are required' },
         { status: 400 }
       );
     }
