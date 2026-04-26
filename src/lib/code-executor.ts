@@ -14,6 +14,18 @@ interface ExecutionContext {
   dependencies?: { [name: string]: string };
 }
 
+type SandboxMessage = {
+  type: 'sandbox-ready' | 'sandbox-log' | 'sandbox-result';
+  payload?: {
+    level?: 'log' | 'warn' | 'error' | 'info';
+    message?: string;
+    success?: boolean;
+    output?: string;
+    error?: string;
+    logs?: string[];
+  };
+};
+
 class CodeExecutor {
   private worker: Worker | null = null;
   private executionTimeout = 5000; // 5 seconds
@@ -35,103 +47,122 @@ class CodeExecutor {
     };
   }
 
-  // Create a safe execution environment for JavaScript
-  async executeJavaScript(code: string, context: ExecutionContext): Promise<ExecutionResult> {
+  // Универсальный запуск JS в изолированном sandbox iframe
+  private runInSandbox(code: string): Promise<ExecutionResult> {
     return new Promise((resolve) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.setAttribute('sandbox', 'allow-scripts');
+      iframe.src = '/sandbox/runner.html';
+
       const logs: string[] = [];
+      const expectedOrigin = window.location.origin;
+      let settled = false;
 
-      // Create a safe wrapper for the code
-      const safeCode = `
-        (function() {
-          const console = {
-            log: (...args) => { __logs.push(args.join(' ')); },
-            error: (...args) => { __logs.push('ERROR: ' + args.join(' ')); },
-            warn: (...args) => { __logs.push('WARN: ' + args.join(' ')); },
-            info: (...args) => { __logs.push('INFO: ' + args.join(' ')); }
-          };
+      const cleanup = () => {
+        window.removeEventListener('message', onMessage);
+        iframe.removeEventListener('load', onLoad);
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
+      };
 
-          const __logs = [];
+      const finish = (result: ExecutionResult) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        cleanup();
+        resolve(result);
+      };
 
-          try {
-            // Execute the user's code
-            ${code}
+      const onMessage = (event: MessageEvent<SandboxMessage>) => {
+        // Проверяем источник события: только наш iframe
+        if (event.source !== iframe.contentWindow) return;
 
-            return {
-              success: true,
-              output: 'Code executed successfully',
-              logs: __logs
-            };
-          } catch (error) {
-            return {
-              success: false,
-              output: '',
-              error: error instanceof Error ? error.message : 'Unknown error',
-              logs: __logs
-            };
-          }
-        })()
-      `;
+        // Для sandbox без allow-same-origin origin может быть "null"
+        const isExpectedOrigin = event.origin === expectedOrigin || event.origin === 'null';
+        if (!isExpectedOrigin) return;
 
-      // For browser environment, we'll simulate execution
-      // In a real implementation, you might want to use a Web Worker or sandbox
-      try {
-        // Simple eval for demo - in production, use proper sandboxing
-        const result = eval(safeCode);
+        const message = event.data;
+        if (!message || typeof message !== 'object') return;
 
-        resolve({
-          success: result.success,
-          output: result.output || '',
-          error: result.error,
-          logs: result.logs || []
-        });
-      } catch (error) {
-        resolve({
+        if (message.type === 'sandbox-log' && message.payload?.message) {
+          const level = message.payload.level ? `[${message.payload.level.toUpperCase()}] ` : '';
+          logs.push(`${level}${message.payload.message}`);
+          return;
+        }
+
+        if (message.type === 'sandbox-result') {
+          finish({
+            success: Boolean(message.payload?.success),
+            output: message.payload?.output || '',
+            error: message.payload?.error,
+            logs: message.payload?.logs?.length ? message.payload.logs : logs,
+          });
+        }
+      };
+
+      const onLoad = () => {
+        iframe.contentWindow?.postMessage(
+          {
+            type: 'execute-javascript',
+            payload: { code },
+          },
+          expectedOrigin
+        );
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        finish({
           success: false,
           output: '',
-          error: error instanceof Error ? error.message : 'Execution failed',
-          logs
+          error: `Execution timed out after ${this.executionTimeout}ms`,
+          logs,
         });
-      }
+      }, this.executionTimeout);
+
+      window.addEventListener('message', onMessage);
+      iframe.addEventListener('load', onLoad);
+      document.body.appendChild(iframe);
     });
   }
 
-  // Execute HTML/CSS in iframe
-  async executeHTML(html: string, css?: string, js?: string): Promise<ExecutionResult> {
-    return new Promise((resolve) => {
-      try {
-        // Create a complete HTML document
-        const fullHTML = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <title>Code Preview</title>
-              <style>
-                body { margin: 0; padding: 20px; font-family: monospace; }
-                ${css || ''}
-              </style>
-            </head>
-            <body>
-              ${html}
-              ${js ? `<script>${js}</script>` : ''}
-            </body>
-          </html>
-        `;
+  // Безопасное выполнение JavaScript через sandboxed iframe
+  async executeJavaScript(code: string, _context: ExecutionContext): Promise<ExecutionResult> {
+    return this.runInSandbox(code);
+  }
 
-        resolve({
-          success: true,
-          output: fullHTML,
-          logs: ['HTML rendered successfully']
-        });
-      } catch (error) {
-        resolve({
-          success: false,
-          output: '',
-          error: error instanceof Error ? error.message : 'HTML execution failed',
-          logs: []
-        });
-      }
-    });
+  // Безопасное выполнение HTML/CSS/JS через sandboxed iframe
+  async executeHTML(html: string, css?: string, js?: string): Promise<ExecutionResult> {
+    const escapedHtml = JSON.stringify(html || '');
+    const escapedCss = JSON.stringify(css || '');
+    const escapedJs = JSON.stringify(js || '');
+
+    const wrappedCode = `
+      (function () {
+        const html = ${escapedHtml};
+        const css = ${escapedCss};
+        const js = ${escapedJs};
+
+        document.open();
+        document.write(
+          '<!doctype html><html><head><meta charset="utf-8"><style>' +
+            css +
+          '</style></head><body>' +
+            html +
+          '</body></html>'
+        );
+        document.close();
+
+        if (js && js.trim().length > 0) {
+          (0, eval)(js);
+        }
+
+        return 'HTML rendered successfully in sandbox';
+      })();
+    `;
+
+    return this.runInSandbox(wrappedCode);
   }
 
   // Execute TypeScript (compile to JS and then execute)

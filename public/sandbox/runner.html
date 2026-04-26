@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none';"
+    />
+    <title>Sandbox Runner</title>
+  </head>
+  <body>
+    <script>
+      (() => {
+        const logs = [];
+
+        const send = (message) => {
+          window.parent.postMessage(message, '*');
+        };
+
+        const toText = (args) =>
+          args
+            .map((item) => {
+              if (typeof item === 'string') return item;
+              try {
+                return JSON.stringify(item);
+              } catch {
+                return String(item);
+              }
+            })
+            .join(' ');
+
+        const originalConsole = {
+          log: console.log,
+          warn: console.warn,
+          error: console.error,
+          info: console.info,
+        };
+
+        ['log', 'warn', 'error', 'info'].forEach((level) => {
+          console[level] = (...args) => {
+            const message = toText(args);
+            logs.push(`[${level.toUpperCase()}] ${message}`);
+            send({ type: 'sandbox-log', payload: { level, message } });
+            originalConsole[level](...args);
+          };
+        });
+
+        window.addEventListener('message', (event) => {
+          const data = event.data;
+          if (!data || data.type !== 'execute-javascript') return;
+
+          const code = data.payload && typeof data.payload.code === 'string' ? data.payload.code : '';
+
+          try {
+            const result = new Function(code)();
+            send({
+              type: 'sandbox-result',
+              payload: {
+                success: true,
+                output: typeof result === 'string' ? result : 'Code executed successfully',
+                logs,
+              },
+            });
+          } catch (error) {
+            send({
+              type: 'sandbox-result',
+              payload: {
+                success: false,
+                output: '',
+                error: error instanceof Error ? error.message : 'Execution failed',
+                logs,
+              },
+            });
+          }
+        });
+
+        send({ type: 'sandbox-ready' });
+      })();
+    </script>
+  </body>
+</html>
