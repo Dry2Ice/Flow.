@@ -223,8 +223,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   };
 
   const loadAvailableModels = async () => {
-    if (!apiKey || !baseUrl) {
-      alert(t('settings.messages.enterApiAndBaseUrl'));
+    if (!baseUrl) {
+      alert(t('settings.messages.baseUrlRequired'));
       return;
     }
 
@@ -233,7 +233,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       const response = await fetch('/api/nim/models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey, baseUrl }),
+        body: JSON.stringify({ baseUrl }),
       });
 
       if (response.ok) {
@@ -253,9 +253,8 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
   };
 
   const loadEmbedModels = async () => {
-    const resolvedApiKey = embedUseSameApiKey ? apiKey : embedApiKey;
-    if (!resolvedApiKey || !embedBaseUrl) {
-      alert(t('settings.messages.enterEmbedApiAndBaseUrl'));
+    if (!embedBaseUrl) {
+      alert(t('settings.messages.baseUrlRequired'));
       return;
     }
 
@@ -264,7 +263,7 @@ export function SettingsModal({ isOpen: externalIsOpen, onClose: externalOnClose
       const response = await fetch('/api/nim/models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey: resolvedApiKey, baseUrl: embedBaseUrl }),
+        body: JSON.stringify({ baseUrl: embedBaseUrl }),
       });
 
       if (response.ok) {
